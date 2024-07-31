@@ -1,0 +1,133 @@
+@startuml inline_umlgraph_1.svg
+  participant "CR7 App" order 1
+  participant "CIO Main Task \n(loc_CioMainLoop)" order 2
+  queue "Message Queue" order 3
+  participant "CIO Window Manager Task" order 4
+  participant "CIO CAN-FD Task" order 5
+  participant "CIO Ethernet Task" order 6
+  participant "CIO VIN Task" order 7
+
+  "CR7 App" -> "CIO Main Task \n(loc_CioMainLoop)" : cio_main()
+  "CIO Main Task \n(loc_CioMainLoop)" -> "CIO Main Task \n(loc_CioMainLoop)" : R_CIO_BSP_Init()
+  note right
+    Pin functions
+    CAN init
+    VIN init
+    etc
+  end note
+
+  group loop
+    "CIO Main Task \n(loc_CioMainLoop)" -> "Message Queue" : R_OSAL_MqReceiveForTimePeriod()
+    note right
+      Wait for command from another task:
+        CMD_NOP, CMD_OPEN or CMD_EXIT
+    end note
+    "CIO Main Task \n(loc_CioMainLoop)" <-[#blue]- "Message Queue" : Received CMD_OPEN
+    "CIO Main Task \n(loc_CioMainLoop)" -> "Message Queue" : R_OSAL_MqSendForTimePeriod(ACK)
+    "CIO Main Task \n(loc_CioMainLoop)" -> "CIO Window Manager Task" : ServerOpen()
+    note right
+      Start server task for driver 
+      depending on message contents,
+      or exit loop on EXIT CMD
+    end note
+    "CIO Main Task \n(loc_CioMainLoop)" -> "Message Queue" : R_OSAL_MqSendForTimePeriod(COMPLETE)  
+  end
+@enduml
+@startuml inline_umlgraph_2.svg
+  participant "Camera task \n(loc_RvcTask)" order 1
+  queue "Message Queue" order 2
+  participant "CIO Main Task \n(loc_CioMainLoop)" order 3
+  participant "CIO VIN Task" order 4
+
+  group R_CIO_Open()
+    "Camera task \n(loc_RvcTask)" -> "Message Queue" : R_OSAL_MqSendForTimePeriod(OPEN)
+    "Message Queue" <- "CIO Main Task \n(loc_CioMainLoop)" : R_OSAL_MqReceiveForTimePeriod(OPEN)
+    "CIO Main Task \n(loc_CioMainLoop)" -> "CIO VIN Task" : ServerOpen(VIN)
+    "Message Queue" <- "CIO Main Task \n(loc_CioMainLoop)" : R_OSAL_MqSendForTimePeriod(ACK)
+    "Message Queue" <- "CIO Main Task \n(loc_CioMainLoop)" : R_OSAL_MqSendForTimePeriod(COMPLETE)
+    "Camera task \n(loc_RvcTask)" -> "Message Queue" : R_OSAL_MqReceiveForTimePeriod(ACK)
+    "Camera task \n(loc_RvcTask)" -> "Message Queue" : R_OSAL_MqReceiveForTimePeriod(COMPLETE)
+  end
+  
+  group R_CIO_IoCtl(R_CIO_VIN_IOC_CONFIG)
+    "Camera task \n(loc_RvcTask)" -> "Message Queue" : R_OSAL_MqSendForTimePeriod(IOCTL)
+    "Message Queue" <- "CIO VIN Task" : R_OSAL_MqReceiveForTimePeriod(IOCTL)
+    "Message Queue" <- "CIO VIN Task" : R_OSAL_MqSendForTimePeriod(ACK)
+    "Message Queue" <- "CIO VIN Task" : R_OSAL_MqSendForTimePeriod(COMPLETE)
+    "Camera task \n(loc_RvcTask)" -> "Message Queue" : R_OSAL_MqReceiveForTimePeriod(ACK)
+    "Camera task \n(loc_RvcTask)" -> "Message Queue" : R_OSAL_MqReceiveForTimePeriod(COMPLETE)
+  end
+
+  "Camera task \n(loc_RvcTask)" -> "Camera task \n(loc_RvcTask)" : Display_Init()
+  
+  group R_CIO_IoCtl(R_CIO_VIN_IOC_REGISTER_FRAME_READY_EVT)
+    "Camera task \n(loc_RvcTask)" -> "Message Queue" : R_OSAL_MqSendForTimePeriod(IOCTL)
+    "Message Queue" <- "CIO VIN Task" : R_OSAL_MqReceiveForTimePeriod(IOCTL)
+    "Message Queue" <- "CIO VIN Task" : R_OSAL_MqSendForTimePeriod(ACK)
+    "Message Queue" <- "CIO VIN Task" : R_OSAL_MqSendForTimePeriod(COMPLETE)
+    "Camera task \n(loc_RvcTask)" -> "Message Queue" : R_OSAL_MqReceiveForTimePeriod(ACK)
+    "Camera task \n(loc_RvcTask)" -> "Message Queue" : R_OSAL_MqReceiveForTimePeriod(COMPLETE)
+  end
+
+  group R_CIO_IoCtl(R_CIO_VIN_IOC_START_CAPTURE)
+    "Camera task \n(loc_RvcTask)" -> "Message Queue" : R_OSAL_MqSendForTimePeriod(IOCTL)
+    "Message Queue" <- "CIO VIN Task" : R_OSAL_MqReceiveForTimePeriod(IOCTL)
+    "Message Queue" <- "CIO VIN Task" : R_OSAL_MqSendForTimePeriod(ACK)
+    "Message Queue" <- "CIO VIN Task" : R_OSAL_MqSendForTimePeriod(COMPLETE)
+    "Camera task \n(loc_RvcTask)" -> "Message Queue" : R_OSAL_MqReceiveForTimePeriod(ACK)
+    "Camera task \n(loc_RvcTask)" -> "Message Queue" : R_OSAL_MqReceiveForTimePeriod(COMPLETE)
+  end
+
+  group loop
+    "Camera task \n(loc_RvcTask)" -> "Message Queue" : R_OSAL_MqRecieveForTimePeriod(data)
+    group R_CIO_IoCtl(R_CIO_VIN_IOC_GET_VALID_FRAME)
+      "Camera task \n(loc_RvcTask)" -> "Message Queue" : R_OSAL_MqSendForTimePeriod(IOCTL)
+      "Message Queue" <- "CIO Main Task \n(loc_CioMainLoop)" : R_OSAL_MqReceiveForTimePeriod(IOCTL)
+      "Message Queue" <- "CIO Main Task \n(loc_CioMainLoop)" : R_OSAL_MqSendForTimePeriod(ACK)
+      "Message Queue" <- "CIO Main Task \n(loc_CioMainLoop)" : R_OSAL_MqSendForTimePeriod(COMPLETE)
+      "Camera task \n(loc_RvcTask)" -> "Message Queue" : R_OSAL_MqReceiveForTimePeriod(ACK)
+      "Camera task \n(loc_RvcTask)" -> "Message Queue" : R_OSAL_MqReceiveForTimePeriod(COMPLETE)
+    end
+    "Camera task \n(loc_RvcTask)" -> "Camera task \n(loc_RvcTask)" : Display_FlushLayer()
+    "Camera task \n(loc_RvcTask)" -> "Camera task \n(loc_RvcTask)" : Display_ToggleLayer()
+  end
+@enduml
+@startuml inline_umlgraph_3.svg
+  participant "CR7 App" order 1
+  participant "Taurus Task \n(loc_TaurusMainLoop)" order 2
+  participant "COM Sever Task \n(locComServerApp)" order 3
+  participant "COMAL" order 4
+  participant "RPMsg" order 5
+  participant "RVGC Server" order 6
+  participant "CAN Server" order 7
+  participant "VIN Server" order 8
+  participant "CA5x App" order 9
+
+
+  "CR7 App" -> "Taurus Task \n(loc_TaurusMainLoop)" : taurus_main()
+  "Taurus Task \n(loc_TaurusMainLoop)" -> "COM Sever Task \n(locComServerApp)" : R_COMSV_Init()
+  "COM Sever Task \n(locComServerApp)" -> "COMAL" : R_RTE_COMAL_Init()
+  "COMAL" -> "COMAL" : Wait for CA5x virtio OK
+  "COMAL" o<-[#blue]- "CA5x App"
+
+  group loop
+    "COM Sever Task \n(locComServerApp)" -> RPMsg : R_RTE_COMAL_ReadCmd()
+    "RPMsg" o<-[#blue]- "CA5x App"
+    "COMAL" <-- "RPMsg"
+    "COM Sever Task \n(locComServerApp)" <-- "COMAL"
+    "COM Sever Task \n(locComServerApp)" -> "COMAL" : R_RTE_COMAL_SendResult(ACK)
+    "COMAL" -> "RPMsg"
+    "COM Sever Task \n(locComServerApp)" -> "RVGC Server" : Execute()
+    note right
+      The target server depends on 
+      the contents of the command
+    end note
+    "COM Sever Task \n(locComServerApp)" <-- "RVGC Server"
+    "COM Sever Task \n(locComServerApp)" -> "COMAL" : R_RTE_COMAL_SendResult(result)
+    "COMAL" -> "RPMsg"
+    "RPMsg" o-[#blue]-> "CA5x App"
+  end
+
+  "Taurus Task \n(loc_TaurusMainLoop)" -> "Taurus Task \n(loc_TaurusMainLoop)" : Wait for quit flag
+  "Taurus Task \n(loc_TaurusMainLoop)" -> "COM Sever Task \n(locComServerApp)" : R_COMSV_DeInit()
+@enduml

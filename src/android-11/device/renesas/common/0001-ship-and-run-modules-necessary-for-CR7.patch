@@ -1,0 +1,53 @@
+From b8445a0b9eae5459dcf580981ff5d27deec0f0a9 Mon Sep 17 00:00:00 2001
+From: Sergii Piatakov <sergii.piatakov@globallogic.com>
+Date: Fri, 25 Aug 2023 09:17:20 +0000
+Subject: [PATCH 1/2] ship and run modules necessary for CR7
+
+Test: build, flash and run DUT, check that modules are loaded.
+Signed-off-by: Sergii Piatakov <sergii.piatakov@globallogic.com>
+---
+ ModulesCommon.mk    | 7 +++++++
+ init/init.common.rc | 9 +++++++++
+ 2 files changed, 16 insertions(+)
+
+diff --git a/ModulesCommon.mk b/ModulesCommon.mk
+index 8fd1515..240e636 100644
+--- a/ModulesCommon.mk
++++ b/ModulesCommon.mk
+@@ -51,6 +51,13 @@ BOARD_VENDOR_KERNEL_MODULES += \
+ BOARD_VENDOR_KERNEL_MODULES += \
+ 	$(KERNEL_MODULES_OUT)/micrel.ko
+ 
++BOARD_VENDOR_KERNEL_MODULES += \
++	$(KERNEL_MODULES_OUT)/rcar_cr7_remoteproc.ko \
++	$(KERNEL_MODULES_OUT)/rpmsg_core.ko \
++	$(KERNEL_MODULES_OUT)/virtio_rpmsg_bus.ko \
++	$(KERNEL_MODULES_OUT)/rcar-rvgc-drm.ko \
++	$(KERNEL_MODULES_OUT)/rcar-vivid.ko
++
+ BOARD_VENDOR_KERNEL_MODULES += \
+ 	$(KERNEL_MODULES_OUT)/ravb_proc.ko  \
+ 	$(KERNEL_MODULES_OUT)/ravb_streaming.ko \
+diff --git a/init/init.common.rc b/init/init.common.rc
+index f092581..f168edc 100644
+--- a/init/init.common.rc
++++ b/init/init.common.rc
+@@ -44,6 +44,15 @@ service irqbalance /vendor/bin/irqbalance -f -n pvrsrvkm
+ 
+ on early-init
+     mount debugfs debugfs /sys/kernel/debug
++    # Load ko files for rpmsg devices
++    insmod /vendor/lib/modules/rcar_cr7_remoteproc.ko
++    exec -- /system/bin/sleep 0.3s
++    insmod /vendor/lib/modules/rpmsg_core.ko
++    insmod /vendor/lib/modules/virtio_rpmsg_bus.ko
++    exec -- /system/bin/sleep 0.5s
++    insmod /vendor/lib/modules/rcar-rvgc-drm.ko
++    exec -- /system/bin/sleep 0.5s
++    insmod /vendor/lib/modules/rcar-vivid.ko
+     start pvrsrvctl
+     write /proc/sys/kernel/sched_energy_aware 0
+     write /sys/devices/system/cpu/cpufreq/boost 1
+-- 
+2.17.1
+

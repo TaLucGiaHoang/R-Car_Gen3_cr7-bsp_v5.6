@@ -1,0 +1,115 @@
+cmake_minimum_required(VERSION 3.16)
+project(rivp)
+
+add_library(${PROJECT_NAME}-${CMAKE_SYSTEM_PROCESSOR}-${CMAKE_SYSTEM_COMPILER}-${RCAR_TARGET_OS}
+    STATIC
+        ../rivp_log/rivp_dep_ldd_log.c
+)
+
+target_include_directories(${PROJECT_NAME}-${CMAKE_SYSTEM_PROCESSOR}-${CMAKE_SYSTEM_COMPILER}-${RCAR_TARGET_OS}
+    PUBLIC
+        ../rivp_log
+        api/include
+        api_jpg/include
+    PRIVATE
+        ${CMAKE_VLIB_ROOT}/os/osal/include
+)
+
+file(GLOB RIVP_SOURCES
+    api/*.c
+)
+file(GLOB RIVPM_VDP_SOURCES
+    mng_vdp/*.c
+)
+file(GLOB RIVP_JPG_SOURCES
+    api_jpg/*.c
+)
+file(GLOB RIVPM_JPG_SOURCES
+    mng_jpg/*.c
+)
+
+if(RIVP_SOURCES)
+    add_library(rivp
+        STATIC
+            ${RIVP_SOURCES}
+    )
+    target_include_directories(rivp
+        PRIVATE
+            api
+            api/include
+            mng_vdp
+            mng_vdp/include
+            api_jpg
+            api_jpg/include
+            mng_jpg
+            mng_jpg/include
+            ../rivp_log
+            ${CMAKE_VLIB_ROOT}/os/osal/include
+    )
+    add_library(rivpm_vdp
+        STATIC
+            ${RIVPM_VDP_SOURCES}
+    )
+    target_include_directories(rivpm_vdp
+        PRIVATE
+            api
+            api/include
+            mng_vdp
+            mng_vdp/include
+            api_jpg
+            api_jpg/include
+            mng_jpg
+            mng_jpg/include
+            ../rivp_log
+            ${CMAKE_VLIB_ROOT}/os/osal/include
+    )
+    add_library(rivp_jpg
+        STATIC
+            ${RIVP_JPG_SOURCES}
+    )
+    target_include_directories(rivp_jpg
+        PRIVATE
+            api
+            api/include
+            mng_vdp
+            mng_vdp/include
+            api_jpg
+            api_jpg/include
+            mng_jpg
+            mng_jpg/include
+            ../rivp_log
+            ${CMAKE_VLIB_ROOT}/os/osal/include
+    )
+    add_library(rivpm_jpg
+        STATIC
+            ${RIVPM_JPG_SOURCES}
+    )
+    target_include_directories(rivpm_jpg
+        PRIVATE
+            api
+            api/include
+            mng_vdp
+            mng_vdp/include
+            api_jpg
+            api_jpg/include
+            mng_jpg
+            mng_jpg/include
+            ../rivp_log
+            ${CMAKE_VLIB_ROOT}/os/osal/include
+    )
+    target_link_libraries(${PROJECT_NAME}-${CMAKE_SYSTEM_PROCESSOR}-${CMAKE_SYSTEM_COMPILER}-${RCAR_TARGET_OS}
+        PRIVATE
+            rivp
+            rivpm_vdp
+            rivp_jpg
+            rivpm_jpg
+    )
+else()
+    target_link_libraries(${PROJECT_NAME}-${CMAKE_SYSTEM_PROCESSOR}-${CMAKE_SYSTEM_COMPILER}-${RCAR_TARGET_OS}
+        PRIVATE
+            ${CMAKE_CURRENT_SOURCE_DIR}/api/lib/${RCAR_TARGET_OS}/librivp.a
+            ${CMAKE_CURRENT_SOURCE_DIR}/api/lib/${RCAR_TARGET_OS}/librivpm_vdp.a
+            ${CMAKE_CURRENT_SOURCE_DIR}/api_jpg/lib/${RCAR_TARGET_OS}/librivp_jpg.a
+            ${CMAKE_CURRENT_SOURCE_DIR}/api_jpg/lib/${RCAR_TARGET_OS}/librivpm_jpg.a
+    )
+endif()

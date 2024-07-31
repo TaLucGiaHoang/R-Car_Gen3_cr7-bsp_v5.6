@@ -1,0 +1,123 @@
+From 47af7ebb776c79af74b43082138ebe6da284bcc1 Mon Sep 17 00:00:00 2001
+From: Nam Nguyen <nam.nguyen.yh@renesas.com>
+Date: Wed, 26 Oct 2022 03:26:14 +0700
+Subject: [PATCH 05/40] misc: rcar-mfis: Adding License for R-Car MFIS driver
+
+File source of R-Car MFIS driver were missing license,
+this patch is for adding them.
+
+Other contain MIT and GPLv2 License term,
+remove them and replace with SPDX aswell.
+
+Signed-off-by: Nam Nguyen <nam.nguyen.yh@renesas.com>
+---
+ drivers/misc/rcar-mfis/rcar_mfis_drv.c    | 65 ++---------------------
+ drivers/misc/rcar-mfis/rcar_mfis_drv.h    |  7 +++
+ include/misc/rcar-mfis/rcar_mfis_public.h |  6 +++
+ 3 files changed, 18 insertions(+), 60 deletions(-)
+
+diff --git a/drivers/misc/rcar-mfis/rcar_mfis_drv.c b/drivers/misc/rcar-mfis/rcar_mfis_drv.c
+index 5625823051f0..abb91f6d29f1 100644
+--- a/drivers/misc/rcar-mfis/rcar_mfis_drv.c
++++ b/drivers/misc/rcar-mfis/rcar_mfis_drv.c
+@@ -1,63 +1,8 @@
+-/*************************************************************************/ /*
+- rcar_mfis_drv.c -- R-Car MFIS
+-
+- Copyright (C) 2021-2022 Renesas Electronics Corporation
+-
+- License        Dual MIT/GPLv2
+-
+- The contents of this file are subject to the MIT license as set out below.
+-
+- Permission is hereby granted, free of charge, to any person obtaining a copy
+- of this software and associated documentation files (the "Software"), to deal
+- in the Software without restriction, including without limitation the rights
+- to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+- copies of the Software, and to permit persons to whom the Software is
+- furnished to do so, subject to the following conditions:
+-
+- The above copyright notice and this permission notice shall be included in
+- all copies or substantial portions of the Software.
+-
+- Alternatively, the contents of this file may be used under the terms of
+- the GNU General Public License Version 2 ("GPL") in which case the provisions
+- of GPL are applicable instead of those above.
+-
+- If you wish to allow use of your version of this file only under the terms of
+- GPL, and not to allow others to use your version of this file under the terms
+- of the MIT license, indicate your decision by deleting the provisions above
+- and replace them with the notice and other provisions required by GPL as set
+- out in the file called "GPL-COPYING" included in this distribution. If you do
+- not delete the provisions above, a recipient may use your version of this file
+- under the terms of either the MIT license or GPL.
+-
+- This License is also included in this distribution in the file called
+- "MIT-COPYING".
+-
+- EXCEPT AS OTHERWISE STATED IN A NEGOTIATED AGREEMENT: (A) THE SOFTWARE IS
+- PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING
+- BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR
+- PURPOSE AND NONINFRINGEMENT; AND (B) IN NO EVENT SHALL THE AUTHORS OR
+- COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
+- IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
+- CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+-
+-
+- GPLv2:
+- If you wish to use this file under the terms of GPL, following terms are
+- effective.
+-
+- This program is free software; you can redistribute it and/or modify
+- it under the terms of the GNU General Public License as published by
+- the Free Software Foundation; version 2 of the License.
+-
+- This program is distributed in the hope that it will be useful,
+- but WITHOUT ANY WARRANTY; without even the implied warranty of
+- MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+- GNU General Public License for more details.
+-
+- You should have received a copy of the GNU General Public License
+- along with this program; if not, write to the Free Software
+- Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+-*/ /*************************************************************************/
++// SPDX-License-Identifier: GPL-2.0-only OR MIT
++/* rcar_mfis_drv.c -- R-Car MFIS
++*
++* Copyright (C) 2022 Renesas Electronics Corporation
++*/
+ 
+ #include <linux/kernel.h>
+ #include <linux/module.h>
+diff --git a/drivers/misc/rcar-mfis/rcar_mfis_drv.h b/drivers/misc/rcar-mfis/rcar_mfis_drv.h
+index 38e7100f30fe..4aef019c59f4 100644
+--- a/drivers/misc/rcar-mfis/rcar_mfis_drv.h
++++ b/drivers/misc/rcar-mfis/rcar_mfis_drv.h
+@@ -1,3 +1,10 @@
++/* SPDX-License-Identifier: GPL-2.0-only OR MIT */
++/*
++ * rcar_mfis_drv.h --  R-Car MFIS
++ *
++ * Copyright (C) 2022 Renesas Electronics Corporation
++ */
++
+ #ifndef _RCAR_MFIS_H_
+ #define _RCAR_MFIS_H_
+ 
+diff --git a/include/misc/rcar-mfis/rcar_mfis_public.h b/include/misc/rcar-mfis/rcar_mfis_public.h
+index 0ba9b01f19d8..9741bd849e01 100644
+--- a/include/misc/rcar-mfis/rcar_mfis_public.h
++++ b/include/misc/rcar-mfis/rcar_mfis_public.h
+@@ -1,3 +1,9 @@
++/* SPDX-License-Identifier: GPL-2.0-only OR MIT */
++/* rcar_mfis_public.h  --  R-Car MFIS
++*
++* Copyright (C) 2022 Renesas Electronics Corporation
++*/
++
+ #ifndef __RCAR_MFIS_PUBLIC_H__
+ #define __RCAR_MFIS_PUBLIC_H__
+ 
+-- 
+2.25.1
+

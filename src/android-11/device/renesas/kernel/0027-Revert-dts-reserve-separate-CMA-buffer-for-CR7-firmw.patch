@@ -1,0 +1,41 @@
+From 3bbc9963fe44b4cf613622da38a287e8d0c3612e Mon Sep 17 00:00:00 2001
+From: Sergii Piatakov <sergii.piatakov@globallogic.com>
+Date: Tue, 7 Nov 2023 14:57:25 +0000
+Subject: [PATCH 27/27] Revert "dts: reserve separate CMA buffer for CR7
+ firmware"
+
+This reverts commit 3ef5559ddf55a03b0c7ccb3d9dc90039493d3e3b.
+
+This separate CMA area isn't needed anymore, because resource table in
+the last version of the firmware ELF file (starting from cr-firmware
+v5.4+) no longer contains the CARVEOUT section.
+
+Test: try to successfully boot when CR7 is running first (pay attention
+      to the remoteproc module).
+Signed-off-by: Sergii Piatakov <sergii.piatakov@globallogic.com>
+---
+ arch/arm64/boot/dts/renesas/salvator-xs_cr7_rproc.dtsi | 8 --------
+ 1 file changed, 8 deletions(-)
+
+diff --git a/arch/arm64/boot/dts/renesas/salvator-xs_cr7_rproc.dtsi b/arch/arm64/boot/dts/renesas/salvator-xs_cr7_rproc.dtsi
+index 81825e97f45d..7aa3ca958d86 100644
+--- a/arch/arm64/boot/dts/renesas/salvator-xs_cr7_rproc.dtsi
++++ b/arch/arm64/boot/dts/renesas/salvator-xs_cr7_rproc.dtsi
+@@ -36,14 +36,6 @@
+ 			reusable;
+ 			reg = <0x00000000 0x80000000 0x0 0x18000000>; /* 384Mb */
+ 		};
+-
+-		/* Memory region for mapping CR7 firmware */
+-		fw_reserved: linux,cma@68000000 {
+-			compatible = "shared-dma-pool";
+-			reusable;
+-			reg = <0x00000000 0x68000000 0x0 0x08000000>; /* 128Mb */
+-			linux,cma-default;
+-		};
+ 	};
+ 
+ 	cr7 {
+-- 
+2.25.1
+

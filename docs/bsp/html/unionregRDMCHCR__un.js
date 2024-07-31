@@ -1,0 +1,25 @@
+var unionregRDMCHCR__un =
+[
+    [ "bit", "unionregRDMCHCR__un.html#a57a87a98bad62dc34a3ae08d5779f24f", null ],
+    [ "CAE", "unionregRDMCHCR__un.html#aef73821d02ff2e038931ad370b1e6264", null ],
+    [ "CAIE", "unionregRDMCHCR__un.html#a4afd06f87e3926e7bea6c84266aeac85", null ],
+    [ "DE", "unionregRDMCHCR__un.html#a5f36d9dc325a8b7154f27f170413a8f4", null ],
+    [ "DM", "unionregRDMCHCR__un.html#ae1f2c3fa08bf3dfc3f365eba37791c1e", null ],
+    [ "DPB", "unionregRDMCHCR__un.html#a72e21ede019dae3fdb2635bbe3fdafb4", null ],
+    [ "DPM", "unionregRDMCHCR__un.html#ae92ea693ab8d6218781aad0b4f8d6026", null ],
+    [ "DSE", "unionregRDMCHCR__un.html#acf3a6d53e32754500e62846004b5eebc", null ],
+    [ "DSIE", "unionregRDMCHCR__un.html#a6860cfbc54f922d60c2c7a59cae60fad", null ],
+    [ "IE", "unionregRDMCHCR__un.html#a2307fd1b65277fc3166cbf2b30029266", null ],
+    [ "INT", "unionregRDMCHCR__un.html#a179be12cc7c54794e4d14ed8fba5dfb5", null ],
+    [ "reserve_1", "unionregRDMCHCR__un.html#ab4f1ea1ec8fac7b2c7733cc53019c966", null ],
+    [ "reserve_2", "unionregRDMCHCR__un.html#a072dac3667fff4c7ff801d1367437a23", null ],
+    [ "reserve_3", "unionregRDMCHCR__un.html#a0c88243224dfc96992376cb715e231db", null ],
+    [ "RPT0", "unionregRDMCHCR__un.html#a2035862477e98422e371141f4f3713c5", null ],
+    [ "RPT1", "unionregRDMCHCR__un.html#a9656fc355ef651a43d16f20865312bf9", null ],
+    [ "RPT2", "unionregRDMCHCR__un.html#adf390cf5931b3b442262c93a091f2e9c", null ],
+    [ "RS", "unionregRDMCHCR__un.html#a3b1d424213905c1ad5e885ed5b4080d5", null ],
+    [ "SM", "unionregRDMCHCR__un.html#a281143c44067fd0c88a9244265c9553f", null ],
+    [ "TE", "unionregRDMCHCR__un.html#abb5f1e76a6c473e515a5e14f3b9c17d3", null ],
+    [ "TS01", "unionregRDMCHCR__un.html#a0fd511b89c34401106e81dcb582c8179", null ],
+    [ "TS23", "unionregRDMCHCR__un.html#a777aeef4dd338ae04ae7c4b42cb0989a", null ]
+];

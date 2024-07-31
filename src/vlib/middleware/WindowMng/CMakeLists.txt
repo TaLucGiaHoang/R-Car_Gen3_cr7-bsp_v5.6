@@ -1,0 +1,2 @@
+add_subdirectory(drv_wmlib)
+add_subdirectory(um_wmlib)

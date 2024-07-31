@@ -1,0 +1,35 @@
+From 6137d4dcdc89cd67b7738a9511812cffe03693d0 Mon Sep 17 00:00:00 2001
+From: Sergii Piatakov <sergii.piatakov@globallogic.com>
+Date: Wed, 4 Oct 2023 23:33:08 +0300
+Subject: [PATCH 32/40] soc: renesas: do not reset CR7 for r8a77965
+
+This patch prevents power reset of CR7 which is necessary for use cases
+when the CR7 side starts before CA5x.
+
+The change is addressed only to CR7 power management and doesn't cover
+other use cases (like IMR, codec, etc). If CR7 uses those nodes then
+similar changes should be added as well.
+
+Test: start Linux with already running RTOS on the CR7 side and ensure
+      that RTOS is not affected by Linux.
+Signed-off-by: Sergii Piatakov <sergii.piatakov@globallogic.com>
+---
+ drivers/soc/renesas/r8a77965-sysc.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/drivers/soc/renesas/r8a77965-sysc.c b/drivers/soc/renesas/r8a77965-sysc.c
+index ff0b0d116992..15790333e0ce 100644
+--- a/drivers/soc/renesas/r8a77965-sysc.c
++++ b/drivers/soc/renesas/r8a77965-sysc.c
+@@ -22,7 +22,7 @@ static const struct rcar_sysc_area r8a77965_areas[] __initconst = {
+ 	  PD_CPU_NOCR },
+ 	{ "ca57-cpu1",	 0x80, 1, R8A77965_PD_CA57_CPU1, R8A77965_PD_CA57_SCU,
+ 	  PD_CPU_NOCR },
+-	{ "cr7",	0x240, 0, R8A77965_PD_CR7,	R8A77965_PD_ALWAYS_ON },
++	{ "cr7",	0x240, 0, R8A77965_PD_CR7,	R8A77965_PD_ALWAYS_ON, PD_CPU_NOCR },
+ 	{ "a3vc",	0x380, 0, R8A77965_PD_A3VC,	R8A77965_PD_ALWAYS_ON },
+ 	{ "a3vp",	0x340, 0, R8A77965_PD_A3VP,	R8A77965_PD_ALWAYS_ON },
+ 	{ "a2vc1",	0x3c0, 1, R8A77965_PD_A2VC1,	R8A77965_PD_A3VC },
+-- 
+2.25.1
+

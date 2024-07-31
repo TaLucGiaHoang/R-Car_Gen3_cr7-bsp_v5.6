@@ -1,0 +1,108 @@
+From 7d0a6b0a7ae77939ec66e5eb42ddbb6d6a810aa6 Mon Sep 17 00:00:00 2001
+From: Sergii Piatakov <sergii.piatakov@globallogic.com>
+Date: Thu, 18 Aug 2022 17:56:50 +0300
+Subject: [PATCH 10/27] W/A: remove sound path declaration to fix build errors
+
+Signed-off-by: Sergii Piatakov <sergii.piatakov@globallogic.com>
+---
+ .../renesas/r8a7795-salvator-xs-android.dts   |  6 ----
+ .../renesas/r8a77965-salvator-xs-android.dts  |  6 ----
+ .../dts/renesas/salvator-xs_cr7_rproc.dtsi    | 29 -------------------
+ 3 files changed, 41 deletions(-)
+
+diff --git a/arch/arm64/boot/dts/renesas/r8a7795-salvator-xs-android.dts b/arch/arm64/boot/dts/renesas/r8a7795-salvator-xs-android.dts
+index 004d038b4266..e8a361c451c6 100644
+--- a/arch/arm64/boot/dts/renesas/r8a7795-salvator-xs-android.dts
++++ b/arch/arm64/boot/dts/renesas/r8a7795-salvator-xs-android.dts
+@@ -29,9 +29,3 @@
+ 	/delete-node/ imr-lx4@fe880000;
+ 	/delete-node/ imr-lx4@fe890000;
+ };
+-
+-&rcar_sound {
+-	ports {
+-		/delete-node/ port@2;
+-	};
+-};
+diff --git a/arch/arm64/boot/dts/renesas/r8a77965-salvator-xs-android.dts b/arch/arm64/boot/dts/renesas/r8a77965-salvator-xs-android.dts
+index efe5e1fa3266..9d1782f1b31d 100644
+--- a/arch/arm64/boot/dts/renesas/r8a77965-salvator-xs-android.dts
++++ b/arch/arm64/boot/dts/renesas/r8a77965-salvator-xs-android.dts
+@@ -16,9 +16,3 @@
+ 
+ /************************ CR7 PoC Salvator XS M3N Specific ************************/
+ #include "salvator-xs_cr7_rproc.dtsi"
+-
+-&rcar_sound {
+-	ports {
+-		/delete-node/ port@2;
+-	};
+-};
+diff --git a/arch/arm64/boot/dts/renesas/salvator-xs_cr7_rproc.dtsi b/arch/arm64/boot/dts/renesas/salvator-xs_cr7_rproc.dtsi
+index 5dc08eadcdc2..f5d76ba66962 100644
+--- a/arch/arm64/boot/dts/renesas/salvator-xs_cr7_rproc.dtsi
++++ b/arch/arm64/boot/dts/renesas/salvator-xs_cr7_rproc.dtsi
+@@ -113,19 +113,10 @@
+ /delete-node/ &csi20;
+ /delete-node/ &csi40;
+ 
+-&ak4613 {
+-	reg = <0x13>;
+-};
+-
+ &sound_pins {
+ 	groups = "ssi349_ctrl", "ssi3_data", "ssi4_data";
+ };
+ 
+-&rsnd_endpoint0 {
+-	playback = <&ssi3 &src3 &dvc0>;
+-	capture  = <&ssi4 &src4 &dvc1>;
+-};
+-
+ &ssi0 {
+ 	dmas = <&audma1 0x01>, <&audma1 0x02>, <&audma1 0x15>, <&audma1 0x16>;
+ };
+@@ -136,13 +127,6 @@
+ &ssi2 {
+ 	dmas = <&audma1 0x05>, <&audma1 0x06>, <&audma1 0x63>, <&audma1 0x64>;
+ };
+-&ssi3 {
+-	dmas = <&audma1 0x07>, <&audma1 0x08>, <&audma1 0x6f>, <&audma1 0x70>;
+-};
+-&ssi4 {
+-	shared-pin;
+-	dmas = <&audma1 0x09>, <&audma1 0x0a>, <&audma1 0x71>, <&audma1 0x72>;
+-};
+ &ssi5 {
+ 	dmas = <&audma1 0x0b>, <&audma1 0x0c>, <&audma1 0x73>, <&audma1 0x74>;
+ };
+@@ -168,12 +152,6 @@
+ &src2 {
+ 	dmas = <&audma1 0x89>, <&audma1 0x9e>;
+ };
+-&src3 {
+-	dmas = <&audma1 0x8b>, <&audma1 0xa0>;
+-};
+-&src4 {
+-	dmas = <&audma1 0x8d>, <&audma1 0xb0>;
+-};
+ &src5 {
+ 	dmas = <&audma1 0x8f>, <&audma1 0xb2>;
+ };
+@@ -190,13 +168,6 @@
+ 	dmas = <&audma1 0x97>, <&audma1 0xba>;
+ };
+ 
+-&rcar_sound {
+-	ports {
+-		/delete-node/ port@1;
+-	};
+-};
+-/delete-node/ &audma0;
+-
+ &backlight {
+ 	/* Known issues: SSI3's pin conflicts with the original lvds
+ 	* backlight's gpio. So the lvds backlight's pin had to be
+-- 
+2.25.1
+

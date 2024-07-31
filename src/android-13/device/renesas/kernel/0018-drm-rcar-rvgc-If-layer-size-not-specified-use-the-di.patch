@@ -1,0 +1,30 @@
+From 772f44078dd832e672cd0240d4b039d05e70e6ae Mon Sep 17 00:00:00 2001
+From: Phil Edworthy <phil.edworthy@renesas.com>
+Date: Thu, 21 Jan 2021 09:15:51 +0000
+Subject: [PATCH 18/40] drm: rcar-rvgc: If layer size not specified, use the
+ display size
+
+---
+ drivers/gpu/drm/rcar-rvgc/rcar_rvgc_kms.c | 6 ++++--
+ 1 file changed, 4 insertions(+), 2 deletions(-)
+
+diff --git a/drivers/gpu/drm/rcar-rvgc/rcar_rvgc_kms.c b/drivers/gpu/drm/rcar-rvgc/rcar_rvgc_kms.c
+index b835a2f638bf..9e09aeb8f36e 100644
+--- a/drivers/gpu/drm/rcar-rvgc/rcar_rvgc_kms.c
++++ b/drivers/gpu/drm/rcar-rvgc/rcar_rvgc_kms.c
+@@ -221,8 +221,10 @@ int rcar_rvgc_modeset_init(struct rcar_rvgc_device* rcrvgc) {
+ 			of_property_read_u32(layer_node, "layer-map", &cur_plane->hw_plane);
+ 			cur_plane->no_scan = of_property_read_bool(layer_node, "no-scan");
+ 			cur_plane->size_override = of_property_read_bool(layer_node, "size-override");
+-			of_property_read_u32(layer_node, "size-w", &cur_plane->size_w);
+-			of_property_read_u32(layer_node, "size-h", &cur_plane->size_h);
++			if (of_property_read_u32(layer_node, "size-w", &cur_plane->size_w))
++				cur_plane->size_w = rvgc_pipe->display_width;
++			if (of_property_read_u32(layer_node, "size-h", &cur_plane->size_h))
++				cur_plane->size_h = rvgc_pipe->display_height;
+ 			cur_plane->pos_override = of_property_read_bool(layer_node, "pos-override");
+ 			of_property_read_u32(layer_node, "pos-x", &cur_plane->pos_x);
+ 			of_property_read_u32(layer_node, "pos-y", &cur_plane->pos_y);
+-- 
+2.25.1
+

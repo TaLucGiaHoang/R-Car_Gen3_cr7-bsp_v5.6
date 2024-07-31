@@ -1,0 +1,102 @@
+From c398f8b88fe5d8e81f00d2c650da9a4a71f2e028 Mon Sep 17 00:00:00 2001
+From: Sergii Piatakov <sergii.piatakov@globallogic.com>
+Date: Thu, 5 Oct 2023 14:51:38 +0300
+Subject: [PATCH 1/5] update module list for integration with CR7
+
+This commit adds two changes:
+ - add modules that are necessary for integration with CR7;
+ - remove modules that are no longer used (because they are substituted
+   by other para-virtualized ones).
+
+Test: build.
+Signed-off-by: Sergii Piatakov <sergii.piatakov@globallogic.com>
+---
+ ModulesCommon.mk | 29 +++++------------------------
+ 1 file changed, 5 insertions(+), 24 deletions(-)
+
+diff --git a/ModulesCommon.mk b/ModulesCommon.mk
+index eac541d..c3e5bf0 100644
+--- a/ModulesCommon.mk
++++ b/ModulesCommon.mk
+@@ -81,14 +81,8 @@ BOARD_VENDOR_KERNEL_MODULES += \
+ 	$(KERNEL_MODULES_OUT)/usb-dmac.ko \
+ 	$(KERNEL_MODULES_OUT)/usb-otg-fsm.ko \
+ 	$(KERNEL_MODULES_OUT)/vsp1.ko \
+-	$(KERNEL_MODULES_OUT)/rcar-du-drm.ko \
+-	$(KERNEL_MODULES_OUT)/rcar_cmm.ko \
+ 	$(KERNEL_MODULES_OUT)/panel-lvds.ko \
+-	$(KERNEL_MODULES_OUT)/rcar_dw_hdmi.ko \
+ 	$(KERNEL_MODULES_OUT)/simple-bridge.ko \
+-	$(KERNEL_MODULES_OUT)/dw-hdmi-cec.ko \
+-	$(KERNEL_MODULES_OUT)/dw-hdmi.ko \
+-	$(KERNEL_MODULES_OUT)/rcar_lvds.ko \
+ 	$(KERNEL_MODULES_OUT)/sh-sci.ko \
+ 	$(KERNEL_MODULES_OUT)/ipmmu-vmsa.ko \
+ 	$(KERNEL_MODULES_OUT)/gpio-rcar.ko \
+@@ -101,6 +95,11 @@ BOARD_VENDOR_KERNEL_MODULES += \
+ 	$(KERNEL_MODULES_OUT)/snd-soc-audio-graph-card.ko \
+ 	$(KERNEL_MODULES_OUT)/display-connector.ko
+ 
++BOARD_VENDOR_KERNEL_MODULES += \
++	$(KERNEL_MODULES_OUT)/rcar_cr7_remoteproc.ko \
++	$(KERNEL_MODULES_OUT)/virtio_rpmsg_bus.ko \
++	$(KERNEL_MODULES_OUT)/rcar-rvgc-drm.ko
++
+ BOARD_VENDOR_RAMDISK_KERNEL_MODULES += \
+ 	$(KERNEL_MODULES_OUT)/extcon-usb-gpio.ko \
+ 	$(KERNEL_MODULES_OUT)/phy-rcar-gen3-usb2.ko \
+@@ -144,14 +143,8 @@ BOARD_VENDOR_RAMDISK_KERNEL_MODULES += \
+ 	$(KERNEL_MODULES_OUT)/usb-otg-fsm.ko \
+ 	$(KERNEL_MODULES_OUT)/usbserial.ko \
+ 	$(KERNEL_MODULES_OUT)/vsp1.ko \
+-	$(KERNEL_MODULES_OUT)/rcar-du-drm.ko \
+-	$(KERNEL_MODULES_OUT)/rcar_cmm.ko \
+ 	$(KERNEL_MODULES_OUT)/panel-lvds.ko \
+-	$(KERNEL_MODULES_OUT)/rcar_dw_hdmi.ko \
+ 	$(KERNEL_MODULES_OUT)/simple-bridge.ko \
+-	$(KERNEL_MODULES_OUT)/dw-hdmi-cec.ko \
+-	$(KERNEL_MODULES_OUT)/dw-hdmi.ko \
+-	$(KERNEL_MODULES_OUT)/rcar_lvds.ko \
+ 	$(KERNEL_MODULES_OUT)/sh-sci.ko \
+ 	$(KERNEL_MODULES_OUT)/ipmmu-vmsa.ko \
+ 	$(KERNEL_MODULES_OUT)/gpio-rcar.ko \
+@@ -182,10 +175,7 @@ BOARD_VENDOR_RAMDISK_KERNEL_MODULES_LOAD += \
+ 	$(KERNEL_MODULES_OUT)/rcar_thermal.ko \
+ 	$(KERNEL_MODULES_OUT)/rcar-vin.ko \
+ 	$(KERNEL_MODULES_OUT)/vsp1.ko \
+-	$(KERNEL_MODULES_OUT)/rcar-du-drm.ko \
+-	$(KERNEL_MODULES_OUT)/rcar_cmm.ko \
+ 	$(KERNEL_MODULES_OUT)/panel-lvds.ko \
+-	$(KERNEL_MODULES_OUT)/rcar_dw_hdmi.ko \
+ 	$(KERNEL_MODULES_OUT)/simple-bridge.ko \
+ 	$(KERNEL_MODULES_OUT)/dw-hdmi-cec.ko \
+ 	$(KERNEL_MODULES_OUT)/dw-hdmi.ko \
+@@ -252,14 +242,8 @@ BOARD_RECOVERY_KERNEL_MODULES += \
+ 	$(KERNEL_MODULES_OUT)/usb-otg-fsm.ko \
+ 	$(KERNEL_MODULES_OUT)/usbserial.ko \
+ 	$(KERNEL_MODULES_OUT)/vsp1.ko \
+-	$(KERNEL_MODULES_OUT)/rcar-du-drm.ko \
+-	$(KERNEL_MODULES_OUT)/rcar_cmm.ko \
+ 	$(KERNEL_MODULES_OUT)/panel-lvds.ko \
+-	$(KERNEL_MODULES_OUT)/rcar_dw_hdmi.ko \
+ 	$(KERNEL_MODULES_OUT)/simple-bridge.ko \
+-	$(KERNEL_MODULES_OUT)/dw-hdmi-cec.ko \
+-	$(KERNEL_MODULES_OUT)/dw-hdmi.ko \
+-	$(KERNEL_MODULES_OUT)/rcar_lvds.ko \
+ 	$(KERNEL_MODULES_OUT)/sh-sci.ko \
+ 	$(KERNEL_MODULES_OUT)/ipmmu-vmsa.ko \
+ 	$(KERNEL_MODULES_OUT)/gpio-rcar.ko \
+@@ -296,10 +280,7 @@ BOARD_RECOVERY_KERNEL_MODULES_LOAD += \
+ 	$(KERNEL_MODULES_OUT)/rcar_thermal.ko \
+ 	$(KERNEL_MODULES_OUT)/rcar-vin.ko \
+ 	$(KERNEL_MODULES_OUT)/vsp1.ko \
+-	$(KERNEL_MODULES_OUT)/rcar-du-drm.ko \
+-	$(KERNEL_MODULES_OUT)/rcar_cmm.ko \
+ 	$(KERNEL_MODULES_OUT)/panel-lvds.ko \
+-	$(KERNEL_MODULES_OUT)/rcar_dw_hdmi.ko \
+ 	$(KERNEL_MODULES_OUT)/simple-bridge.ko \
+ 	$(KERNEL_MODULES_OUT)/dw-hdmi-cec.ko \
+ 	$(KERNEL_MODULES_OUT)/dw-hdmi.ko \
+-- 
+2.25.1
+

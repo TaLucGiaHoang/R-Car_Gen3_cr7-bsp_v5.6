@@ -1,0 +1,85 @@
+From 28e826cf5bd6f644e999485b768f370272d04ae5 Mon Sep 17 00:00:00 2001
+From: Sergii Piatakov <sergii.piatakov@globallogic.com>
+Date: Tue, 13 Sep 2022 10:56:32 +0300
+Subject: [PATCH 2/3] Revert "video: Enable Renesas video"
+
+Disable any video interaction from u-boot for CR7 use cases.
+
+This reverts commit 689445184bedd9912dfef3f05ed24489263d8b7a.
+---
+ configs/r8a7795_kingfisher_defconfig  | 1 -
+ configs/r8a7795_salvator-x_defconfig  | 1 -
+ configs/r8a7795_ulcb_defconfig        | 1 -
+ configs/r8a77965_salvator-x_defconfig | 1 -
+ configs/r8a7796_kingfisher_defconfig  | 1 -
+ configs/r8a7796_salvator-x_defconfig  | 1 -
+ configs/r8a7796_ulcb_defconfig        | 1 -
+ 7 files changed, 7 deletions(-)
+
+diff --git a/configs/r8a7795_kingfisher_defconfig b/configs/r8a7795_kingfisher_defconfig
+index 56e901eca0..e25930ce7c 100644
+--- a/configs/r8a7795_kingfisher_defconfig
++++ b/configs/r8a7795_kingfisher_defconfig
+@@ -101,4 +101,3 @@ CONFIG_FASTBOOT_BY_SW=y
+ CONFIG_LZ4=y
+ CONFIG_OF_LIBFDT_OVERLAY=y
+ CONFIG_SMBIOS_MANUFACTURER=""
+-CONFIG_VIDEO_RENESAS=y
+diff --git a/configs/r8a7795_salvator-x_defconfig b/configs/r8a7795_salvator-x_defconfig
+index 6c4ac30f31..98c45dd3f4 100644
+--- a/configs/r8a7795_salvator-x_defconfig
++++ b/configs/r8a7795_salvator-x_defconfig
+@@ -97,4 +97,3 @@ CONFIG_FASTBOOT_BY_SW=y
+ CONFIG_LZ4=y
+ CONFIG_OF_LIBFDT_OVERLAY=y
+ CONFIG_SMBIOS_MANUFACTURER=""
+-CONFIG_VIDEO_RENESAS=y
+\ No newline at end of file
+diff --git a/configs/r8a7795_ulcb_defconfig b/configs/r8a7795_ulcb_defconfig
+index 9bf9c5e3b6..3ae8270cd6 100644
+--- a/configs/r8a7795_ulcb_defconfig
++++ b/configs/r8a7795_ulcb_defconfig
+@@ -99,4 +99,3 @@ CONFIG_ANDROID_VIRTUAL_AB_UPDATE=y
+ CONFIG_LZ4=y
+ CONFIG_OF_LIBFDT_OVERLAY=y
+ CONFIG_SMBIOS_MANUFACTURER=""
+-CONFIG_VIDEO_RENESAS=y
+diff --git a/configs/r8a77965_salvator-x_defconfig b/configs/r8a77965_salvator-x_defconfig
+index f57819d131..dbc2712e0e 100644
+--- a/configs/r8a77965_salvator-x_defconfig
++++ b/configs/r8a77965_salvator-x_defconfig
+@@ -98,4 +98,3 @@ CONFIG_FASTBOOT_BY_SW=y
+ CONFIG_LZ4=y
+ CONFIG_OF_LIBFDT_OVERLAY=y
+ CONFIG_SMBIOS_MANUFACTURER=""
+-CONFIG_VIDEO_RENESAS=y
+diff --git a/configs/r8a7796_kingfisher_defconfig b/configs/r8a7796_kingfisher_defconfig
+index 1d34fbc8b1..fb9f775e06 100644
+--- a/configs/r8a7796_kingfisher_defconfig
++++ b/configs/r8a7796_kingfisher_defconfig
+@@ -102,4 +102,3 @@ CONFIG_FASTBOOT_BY_SW=y
+ CONFIG_LZ4=y
+ CONFIG_OF_LIBFDT_OVERLAY=y
+ CONFIG_SMBIOS_MANUFACTURER=""
+-CONFIG_VIDEO_RENESAS=y
+diff --git a/configs/r8a7796_salvator-x_defconfig b/configs/r8a7796_salvator-x_defconfig
+index 8ebd857da7..457b17a95a 100644
+--- a/configs/r8a7796_salvator-x_defconfig
++++ b/configs/r8a7796_salvator-x_defconfig
+@@ -98,4 +98,3 @@ CONFIG_FASTBOOT_BY_SW=y
+ CONFIG_LZ4=y
+ CONFIG_OF_LIBFDT_OVERLAY=y
+ CONFIG_SMBIOS_MANUFACTURER=""
+-CONFIG_VIDEO_RENESAS=y
+diff --git a/configs/r8a7796_ulcb_defconfig b/configs/r8a7796_ulcb_defconfig
+index beef3a4df1..cc40e3e5eb 100644
+--- a/configs/r8a7796_ulcb_defconfig
++++ b/configs/r8a7796_ulcb_defconfig
+@@ -96,4 +96,3 @@ CONFIG_FASTBOOT_BY_SW=y
+ CONFIG_LZ4=y
+ CONFIG_OF_LIBFDT_OVERLAY=y
+ CONFIG_SMBIOS_MANUFACTURER=""
+-CONFIG_VIDEO_RENESAS=y
+-- 
+2.25.1
+

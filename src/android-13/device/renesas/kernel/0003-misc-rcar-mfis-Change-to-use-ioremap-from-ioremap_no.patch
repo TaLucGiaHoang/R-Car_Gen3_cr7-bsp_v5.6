@@ -1,0 +1,31 @@
+From 1be7818cfd35884c13d645ec807454ff5d9a9f9f Mon Sep 17 00:00:00 2001
+From: Khiem Nguyen <khiem.nguyen.xt@renesas.com>
+Date: Wed, 10 Mar 2021 14:51:39 +0700
+Subject: [PATCH 03/40] misc: rcar-mfis: Change to use ioremap from
+ ioremap_nocache
+
+ioremap_nocache() becomes obsolete.
+It can be replaced by ioremap() similar to the commit
+4bdc0d676a remove ioremap_nocache and devm_ioremap_nocache.
+
+Signed-off-by: Khiem Nguyen <khiem.nguyen.xt@renesas.com>
+---
+ drivers/misc/rcar-mfis/rcar_mfis_drv.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/drivers/misc/rcar-mfis/rcar_mfis_drv.c b/drivers/misc/rcar-mfis/rcar_mfis_drv.c
+index 3e2d410d632d..859d505b4ca5 100644
+--- a/drivers/misc/rcar-mfis/rcar_mfis_drv.c
++++ b/drivers/misc/rcar-mfis/rcar_mfis_drv.c
+@@ -177,7 +177,7 @@ static int rcar_mfis_probe(struct platform_device *pdev)
+ 
+ 	/* Map MFIS registers */
+ 	res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
+-	mmio_base = (u32 __iomem *)devm_ioremap_nocache(dev, res->start, resource_size(res));
++	mmio_base = (u32 __iomem *)devm_ioremap(dev, res->start, resource_size(res));
+ 	if (IS_ERR(mmio_base)) {
+ 		dev_err(dev, "Failed to remap MFIS registers.\n");
+ 		ret = PTR_ERR(mmio_base);
+-- 
+2.25.1
+

@@ -1,0 +1,68 @@
+var group__PublicTypes =
+[
+    [ "WM configuration", "group__WMCfg.html", "group__WMCfg" ],
+    [ "r_wm_Doc_t", "structr__wm__Doc__t.html", [
+      [ "ActMonEnable", "structr__wm__Doc__t.html#aa4e3ddb58b5798be4d91989c2c5fcc3a", null ],
+      [ "ActMonLowerTime", "structr__wm__Doc__t.html#ab401ddb3c2c1cd6b3e4cc2d1429290d0", null ],
+      [ "ActMonUpperTime", "structr__wm__Doc__t.html#af1037bd2516a40407073fa74ff16d395", null ],
+      [ "Callback", "structr__wm__Doc__t.html#affe36c1cf5a5f4cc881a94313a199f8f", null ],
+      [ "CbArg", "structr__wm__Doc__t.html#a063838a9472a81eb40a6e67f30f2a92c", null ],
+      [ "DocMonitors", "structr__wm__Doc__t.html#af2b2a6194e9c0531ff6aa9f0849d8e38", null ],
+      [ "DocUnit", "structr__wm__Doc__t.html#a558a9ef21a8ab602138a0e0ad8a17c9b", null ],
+      [ "DuParam", "structr__wm__Doc__t.html#a29a2c63e60cb3d0ce7e1fbabe910e223", null ],
+      [ "Enable", "structr__wm__Doc__t.html#a3348c072797d519fa8f99e521ab65a69", null ]
+    ] ],
+    [ "r_wm_Discom_t", "structr__wm__Discom__t.html", [
+      [ "Callback", "structr__wm__Discom__t.html#a37aecc87c3c690bb83277581b56038f0", null ],
+      [ "CbArg", "structr__wm__Discom__t.html#a063838a9472a81eb40a6e67f30f2a92c", null ],
+      [ "Crc", "structr__wm__Discom__t.html#a30b1c8a5b0892cd539161ee644ac6d41", null ],
+      [ "Enable", "structr__wm__Discom__t.html#a3348c072797d519fa8f99e521ab65a69", null ],
+      [ "Height", "structr__wm__Discom__t.html#a3bdc883455d9732f65c9d4cb1aebe28b", null ],
+      [ "PosX", "structr__wm__Discom__t.html#adcaa2e6e300945d1eb2f431a733503fd", null ],
+      [ "PosY", "structr__wm__Discom__t.html#ad038d6de53adff0d7b2d093dae2997f6", null ],
+      [ "Width", "structr__wm__Discom__t.html#ad672690f555bb08866a491753109e551", null ]
+    ] ],
+    [ "r_wm_Surface_t", "structr__wm__Surface__t.html", [
+      [ "Discom", "structr__wm__Surface__t.html#a6641faf56ed5b123b55efebc0a85d96a", null ],
+      [ "Doc", "structr__wm__Surface__t.html#a2e9100d5c3eca5fb4feee142c7fee8b3", null ],
+      [ "FBuf", "structr__wm__Surface__t.html#a1867bce72b4fa7adb1e4de5a1f3e1d4d", null ],
+      [ "FBufC0", "structr__wm__Surface__t.html#aef2d4b5662df2460013e7fe505be52d8", null ],
+      [ "FBufC1", "structr__wm__Surface__t.html#a6be45fc2d38222af3982190e691f9069", null ],
+      [ "Fmt", "structr__wm__Surface__t.html#af12833f4b27e022c5cde56100e85ac25", null ],
+      [ "Handle", "structr__wm__Surface__t.html#acc730a5c502d61924b64cebac44136d0", null ],
+      [ "Height", "structr__wm__Surface__t.html#a3bdc883455d9732f65c9d4cb1aebe28b", null ],
+      [ "PosX", "structr__wm__Surface__t.html#adcaa2e6e300945d1eb2f431a733503fd", null ],
+      [ "PosY", "structr__wm__Surface__t.html#ad038d6de53adff0d7b2d093dae2997f6", null ],
+      [ "PosZ", "structr__wm__Surface__t.html#aa8082f87bcbeeaca4728807b896393a0", null ],
+      [ "StrideC", "structr__wm__Surface__t.html#abde5a4756d32e4e03df040504c56a97b", null ],
+      [ "StrideY", "structr__wm__Surface__t.html#a4a13f6f63198178e873e12e88e1833da", null ],
+      [ "Width", "structr__wm__Surface__t.html#ad672690f555bb08866a491753109e551", null ]
+    ] ],
+    [ "r_wm_Error_t", "group__PublicTypes.html#ga0f66de949f00db54a8383f353fc0a884", [
+      [ "R_WM_ERR_SUCCESS", "group__PublicTypes.html#gga0f66de949f00db54a8383f353fc0a884a276adf06e2f759d9a547a40bdd809169", null ],
+      [ "R_WM_ERR_FAILED", "group__PublicTypes.html#gga0f66de949f00db54a8383f353fc0a884a7a9a0b1598153482163ff53bd068f657", null ],
+      [ "R_WM_ERR_NOT_INITIALIZED", "group__PublicTypes.html#gga0f66de949f00db54a8383f353fc0a884ae9e7473e728121821b70de0ae4faba98", null ],
+      [ "R_WM_ERR_UNIT_ALREADY_INIT", "group__PublicTypes.html#gga0f66de949f00db54a8383f353fc0a884ac27cef9acd7cffd08a98e339ff894e66", null ],
+      [ "R_WM_ERR_WRONG_PARAMETER", "group__PublicTypes.html#gga0f66de949f00db54a8383f353fc0a884a37137d1dac37d5acf024dd217c784116", null ],
+      [ "R_WM_ERR_NULL_POINTER", "group__PublicTypes.html#gga0f66de949f00db54a8383f353fc0a884af1bce4fbc29cde303228928f83dedd0b", null ],
+      [ "R_WM_ERR_INVALID_PROP", "group__PublicTypes.html#gga0f66de949f00db54a8383f353fc0a884ac1f36444d35d2ab0d23903720d208320", null ],
+      [ "R_WM_ERR_RINGBUF_NOT_INITIALISED", "group__PublicTypes.html#gga0f66de949f00db54a8383f353fc0a884aa72d0942bd92620724e02a51561b502f", null ],
+      [ "R_WM_ERR_RINGBUFFER_OVERFLOW", "group__PublicTypes.html#gga0f66de949f00db54a8383f353fc0a884a9862ef92c57920decef945f67fc2dabb", null ],
+      [ "R_WM_ERR_OPENCOM_FAILED", "group__PublicTypes.html#gga0f66de949f00db54a8383f353fc0a884a6735706e21d47ae5a03a36b227a8d152", null ],
+      [ "R_WM_ERR_CLOSECOM_FAILED", "group__PublicTypes.html#gga0f66de949f00db54a8383f353fc0a884a8af4729727a74ee240f186917bed0836", null ],
+      [ "R_WM_ERR_MSGIOCTL_FAILED", "group__PublicTypes.html#gga0f66de949f00db54a8383f353fc0a884a22a8ee01d10e85ca47f5beface0f26a6", null ],
+      [ "R_WM_ERR_INVALID_CMD", "group__PublicTypes.html#gga0f66de949f00db54a8383f353fc0a884a243904bb35ceeb6264982ee8003c4a10", null ],
+      [ "R_WM_ERR_OS_MUTEX", "group__PublicTypes.html#gga0f66de949f00db54a8383f353fc0a884a3c72b0da4d383739fc33aee5383c2aa6", null ],
+      [ "R_WM_ERR_OS_SEMA", "group__PublicTypes.html#gga0f66de949f00db54a8383f353fc0a884a4627ffa932aa3577360260d769234371", null ],
+      [ "R_WM_ERR_DEINIT_FAILED", "group__PublicTypes.html#gga0f66de949f00db54a8383f353fc0a884a73b78b82c5ae88afded4937e1c9b1a82", null ],
+      [ "R_WM_ERR_UNIT_USED", "group__PublicTypes.html#gga0f66de949f00db54a8383f353fc0a884aac7fd5b77de884c79ed913f63818e615", null ],
+      [ "R_WM_ERR_WRONG_PID", "group__PublicTypes.html#gga0f66de949f00db54a8383f353fc0a884aeac7c101973a7b1a37f456593cf8d434", null ],
+      [ "R_WM_ERR_NO_SURF", "group__PublicTypes.html#gga0f66de949f00db54a8383f353fc0a884a76725f83a59dfdb4ae693b7b190bd89f", null ],
+      [ "R_WM_ERR_TOO_MANY_THREADS", "group__PublicTypes.html#gga0f66de949f00db54a8383f353fc0a884affc1cb13c397ec336e06a1d29714f0a4", null ],
+      [ "R_WM_ERR_DUINIT_FAILED", "group__PublicTypes.html#gga0f66de949f00db54a8383f353fc0a884ad3b4c5403850271d1e30100963ac2f19", null ],
+      [ "R_WM_ERR_VSPDINIT_FAILED", "group__PublicTypes.html#gga0f66de949f00db54a8383f353fc0a884a4bc0160eeb2a836d32b9fe46b0e22fd9", null ],
+      [ "R_WM_ERR_VSPDBLEND_FAILED", "group__PublicTypes.html#gga0f66de949f00db54a8383f353fc0a884a006739b0fc9537777242f87f0bacaf45", null ],
+      [ "R_WM_ERR_NA", "group__PublicTypes.html#gga0f66de949f00db54a8383f353fc0a884a8aedc293179f945c273459cb36221141", null ],
+      [ "R_WM_ERR_LAST", "group__PublicTypes.html#gga0f66de949f00db54a8383f353fc0a884a7ae11036e352c90f835e7b95cd495f24", null ]
+    ] ]
+];

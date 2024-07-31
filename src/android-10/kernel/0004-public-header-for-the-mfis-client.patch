@@ -1,0 +1,32 @@
+From a8f0985f2d95c0dde52cd3a4d66fbb215525d98e Mon Sep 17 00:00:00 2001
+From: Sven <sven.grundmann@renesas.com>
+Date: Fri, 6 Mar 2020 18:42:21 +0100
+Subject: [PATCH 04/34] public header for the mfis client
+
+---
+ include/misc/rcar-mfis/rcar_mfis_public.h | 13 +++++++++++++
+ 1 file changed, 13 insertions(+)
+ create mode 100644 include/misc/rcar-mfis/rcar_mfis_public.h
+
+diff --git a/include/misc/rcar-mfis/rcar_mfis_public.h b/include/misc/rcar-mfis/rcar_mfis_public.h
+new file mode 100644
+index 000000000000..0ba9b01f19d8
+--- /dev/null
++++ b/include/misc/rcar-mfis/rcar_mfis_public.h
+@@ -0,0 +1,13 @@
++#ifndef __RCAR_MFIS_PUBLIC_H__
++#define __RCAR_MFIS_PUBLIC_H__
++
++struct rcar_mfis_msg {
++	u32 icr;
++	u32 mbr;
++};
++
++int rcar_mfis_trigger_interrupt(int channel, struct rcar_mfis_msg msg);
++int rcar_mfis_register_notifier(int channel, struct notifier_block *nb, void *data);
++int rcar_mfis_unregister_notifier(int channel, struct notifier_block *nb);
++
++#endif
+-- 
+2.17.1
+

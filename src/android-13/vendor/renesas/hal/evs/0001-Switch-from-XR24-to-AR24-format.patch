@@ -1,0 +1,50 @@
+From 3a5425178cc881a4514bfa43db62f8b0ce0f2632 Mon Sep 17 00:00:00 2001
+From: Sergii Piatakov <sergii.piatakov@globallogic.com>
+Date: Thu, 1 Feb 2024 16:46:15 +0200
+Subject: [PATCH 1/1] Switch from XR24 to AR24 format
+
+Output image of the HAL is processed by EVS application and further
+pipeline nodes as RBGA. Using an input picture without an alpha layer
+may lead to displaying a final image as completely transparent.
+
+This problem occurs after upgrading DDK from v1.13 to v1.15 and only for
+configuration with CR7 support (the issue isn't observed either with DDK
+v1.13 or with `rcar-du` DRM).
+
+Test: run EVS application on setup with CR7 support and ensure that
+      Android output is visible.
+Signed-off-by: Sergii Piatakov <sergii.piatakov@globallogic.com>
+---
+ EvsCamera.cpp  | 2 +-
+ EvsDisplay.cpp | 2 +-
+ 2 files changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/EvsCamera.cpp b/EvsCamera.cpp
+index a13f7c1..861a123 100644
+--- a/EvsCamera.cpp
++++ b/EvsCamera.cpp
+@@ -34,7 +34,7 @@ namespace V1_1 {
+ namespace renesas {
+ 
+ #define BYTES_PER_PIXEL 4
+-#define CAMERA_FORMAT V4L2_PIX_FMT_XBGR32
++#define CAMERA_FORMAT V4L2_PIX_FMT_ABGR32
+ #define MIN_UNDEQUEUED_BUFFERS 2
+ #define MIN_BUFFERS_IN_FLIGHT 2
+ #define MAX_BUFFERS_IN_FLIGHT 20
+diff --git a/EvsDisplay.cpp b/EvsDisplay.cpp
+index f6b2b45..f54e3bd 100644
+--- a/EvsDisplay.cpp
++++ b/EvsDisplay.cpp
+@@ -42,7 +42,7 @@ namespace renesas {
+ 
+ #define BYTES_PER_PIXEL 4
+ #define NUM_BUFFERS (3)
+-#define BUFFER_FORMAT HAL_PIXEL_FORMAT_BGRX_8888
++#define BUFFER_FORMAT HAL_PIXEL_FORMAT_BGRA_8888
+ #define BUFFER_USAGE (GRALLOC1_PRODUCER_USAGE_GPU_RENDER_TARGET | GRALLOC1_PRODUCER_USAGE_CPU_WRITE_OFTEN)
+ 
+ EvsDisplay::EvsDisplay()
+-- 
+2.25.1
+

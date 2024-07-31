@@ -1,0 +1,30 @@
+From bc142ad034eeb85a20f95bbc1384928a3c85c6c5 Mon Sep 17 00:00:00 2001
+From: Khiem Nguyen <khiem.nguyen.xt@renesas.com>
+Date: Wed, 10 Mar 2021 17:13:42 +0700
+Subject: [PATCH 22/40] drm: rcar-rvgc: Replace drm_dev_unref with drm_dev_put
+
+drm_dev_unref() became obsolete since v4.20
+as commit 06fa0d46b1 (drm/rcar-du: Replace drm_dev_unref with drm_dev_put).
+This patch changes to use new function.
+
+Signed-off-by: Khiem Nguyen <khiem.nguyen.xt@renesas.com>
+---
+ drivers/gpu/drm/rcar-rvgc/rcar_rvgc_drv.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/drivers/gpu/drm/rcar-rvgc/rcar_rvgc_drv.c b/drivers/gpu/drm/rcar-rvgc/rcar_rvgc_drv.c
+index 13a0dd7f2f93..3220cc847696 100644
+--- a/drivers/gpu/drm/rcar-rvgc/rcar_rvgc_drv.c
++++ b/drivers/gpu/drm/rcar-rvgc/rcar_rvgc_drv.c
+@@ -164,7 +164,7 @@ static void rcar_rvgc_remove(struct rpmsg_device* rpdev) {
+ 		drm_dev_unregister(ddev);
+ 		drm_kms_helper_poll_fini(ddev);
+ 		drm_mode_config_cleanup(ddev);
+-		drm_dev_unref(ddev);
++		drm_dev_put(ddev);
+ 	}
+ 	return;
+ }
+-- 
+2.25.1
+

@@ -1,0 +1,52 @@
+[
+    {
+        "name": "GCC 6.3.1 FreeRTOS, Linux guest",
+        "environmentVariables": {"BUILD_DIRECTORY": "build-freertos"},
+        "toolchainFile": "${workspaceFolder}/src/vlib/compiler/arm-gnu.cmake",
+        "cmakeSettings": {
+            "RCAR_TARGET_OS": "freertos",
+            "RCAR_SET_FPU": "hard",
+            "RCAR_TARGET_GUEST": "LINUX_GUEST"
+        }
+    },
+    {
+        "name": "GCC 6.3.1 FreeRTOS, INTEGRITY guest",
+        "environmentVariables": {"BUILD_DIRECTORY": "build-freertos"},
+        "toolchainFile": "${workspaceFolder}/src/vlib/compiler/arm-gnu.cmake",
+        "cmakeSettings": {
+            "RCAR_TARGET_OS": "freertos",
+            "RCAR_SET_FPU": "hard",
+            "RCAR_TARGET_GUEST": "INTEGRITY_GUEST"
+        }
+    },
+    {
+        "name": "GCC 6.3.1 Trampoline, Linux guest",
+        "environmentVariables": {"BUILD_DIRECTORY": "build-trampoline"},
+        "toolchainFile": "${workspaceFolder}/src/vlib/compiler/arm-gnu.cmake",
+        "cmakeSettings": {
+            "RCAR_TARGET_OS": "trampoline",
+            "RCAR_SET_FPU": "soft",
+            "RCAR_TARGET_GUEST": "LINUX_GUEST"
+        }
+    },
+    {
+        "name": "GCC 6.3.1 Trampoline, INTEGRITY guest",
+        "environmentVariables": {"BUILD_DIRECTORY": "build-trampoline"},
+        "toolchainFile": "${workspaceFolder}/src/vlib/compiler/arm-gnu.cmake",
+        "cmakeSettings": {
+            "RCAR_TARGET_OS": "trampoline",
+            "RCAR_SET_FPU": "soft",
+            "RCAR_TARGET_GUEST": "INTEGRITY_GUEST"
+        }
+    },
+    {
+        "name": "GCC 6.3.1 Trampoline (FPU), Experimental Only",
+        "environmentVariables": {"BUILD_DIRECTORY": "build-trampoline"},
+        "toolchainFile": "${workspaceFolder}/src/vlib/compiler/arm-gnu.cmake",
+        "cmakeSettings": {
+            "RCAR_TARGET_OS": "trampoline",
+            "RCAR_SET_FPU": "hard",
+            "RCAR_TARGET_GUEST": "LINUX_GUEST"
+        }
+    }
+]

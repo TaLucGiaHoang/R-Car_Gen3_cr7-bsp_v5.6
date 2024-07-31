@@ -1,0 +1,32 @@
+From 7019f05084c655dbd8ceb56f3d1f5e677c007d2a Mon Sep 17 00:00:00 2001
+From: Yongbo Zhang <yongbo.zhang.xh@renesas.com>
+Date: Tue, 10 May 2022 10:29:10 +0800
+Subject: [PATCH 18/27] arm64: dts: renesas: add mfis-lock node to enable
+ hwspinlock function
+
+---
+ arch/arm64/boot/dts/renesas/salvator-xs_cr7_rproc.dtsi | 8 ++++++++
+ 1 file changed, 8 insertions(+)
+
+diff --git a/arch/arm64/boot/dts/renesas/salvator-xs_cr7_rproc.dtsi b/arch/arm64/boot/dts/renesas/salvator-xs_cr7_rproc.dtsi
+index c3436ca2a9c7..2d160d769b04 100644
+--- a/arch/arm64/boot/dts/renesas/salvator-xs_cr7_rproc.dtsi
++++ b/arch/arm64/boot/dts/renesas/salvator-xs_cr7_rproc.dtsi
+@@ -98,6 +98,14 @@
+ 
+ 		/delete-node/ mfis-as;
+ 	};
++
++    mfis_lock: mfis-lock@e6200000{
++            compatible = "renesas,mfis-lock-r8a7796",
++				     "renesas,mfis-lock";
++			    reg = <0 0xe6260000 0 0x1000>;
++			#hwlock-cells = <1>;
++            status = "okay";
++        };
+ };
+ 
+ /delete-node/ &fcpvd0;
+-- 
+2.25.1
+

@@ -1,0 +1,106 @@
+From 2da54d42b8df1acc440d3030fcb266a38828e055 Mon Sep 17 00:00:00 2001
+From: Sergii Piatakov <sergii.piatakov@globallogic.com>
+Date: Sat, 14 Oct 2023 14:16:14 +0300
+Subject: [PATCH 35/40] drm: rcar-rvgc: generate fake EDID
+
+This change is necessary to make Android happy.
+
+Starting from the v2.3 HWComposer is responsible for reading and
+providing EDID data from DRM (via the `getDisplayIdentificationData`
+member function). This BLOB data is used by SurfaceFlinger to generate
+a unique hash value associated with a display.
+
+The rcar-rvgc module implements a para-virtualized display and it
+doesn't have a real EDID. So it is proposed to generate a fake EDID with
+a minimal set of the necessary data (Android is mainly interested in the
+string data rather than frequencies and resolutions).
+
+See for details:
+ - https://source.android.com/docs/core/display/multi_display/displays
+ - https://source.android.com/docs/core/display/multi_display/\
+                                                three-hardware-displays
+ - frameworks/native/services/surfaceflinger/SurfaceFlinger.cpp
+
+Test: $ hexdump -C /sys/class/drm/<connector>/edid
+
+      $ dumpsys SurfaceFlinger --display-id
+      $ // Output example:
+      $ Display 4634843762118032418 (HWC display 0): port=34 pnpId=TRE\
+                                         displayName="Renesas-RVGC0"
+      $ Display 4634843131600743463 (HWC display 1): port=39 pnpId=TRE\
+                                         displayName="Renesas-RVGC1"
+
+      $ run vts -m VtsHalGraphicsComposerV2_3TargetTest
+Signed-off-by: Sergii Piatakov <sergii.piatakov@globallogic.com>
+---
+ drivers/gpu/drm/rcar-rvgc/rcar_rvgc_pipe.c | 40 ++++++++++++++++++++++
+ 1 file changed, 40 insertions(+)
+
+diff --git a/drivers/gpu/drm/rcar-rvgc/rcar_rvgc_pipe.c b/drivers/gpu/drm/rcar-rvgc/rcar_rvgc_pipe.c
+index 4428320a52ad..83432aadf6d5 100644
+--- a/drivers/gpu/drm/rcar-rvgc/rcar_rvgc_pipe.c
++++ b/drivers/gpu/drm/rcar-rvgc/rcar_rvgc_pipe.c
+@@ -15,6 +15,7 @@
+ #include <drm/drm_atomic_helper.h>
+ #include <drm/drm_crtc.h>
+ #include <drm/drm_crtc_helper.h>
++#include <drm/drm_edid.h>
+ /* TODO: Need plane helper ? */
+ #include <drm/drm_fb_cma_helper.h>
+ #include <drm/drm_gem_cma_helper.h>
+@@ -119,6 +120,42 @@ static const struct drm_connector_funcs rvgc_connector_funcs = {
+ 	.atomic_destroy_state = drm_atomic_helper_connector_destroy_state,
+ };
+ 
++static struct edid
++*rvgc_connector_create_edid(unsigned int idx)
++{
++	struct edid *edid	= NULL;
++	const u8 *raw_edid	= NULL;
++	const u8 header[]	= {0x00, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0x00};
++	const u8 model[]	= {'R', 'e', 'n', 'e', 's', 'a', 's', '-', 'R', 'V', 'G', 'C', ' '};
++	int i = 0;
++
++	edid = kzalloc(sizeof(*edid), GFP_KERNEL);
++
++	memcpy(edid->header, header, sizeof(header));
++
++	edid->mfg_id[0]		= 'R';	// ..enesas
++	edid->mfg_id[1]		= 'E';	// ..lectronics
++
++	edid->prod_code[0]	= 'V';	// ..irtual
++	edid->prod_code[1]	= 'G';	// ..raphics
++
++	edid->mfg_year = 2020 - 1900;
++
++	edid->version  = 1;
++	edid->revision = 3;
++
++	edid->detailed_timings[0].data.other_data.type = EDID_DETAIL_MONITOR_NAME;
++	memcpy(edid->detailed_timings[0].data.other_data.data.str.str, model, sizeof(model));
++	edid->detailed_timings[0].data.other_data.data.str.str[12] = '0' + idx;
++
++	raw_edid = (u8 *)edid;
++	for (i = 0; i < EDID_LENGTH - 1; i++)
++		edid->checksum += raw_edid[i];
++	edid->checksum = 0x100 - edid->checksum;
++
++	return edid;
++}
++
+ static struct drm_connector
+ *rvgc_connector_create(struct rcar_rvgc_pipe *rvgc_pipe)
+ {
+@@ -145,6 +182,9 @@ static struct drm_connector
+ 		return ERR_PTR(ret);
+ 	}
+ 
++	ret = drm_connector_update_edid_property(connector,
++				rvgc_connector_create_edid(rvgc_pipe->idx));
++
+ 	connector->status = connector_status_connected;
+ 
+ 	return connector;
+-- 
+2.25.1
+

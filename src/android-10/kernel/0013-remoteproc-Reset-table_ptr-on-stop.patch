@@ -1,0 +1,34 @@
+From acfdb44b0082edbdbf802983cd5c6f0a728efe9d Mon Sep 17 00:00:00 2001
+From: Bjorn Andersson <bjorn.andersson@linaro.org>
+Date: Fri, 5 Jan 2018 15:58:05 -0800
+Subject: [PATCH 13/34] remoteproc: Reset table_ptr on stop
+
+[ Upstream commit 0a8b81cb2e413eff4cd9aeac7ef415150b699fb4 ]
+
+The installed resource table is no longer accessible after stopping the
+remote, so update table_ptr to point to the local copy.
+
+Reviewed-By: Loic Pallardy <loic.pallardy@st.com>
+Tested-By: Loic Pallardy <loic.pallardy@st.com>
+Signed-off-by: Bjorn Andersson <bjorn.andersson@linaro.org>
+---
+ drivers/remoteproc/remoteproc_core.c | 3 +++
+ 1 file changed, 3 insertions(+)
+
+diff --git a/drivers/remoteproc/remoteproc_core.c b/drivers/remoteproc/remoteproc_core.c
+index 84f4aae19105..21797b916d47 100644
+--- a/drivers/remoteproc/remoteproc_core.c
++++ b/drivers/remoteproc/remoteproc_core.c
+@@ -1000,6 +1000,9 @@ static int rproc_stop(struct rproc *rproc)
+ 	/* remove any subdevices for the remote processor */
+ 	rproc_remove_subdevices(rproc);
+ 
++	/* the installed resource table is no longer accessible */
++	rproc->table_ptr = rproc->cached_table;
++
+ 	/* power off the remote processor */
+ 	ret = rproc->ops->stop(rproc);
+ 	if (ret) {
+-- 
+2.17.1
+

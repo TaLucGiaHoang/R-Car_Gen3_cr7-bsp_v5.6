@@ -1,0 +1,56 @@
+From d93448675318c91d92702c9cebe0967e73d8d57b Mon Sep 17 00:00:00 2001
+From: Sergii Piatakov <sergii.piatakov@globallogic.com>
+Date: Tue, 28 May 2024 22:09:54 +0000
+Subject: [PATCH 39/40] dts: renesas: add basic CR7 support for r8a7795
+
+This is a hotfix for adding basic support of CR7 for r8a7795.
+After deeper testing some additional changes may be required.
+
+Signed-off-by: Sergii Piatakov <sergii.piatakov@globallogic.com>
+---
+ .../renesas/r8a77951-salvator-xs-android.dts   | 18 ++++++++++++++++++
+ drivers/soc/renesas/r8a7795-sysc.c             |  2 +-
+ 2 files changed, 19 insertions(+), 1 deletion(-)
+
+diff --git a/arch/arm64/boot/dts/renesas/r8a77951-salvator-xs-android.dts b/arch/arm64/boot/dts/renesas/r8a77951-salvator-xs-android.dts
+index 148e942f56c7..8b57429ee069 100644
+--- a/arch/arm64/boot/dts/renesas/r8a77951-salvator-xs-android.dts
++++ b/arch/arm64/boot/dts/renesas/r8a77951-salvator-xs-android.dts
+@@ -14,3 +14,21 @@
+ #endif // __H3_SALVATOR_XS_OVERRIDE__
+ #include "android/r8a7795.dtsi"
+ #include "android/salvator.dtsi"
++
++/************************ CR7 PoC Salvator XS M3N Specific ************************/
++#include "salvator-xs_cr7_rproc.dtsi"
++
++/ {
++	/delete-node/ hdmi1-out;
++};
++
++/delete-node/ &hdmi1;
++/delete-node/ &fcpvd2;
++/delete-node/ &vspd2;
++
++&soc {
++	/delete-node/ imr-lx4@fe860000;
++	/delete-node/ imr-lx4@fe870000;
++	/delete-node/ imr-lx4@fe880000;
++	/delete-node/ imr-lx4@fe890000;
++};
+diff --git a/drivers/soc/renesas/r8a7795-sysc.c b/drivers/soc/renesas/r8a7795-sysc.c
+index 91074411b8cf..475b8ff3600a 100644
+--- a/drivers/soc/renesas/r8a7795-sysc.c
++++ b/drivers/soc/renesas/r8a7795-sysc.c
+@@ -36,7 +36,7 @@ static struct rcar_sysc_area r8a7795_areas[] __initdata = {
+ 	{ "ca53-cpu3",	0x200, 3, R8A7795_PD_CA53_CPU3,	R8A7795_PD_CA53_SCU,
+ 	  PD_CPU_NOCR },
+ 	{ "a3vp",	0x340, 0, R8A7795_PD_A3VP,	R8A7795_PD_ALWAYS_ON },
+-	{ "cr7",	0x240, 0, R8A7795_PD_CR7,	R8A7795_PD_ALWAYS_ON },
++	{ "cr7",	0x240, 0, R8A7795_PD_CR7,	R8A7795_PD_ALWAYS_ON, PD_CPU_NOCR },
+ 	{ "a3vc",	0x380, 0, R8A7795_PD_A3VC,	R8A7795_PD_ALWAYS_ON },
+ 	/* A2VC0 exists on ES1.x only */
+ 	{ "a2vc0",	0x3c0, 0, R8A7795_PD_A2VC0,	R8A7795_PD_A3VC },
+-- 
+2.25.1
+

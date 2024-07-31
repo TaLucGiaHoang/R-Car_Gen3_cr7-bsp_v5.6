@@ -1,0 +1,168 @@
+From b4c3cfe5a6872b65d3837f06af3dfb3001201c73 Mon Sep 17 00:00:00 2001
+From: Phong Hoang <phong.hoang.wz@renesas.com>
+Date: Wed, 4 Oct 2023 19:29:35 +0300
+Subject: [PATCH 28/40] drm: rcar-rvgc: Fix build warnings
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Temporarily, disable unused variable/functions.
+This patch fixes following build warnings
+
+- make C=1
+warning: no previous prototype for ‘rcar_rvgc_format_info’
+         [-Wmissing-prototypes]
+warning: no previous prototype for ‘rcar_rvgc_modeset_init’
+         [-Wmissing-prototypes]
+warning: no previous prototype for ‘rvgc_connector_create’
+         [-Wmissing-prototypes]
+warning: no previous prototype for ‘rvgc_crtc_atomic_flush’
+         [-Wmissing-prototypes]
+
+- make C=2 CF="-Wsparse-all -D__CHECK_ENDIAN__" (from sparse tool)
+warning: symbol 'rcar_rvgc_format_info' was not declared.
+         Should it be static?
+warning: symbol 'rcar_rvgc_modeset_init' was not declared.
+         Should it be static?
+warning: symbol 'rvgc_connector_create' was not declared.
+         Should it be static?
+warning: symbol 'rvgc_crtc_atomic_flush' was not declared.
+         Should it be static?
+warning: Using plain integer as NULL pointer
+
+Signed-off-by: Phong Hoang <phong.hoang.wz@renesas.com>
+Signed-off-by: Vladyslav Andrishko <vladyslav.andrishko@globallogic.com>
+---
+ drivers/gpu/drm/rcar-rvgc/rcar_rvgc_kms.c  |  7 +-----
+ drivers/gpu/drm/rcar-rvgc/rcar_rvgc_pipe.c | 28 +++++++++++++---------
+ 2 files changed, 18 insertions(+), 17 deletions(-)
+
+diff --git a/drivers/gpu/drm/rcar-rvgc/rcar_rvgc_kms.c b/drivers/gpu/drm/rcar-rvgc/rcar_rvgc_kms.c
+index f909e49955a9..378a504786e5 100644
+--- a/drivers/gpu/drm/rcar-rvgc/rcar_rvgc_kms.c
++++ b/drivers/gpu/drm/rcar-rvgc/rcar_rvgc_kms.c
+@@ -10,6 +10,7 @@
+ #include <linux/delay.h>
+ 
+ #include "rcar_rvgc_drv.h"
++#include "rcar_rvgc_kms.h"
+ #include "rcar_rvgc_pipe.h"
+ 
+ #include "rcar_rvgc_taurus.h"
+@@ -17,12 +18,6 @@
+ 
+ 
+ 
+-struct rcar_rvgc_format_info {
+-	u32 fourcc;
+-	unsigned int bpp;
+-	unsigned int planes;
+-};
+-
+ /********** Fromat Info **********/
+ static const struct rcar_rvgc_format_info rcar_rvgc_format_infos[] = {
+ 	{
+diff --git a/drivers/gpu/drm/rcar-rvgc/rcar_rvgc_pipe.c b/drivers/gpu/drm/rcar-rvgc/rcar_rvgc_pipe.c
+index e7da6532c49f..3fe80f3ac6d0 100644
+--- a/drivers/gpu/drm/rcar-rvgc/rcar_rvgc_pipe.c
++++ b/drivers/gpu/drm/rcar-rvgc/rcar_rvgc_pipe.c
+@@ -112,8 +112,9 @@ static const struct drm_connector_funcs rvgc_connector_funcs = {
+ 	.atomic_destroy_state = drm_atomic_helper_connector_destroy_state,
+ };
+ 
+-struct drm_connector*
+-rvgc_connector_create(struct rcar_rvgc_pipe* rvgc_pipe) {
++static struct drm_connector
++*rvgc_connector_create(struct rcar_rvgc_pipe *rvgc_pipe)
++{
+ 	struct rcar_rvgc_device* rvgc_dev = rvgc_pipe->rcar_rvgc_dev;
+ 	struct drm_device* drm = rvgc_dev->ddev;
+ 	struct rvgc_connector* rconn;
+@@ -197,15 +198,17 @@ static void rvgc_crtc_enable(struct drm_crtc* crtc,
+ 	drm_crtc_vblank_get(crtc);
+ }
+ 
+-static void rvgc_crtc_disable(struct drm_crtc* crtc,
+-			      struct drm_crtc_state* old_state) {
++static void rvgc_crtc_disable(struct drm_crtc *crtc,
++			      struct drm_crtc_state *old_state)
++{
+ 	//printk(KERN_ERR "%s():%d", __FUNCTION__, __LINE__);
+ 	drm_crtc_vblank_off(crtc);
+ 	drm_crtc_vblank_put(crtc);
+ }
+ 
+-void rvgc_crtc_atomic_flush(struct drm_crtc* crtc,
+-			    struct drm_crtc_state* old_crtc_state) {
++static void rvgc_crtc_atomic_flush(struct drm_crtc *crtc,
++				   struct drm_crtc_state *old_crtc_state)
++{
+ 	int ret;
+ 	struct rcar_rvgc_pipe* rvgc_pipe = container_of(crtc, struct rcar_rvgc_pipe, crtc);
+ 	struct rcar_rvgc_device* rcrvgc    = rvgc_pipe->rcar_rvgc_dev;
+@@ -269,6 +272,7 @@ static int rvgc_plane_atomic_check(struct drm_plane* plane,
+ 	return 0;
+ }
+ 
++#if 0
+ static int plane_not_changed_drm_send_event(struct drm_plane* plane,
+ 					    struct drm_plane_state* old_state) {
+ 	struct drm_plane_state* new_plane_state = plane->state;
+@@ -299,6 +303,7 @@ static int check_refresh_primary(struct drm_plane* plane) {
+ 	struct rcar_rvgc_device* rcrvgc          = dev_get_drvdata(ddev);
+ 	return ((plane_type == DRM_PLANE_TYPE_PRIMARY) && !rcrvgc->update_primary_plane);
+ }
++#endif
+ 
+ static void rvgc_plane_atomic_update(struct drm_plane* plane,
+ 				     struct drm_plane_state* old_state) {
+@@ -318,7 +323,7 @@ static void rvgc_plane_atomic_update(struct drm_plane* plane,
+ 
+ 	/* Accomodate as many use case as possible by fdt/powervr.ini overrides */
+ 	if (rvgc_plane->no_scan) {
+-		if ((0 == old_state->fb) && (0 != plane->state->fb)) {
++		if (!old_state->fb && plane->state->fb) {
+ 			dev_info(rcrvgc->dev, "id=%d is NOT being displayed (FDT has no-scan)\n", plane->base.id);
+ 		}
+ 	} else {
+@@ -340,7 +345,7 @@ static void rvgc_plane_atomic_update(struct drm_plane* plane,
+ 		}
+ 
+ 		/* determine why we're here...*/
+-		if ((0 == old_state->fb) && (0 != plane->state->fb)) {
++		if (!old_state->fb && plane->state->fb) {
+ 			dev_info(rcrvgc->dev, "Reserve id=%d, layer=%d (via %s):%sx=%d, y=%d, %sw=%d, h=%d\n",
+ 				 plane->base.id, hw_plane, (pos_z_via_pvr) ? "PVR":"FDT",
+ 				 (rvgc_plane->pos_override) ? "Force Pos,":"", pos_x, pos_y,
+@@ -386,7 +391,7 @@ static void rvgc_plane_atomic_update(struct drm_plane* plane,
+ 			return;
+ 		}
+ 
+-		if ((0 != old_state->fb) && (0 == plane->state->fb)) {
++		if (old_state->fb && !plane->state->fb) {
+ 			/* disabling */
+ 			dev_info(rcrvgc->dev, "Release id=%d, layer=%d\n", plane->base.id, hw_plane);
+ 			ret = rvgc_taurus_layer_release(rcrvgc, display_idx, hw_plane, &res_msg);
+@@ -398,7 +403,7 @@ static void rvgc_plane_atomic_update(struct drm_plane* plane,
+ 			return;
+ 		}
+ 
+-		if (0 != plane->state->fb) {
++		if (plane->state->fb) {
+ 			/* updating fb */
+ 			gem_obj = drm_fb_cma_get_gem_obj(fb, 0); //we support only single planar formats
+ 			ret = rvgc_taurus_layer_set_addr(rcrvgc, display_idx, hw_plane, gem_obj->paddr, &res_msg);
+@@ -488,8 +493,9 @@ static int overlay_pipe_init(struct rcar_rvgc_device* rvgc_dev,
+ 
+ static int taurus_init(struct rcar_rvgc_device* rvgc_dev,
+ 		       struct rcar_rvgc_pipe* rvgc_pipe) {
+-
++#if 0
+ 	struct rcar_rvgc_device* rcrvgc = rvgc_pipe->rcar_rvgc_dev;
++#endif
+ 	int ret = 0;
+ 	struct taurus_rvgc_res_msg res_msg;
+ 
+-- 
+2.25.1
+

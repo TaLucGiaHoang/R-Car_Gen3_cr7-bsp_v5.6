@@ -1,0 +1,32 @@
+From d4879a5b446cbc55988a84a44c49b9e6aee2e076 Mon Sep 17 00:00:00 2001
+From: Sergii Piatakov <sergii.piatakov@globallogic.com>
+Date: Thu, 5 Oct 2023 15:22:37 +0300
+Subject: [PATCH 3/3] video: do not copy logo image
+
+This patch is necessary to avoid a flashing error. The error occurs
+because the `video` feature is disabled (and `fastboot` doesn't aware of
+the `logo.argb` image), but since the `logo.argb` image is still present
+in the output directory the flashing script tries to flash it.
+
+Test: flash Android via fastboot.sh script:
+      $ ./vendor/renesas/utils/fastboot/fastboot.sh --noresetenv
+Signed-off-by: Sergii Piatakov <sergii.piatakov@globallogic.com>
+---
+ Android.mk | 1 -
+ 1 file changed, 1 deletion(-)
+
+diff --git a/Android.mk b/Android.mk
+index 6dbc7f0fd9..fbb650667e 100644
+--- a/Android.mk
++++ b/Android.mk
+@@ -82,7 +82,6 @@ u-boot:
+ 	$(UBOOT_ARCH_PARAMS) $(ANDROID_MAKE) -C $(UBOOT_SRC) O=$(UBOOT_OUT_ABS) $(TARGET_BOARD_PLATFORM)_$(TARGET_BOOTLOADER_BOARD_NAME)_defconfig
+ 	$(UBOOT_ARCH_PARAMS) $(ANDROID_MAKE) -C $(UBOOT_SRC) O=$(UBOOT_OUT_ABS) KCFLAGS+="$(UBOOT_KCFLAGS_ADSP)" KCFLAGS+="$(UBOOT_KCFLAGS)" -j `$(NPROC)`
+ 	cp -vF $(UBOOT_OUT_ABS)/u-boot.bin $(UBOOT_OUT_ABS)/u-boot-elf.srec $(PRODUCT_OUT_ABS)/
+-	cp -vF $(UBOOT_SRC)/drivers/video/renesas/logo/logo.argb $(PRODUCT_OUT_ABS)/
+ 
+ scan-build-uboot:
+ 	@echo "Starting scan-build for UBOOT"
+-- 
+2.25.1
+

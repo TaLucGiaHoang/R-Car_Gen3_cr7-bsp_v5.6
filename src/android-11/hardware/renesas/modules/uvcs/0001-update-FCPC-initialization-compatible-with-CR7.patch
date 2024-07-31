@@ -1,0 +1,133 @@
+From 7d24dda6331f1c3b701fa1707e5d56849cee7fc2 Mon Sep 17 00:00:00 2001
+From: Sergii Piatakov <sergii.piatakov@globallogic.com>
+Date: Fri, 25 Aug 2023 09:45:07 +0000
+Subject: [PATCH 1/1] update FCPC initialization compatible with CR7
+
+Signed-off-by: Sergii Piatakov <sergii.piatakov@globallogic.com>
+---
+ src/core/mcvx_api.c | 97 +++++++++++++++++++++++++++++++++------------
+ 1 file changed, 71 insertions(+), 26 deletions(-)
+
+diff --git a/src/core/mcvx_api.c b/src/core/mcvx_api.c
+index a755143..3b119c4 100644
+--- a/src/core/mcvx_api.c
++++ b/src/core/mcvx_api.c
+@@ -59,6 +59,10 @@
+ */ /*************************************************************************/
+ 
+ #include "mcvx_api.h"
++#include <linux/kernel.h>
++#include <linux/hwspinlock.h>
++#include <asm/io.h>
++#include <linux/delay.h>
+ 
+ /**
+  *
+@@ -1089,37 +1093,78 @@ MCVX_RC mcvx_fcpc_init(
+ {
+ 	MCVX_RC				rtn_code;
+ 	MCVX_REG			reg_data;
++	struct hwspinlock *hwlock = NULL;
++	int lTimes = 0;
++	volatile unsigned int *addr = NULL;
++	volatile unsigned int lFcpcInited = 0;
++
++	/* remap STBCHR4 reg*/
++	addr = (volatile unsigned int*)ioremap(0xE6160120, 4);
++	if (!addr) {
++		rtn_code = MCVX_ERR_WORK;
++		return rtn_code;
++	}
+ 
+-	if (config == NULL) {
+-		rtn_code = MCVX_ERR_PARAM;
+-	} else if (fcpc == NULL) {
+-		rtn_code = MCVX_ERR_PARAM;
+-	} else if ((config->udf_reg_read == NULL) || (config->udf_reg_write == NULL)) {
+-		rtn_code = MCVX_ERR_PARAM;
+-	} else if (config->fcpc_base_addr == NULL) {
+-		rtn_code = MCVX_ERR_PARAM;
+-	} else if ((config->fcpc_arch != MCVX_FCPC_S) && (config->fcpc_arch != MCVX_FCPC_I)) {
+-		rtn_code = MCVX_ERR_PARAM;
++	lFcpcInited = ioread32(addr) & (0x1 << 1);
++	if(lFcpcInited != 0) {
++		/* FCPCS has been initialized*/
++		rtn_code = MCVX_NML_END;
+ 	} else {
+-		fcpc->fcpc_arch		= config->fcpc_arch;
+-		fcpc->shared_mode	= config->shared_mode;
+-		fcpc->udf_reg_read	= config->udf_reg_read;
+-		fcpc->udf_reg_write	= config->udf_reg_write;
+-		fcpc->REG_FCPC		= (MCVX_REG_FCPC_T *)config->fcpc_base_addr;
+-
+-		/* get revision */
+-		reg_data	= 0u;
+-		fcpc->udf_reg_read(&fcpc->REG_FCPC->FCP_VCR, &reg_data, MCVX_REGS_SINGLE);
+-		fcpc->revision = reg_data & MCVX_M_08BIT;
+-		/* revision 1 : H3  ES1.x */
+-		/* revision 2 : M3W ES1   */
+-		/* revision 3 : H3  ES2   */
+-
+-		(void)mcvx_fcpc_reset(fcpc, MCVX_RESET_FORCED);
++		hwlock = hwspin_lock_request_specific(63);
++		if(NULL != hwlock){
+ 
+-		rtn_code = MCVX_NML_END;
++			while((0 != hwspin_trylock(hwlock)) && (lTimes < 2)) {
++				msleep(1u);
++				lTimes++;
++			}
++
++			if(lTimes < 2) {
++				/* FCPCS init */
++				/* check arguments */
++				if (config == NULL) {
++					rtn_code = MCVX_ERR_PARAM;
++				} else if (fcpc == NULL) {
++					rtn_code = MCVX_ERR_PARAM;
++				} else if ((config->udf_reg_read == NULL) || (config->udf_reg_write == NULL)) {
++					rtn_code = MCVX_ERR_PARAM;
++				} else if (config->fcpc_base_addr == NULL) {
++					rtn_code = MCVX_ERR_PARAM;
++				} else if ((config->fcpc_arch != MCVX_FCPC_S) && (config->fcpc_arch != MCVX_FCPC_I)) {
++					rtn_code = MCVX_ERR_PARAM;
++				} else {
++					fcpc->fcpc_arch		= config->fcpc_arch;
++					fcpc->shared_mode	= config->shared_mode;
++					fcpc->udf_reg_read	= config->udf_reg_read;
++					fcpc->udf_reg_write	= config->udf_reg_write;
++					fcpc->REG_FCPC		= (MCVX_REG_FCPC_T *)config->fcpc_base_addr;
++
++					/* get revision */
++					reg_data	= 0u;
++					fcpc->udf_reg_read(&fcpc->REG_FCPC->FCP_VCR, &reg_data, MCVX_REGS_SINGLE);
++					fcpc->revision = reg_data & MCVX_M_08BIT;
++					/* revision 1 : H3  ES1.x */
++					/* revision 2 : M3W ES1   */
++					/* revision 3 : H3  ES2   */
++
++					(void)mcvx_fcpc_reset(fcpc, MCVX_RESET_FORCED);
++
++					iowrite32(lFcpcInited | (0x1<<1), addr);
++
++					rtn_code = MCVX_NML_END;
++				}
++
++				hwspin_unlock(hwlock);
++			} else {
++				pr_err("can't get the lock.\n");
++			}
++
++			hwspin_lock_free(hwlock);
++		}
+ 	}
+ 
++	iounmap(addr);
++	addr = NULL;
++
+ 	return rtn_code;
+ }
+ 
+-- 
+2.17.1
+

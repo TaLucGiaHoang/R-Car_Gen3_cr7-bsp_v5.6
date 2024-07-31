@@ -1,0 +1,29 @@
+From dcdc281a038ee5ab3c1c872dae51542953f5b064 Mon Sep 17 00:00:00 2001
+From: Khiem Nguyen <khiem.nguyen.xt@renesas.com>
+Date: Wed, 10 Mar 2021 17:58:07 +0700
+Subject: [PATCH 25/40] drm: rcar-rvgc: Let drm core handle connector
+
+From commit a92462d6bf (drm/connector: Share with non-atomic drivers the function to get the single encoder)
+the encoder connector will be handled by drm core.
+This patch follows the examples there.
+
+Signed-off-by: Khiem Nguyen <khiem.nguyen.xt@renesas.com>
+---
+ drivers/gpu/drm/rcar-rvgc/rcar_rvgc_pipe.c | 1 -
+ 1 file changed, 1 deletion(-)
+
+diff --git a/drivers/gpu/drm/rcar-rvgc/rcar_rvgc_pipe.c b/drivers/gpu/drm/rcar-rvgc/rcar_rvgc_pipe.c
+index ca44fa3bf1fc..dd1dadf5a9ee 100644
+--- a/drivers/gpu/drm/rcar-rvgc/rcar_rvgc_pipe.c
++++ b/drivers/gpu/drm/rcar-rvgc/rcar_rvgc_pipe.c
+@@ -85,7 +85,6 @@ static int rvgc_connector_get_modes(struct drm_connector* connector) {
+ 
+ static const struct drm_connector_helper_funcs rvgc_connector_hfuncs = {
+ 	.get_modes = rvgc_connector_get_modes,
+-	.best_encoder = drm_atomic_helper_best_encoder,
+ };
+ 
+ static enum drm_connector_status
+-- 
+2.25.1
+

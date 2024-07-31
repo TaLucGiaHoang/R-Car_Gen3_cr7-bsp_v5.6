@@ -1,0 +1,48 @@
+From ce8898683be3e2cbad52b1a3c7f81c3ceb90bf6e Mon Sep 17 00:00:00 2001
+From: Khiem Nguyen <khiem.nguyen.xt@renesas.com>
+Date: Wed, 10 Mar 2021 19:05:24 +0700
+Subject: [PATCH 12/40] remoteproc: Fix compiler warnings
+
+This patch fixes the compiler warnings due to incompatible
+with the function callback prototypes.
+
+Signed-off-by: Khiem Nguyen <khiem.nguyen.xt@renesas.com>
+Signed-off-by: Phong Hoang <phong.hoang.wz@renesas.com>
+---
+ drivers/remoteproc/rcar_cr7_remoteproc.c | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/drivers/remoteproc/rcar_cr7_remoteproc.c b/drivers/remoteproc/rcar_cr7_remoteproc.c
+index 91833a3f4eb5..01025cb102c9 100644
+--- a/drivers/remoteproc/rcar_cr7_remoteproc.c
++++ b/drivers/remoteproc/rcar_cr7_remoteproc.c
+@@ -153,7 +153,7 @@ static int rcar_cr7_rproc_start(struct rproc *rproc)
+ 	// Get Reset Controller node (RST)
+ 	mmio_rst_base = ioremap(RST_BASE, 4);
+ 	if (rproc->bootaddr & ~0xfffc0000)
+-		dev_warn(dev, "Boot address (0x%x) not aligned!\n", rproc->bootaddr);
++		dev_warn(dev, "Boot address (0x%llx) not aligned!\n", rproc->bootaddr);
+ 	regval = (rproc->bootaddr & 0xfffc0000); //Set Boot Addr
+ 	regval |= 0x10; //Enable BAR
+ 	iowrite32(regval, (mmio_rst_base + RST_CR7BAR_OFFSET));
+@@ -225,7 +225,7 @@ static void rcar_cr7_rproc_kick(struct rproc *rproc, int vqid)
+ 	}
+ }
+ 
+-static void *rcar_cr7_da_to_va(struct rproc *rproc, u64 da, int len)
++static void *rcar_cr7_da_to_va(struct rproc *rproc, u64 da, unsigned long len, bool *unused)
+ {
+ 	struct rcar_cr7_rproc *rrproc = rproc->priv;
+ 	int offset;
+@@ -268,7 +268,7 @@ static int rcar_cr7_rproc_elf_sanity_check(struct rproc *rproc,
+ 	return rproc_elf_sanity_check(rproc, fw);
+ }
+ 
+-static u32 rcar_cr7_rproc_elf_get_boot_addr(struct rproc *rproc,
++static u64 rcar_cr7_rproc_elf_get_boot_addr(struct rproc *rproc,
+ 					    const struct firmware *fw)
+ {
+ 	return rproc_elf_get_boot_addr(rproc, fw);
+-- 
+2.25.1
+

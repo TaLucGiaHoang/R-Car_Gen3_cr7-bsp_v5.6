@@ -1,0 +1,42 @@
+From 484883cd71856460b668479f2ad5cf84f044045a Mon Sep 17 00:00:00 2001
+From: Sergii Piatakov <sergii.piatakov@globallogic.com>
+Date: Tue, 9 Jan 2024 20:28:25 +0200
+Subject: [PATCH 4/5] update module list for integration with CR7
+
+Remove modules that are not used for paravirtualized graphics (because
+the real access to the display is performed from CR7 side and CA5x
+shouldn't deal with displays directly).
+
+Test: build, flash and run a DUT, ensure that Linux Kernel is started.
+Signed-off-by: Sergii Piatakov <sergii.piatakov@globallogic.com>
+---
+ ModulesCommon.mk | 6 ------
+ 1 file changed, 6 deletions(-)
+
+diff --git a/ModulesCommon.mk b/ModulesCommon.mk
+index c3e5bf0..628e313 100644
+--- a/ModulesCommon.mk
++++ b/ModulesCommon.mk
+@@ -177,9 +177,6 @@ BOARD_VENDOR_RAMDISK_KERNEL_MODULES_LOAD += \
+ 	$(KERNEL_MODULES_OUT)/vsp1.ko \
+ 	$(KERNEL_MODULES_OUT)/panel-lvds.ko \
+ 	$(KERNEL_MODULES_OUT)/simple-bridge.ko \
+-	$(KERNEL_MODULES_OUT)/dw-hdmi-cec.ko \
+-	$(KERNEL_MODULES_OUT)/dw-hdmi.ko \
+-	$(KERNEL_MODULES_OUT)/rcar_lvds.ko \
+ 	$(KERNEL_MODULES_OUT)/i2c-rcar.ko \
+ 	$(KERNEL_MODULES_OUT)/gpio-rcar.ko \
+ 	$(KERNEL_MODULES_OUT)/gpio-regulator.ko \
+@@ -282,9 +279,6 @@ BOARD_RECOVERY_KERNEL_MODULES_LOAD += \
+ 	$(KERNEL_MODULES_OUT)/vsp1.ko \
+ 	$(KERNEL_MODULES_OUT)/panel-lvds.ko \
+ 	$(KERNEL_MODULES_OUT)/simple-bridge.ko \
+-	$(KERNEL_MODULES_OUT)/dw-hdmi-cec.ko \
+-	$(KERNEL_MODULES_OUT)/dw-hdmi.ko \
+-	$(KERNEL_MODULES_OUT)/rcar_lvds.ko \
+ 	$(KERNEL_MODULES_OUT)/i2c-rcar.ko \
+ 	$(KERNEL_MODULES_OUT)/gpio-rcar.ko \
+ 	$(KERNEL_MODULES_OUT)/gpio-regulator.ko \
+-- 
+2.25.1
+

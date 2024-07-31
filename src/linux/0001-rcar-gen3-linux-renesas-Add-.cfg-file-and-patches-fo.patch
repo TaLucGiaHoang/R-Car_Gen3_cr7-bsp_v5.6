@@ -1,0 +1,53 @@
+From d63adc318788ee21626e85cc0e01c2e533ab5557 Mon Sep 17 00:00:00 2001
+From: Vladyslav Andrishko <vladyslav.andrishko@globallogic.com>
+Date: Fri, 11 Aug 2023 12:25:30 +0300
+Subject: [PATCH] rcar-gen3: linux-renesas: Add .cfg file and patches for
+ taurus-sample
+
+Appends taurus sample config and patch files in linux recipe.
+Adds taurus-client-sample kernel module to core-image-renesas-base.inc.
+
+These changes incorporate the patches and configurations for Taurus
+client sample into the Yocto build image. This enables using and testing
+the Taurus client functionality on the target hardware.
+
+Signed-off-by: Vladyslav Andrishko <vladyslav.andrishko@globallogic.com>
+---
+ .../recipes-graphics/images/core-image-renesas-base.inc   | 1 +
+ meta-rcar-gen3/recipes-kernel/linux/linux-renesas_5.10.bb | 8 ++++++++
+ 2 files changed, 9 insertions(+)
+
+diff --git a/meta-rcar-gen3/recipes-graphics/images/core-image-renesas-base.inc b/meta-rcar-gen3/recipes-graphics/images/core-image-renesas-base.inc
+index 8297f277..83204848 100644
+--- a/meta-rcar-gen3/recipes-graphics/images/core-image-renesas-base.inc
++++ b/meta-rcar-gen3/recipes-graphics/images/core-image-renesas-base.inc
+@@ -75,6 +75,7 @@ SAFE_RENDERING_KERNEL_PKGS = " \
+     kernel-module-rcar-taurus-can \
+     kernel-module-rcar-taurus-ether \
+     kernel-module-rcar-vivid \
++    kernel-module-taurus-client-sample \
+ "
+ 
+ IMAGE_INSTALL_append = " \
+diff --git a/meta-rcar-gen3/recipes-kernel/linux/linux-renesas_5.10.bb b/meta-rcar-gen3/recipes-kernel/linux/linux-renesas_5.10.bb
+index 3db4f59a..8d134e9e 100644
+--- a/meta-rcar-gen3/recipes-kernel/linux/linux-renesas_5.10.bb
++++ b/meta-rcar-gen3/recipes-kernel/linux/linux-renesas_5.10.bb
+@@ -27,6 +27,14 @@ PR = "r1"
+ KCONFIG_MODE = "--alldefconfig"
+ KBUILD_DEFCONFIG = "defconfig"
+ 
++# Add taurus sample patches
++SRC_URI_append = " \
++    file://0001-samples-renesas_taurus_client-Adding-License-for-Ren.patch \
++    file://0002-samples-taurus-switch-on-the-COMCH-Taurus-service.patch \
++    file://0003-samples-taurus-Fix-compilation-error-by-adding-void-.patch \
++    file://taurus.cfg \
++"
++
+ SRC_URI_append = " \
+     file://touch.cfg \
+     ${@oe.utils.conditional("USE_AVB", "1", " file://usb-video-class.cfg", "", d)} \
+-- 
+2.17.1
+

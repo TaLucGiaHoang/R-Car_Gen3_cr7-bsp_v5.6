@@ -1,0 +1,35 @@
+From 44d6a4120a0ff3b166ceae024052f0b4abc9c321 Mon Sep 17 00:00:00 2001
+From: Nam Nguyen <nam.nguyen.yh@renesas.com>
+Date: Wed, 26 Oct 2022 03:50:35 +0700
+Subject: [PATCH 14/40] remoteproc: Adding License and update Copyright date
+
+Remote processor machine-specific module License were updated
+by remove the GPLv2 term and adding SPDx.
+It also update the Copyright date.
+
+Signed-off-by: Nam Nguyen <nam.nguyen.yh@renesas.com>
+---
+ drivers/remoteproc/rcar_cr7_remoteproc.c | 6 ++----
+ 1 file changed, 2 insertions(+), 4 deletions(-)
+
+diff --git a/drivers/remoteproc/rcar_cr7_remoteproc.c b/drivers/remoteproc/rcar_cr7_remoteproc.c
+index 9ff58c6b5dc3..37b756a78143 100644
+--- a/drivers/remoteproc/rcar_cr7_remoteproc.c
++++ b/drivers/remoteproc/rcar_cr7_remoteproc.c
+@@ -1,11 +1,9 @@
++// SPDX-License-Identifier: GPL-2.0-only OR MIT
+ /*
+  * Remote processor machine-specific module for R-Car Gen3 - Cortex-R7
+  *
+- * Copyright (C) 2019 Renesas Electronics
++ * Copyright (C) 2022 Renesas Electronics
+  *
+- * This program is free software; you can redistribute it and/or
+- * modify it under the terms of the GNU General Public License
+- * version 2 as published by the Free Software Foundation.
+  */
+ 
+ #include <linux/bitops.h>
+-- 
+2.25.1
+

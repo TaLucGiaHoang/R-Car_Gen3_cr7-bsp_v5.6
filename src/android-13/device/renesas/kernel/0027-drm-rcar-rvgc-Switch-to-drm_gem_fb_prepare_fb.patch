@@ -1,0 +1,38 @@
+From 633a7831374018b8739ffb3ebb020e13a62dbd35 Mon Sep 17 00:00:00 2001
+From: Khiem Nguyen <khiem.nguyen.xt@renesas.com>
+Date: Wed, 10 Mar 2021 18:38:26 +0700
+Subject: [PATCH 27/40] drm: rcar-rvgc: Switch to drm_gem_fb_prepare_fb
+
+Function drm_fb_cma_prepare_fb() has been removed by commit
+ c0f095f76 (drm/fb-cma-helper: Remove unused functions).
+This patch changes to use drm_gem_fb_prepare_fb() as replacement.
+
+Signed-off-by: Khiem Nguyen <khiem.nguyen.xt@renesas.com>
+---
+ drivers/gpu/drm/rcar-rvgc/rcar_rvgc_pipe.c | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/drivers/gpu/drm/rcar-rvgc/rcar_rvgc_pipe.c b/drivers/gpu/drm/rcar-rvgc/rcar_rvgc_pipe.c
+index 470b599abf9e..e7da6532c49f 100644
+--- a/drivers/gpu/drm/rcar-rvgc/rcar_rvgc_pipe.c
++++ b/drivers/gpu/drm/rcar-rvgc/rcar_rvgc_pipe.c
+@@ -11,6 +11,7 @@
+ /* TODO: Need plane helper ? */
+ #include <drm/drm_fb_cma_helper.h>
+ #include <drm/drm_gem_cma_helper.h>
++#include <drm/drm_gem_framebuffer_helper.h>
+ #include <drm/drm_vblank.h>
+ #include <drm/drm_drv.h>
+ #include <drm/drm_probe_helper.h>
+@@ -414,7 +415,7 @@ static void rvgc_plane_atomic_update(struct drm_plane* plane,
+ 
+ static int rvgc_plane_prepare_fb(struct drm_plane* plane,
+ 				 struct drm_plane_state* state) {
+-	return drm_fb_cma_prepare_fb(plane, state);
++	return drm_gem_fb_prepare_fb(plane, state);
+ }
+ 
+ static void rvgc_plane_cleanup_fb(struct drm_plane* plane,
+-- 
+2.25.1
+

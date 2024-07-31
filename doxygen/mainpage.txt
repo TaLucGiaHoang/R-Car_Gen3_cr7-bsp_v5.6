@@ -1,0 +1,122 @@
+
+/** @mainpage
+ 
+    @section A Introduction
+
+    This software package provides a set of reference applications, drivers and middleware for the Cortex-R7 on Renesas R-Car SoCs.
+    
+    This is reference software only. This means there is no guarantees for quality or performance, the software may contain bugs, and only "smoke" testing was done.
+    The software was tested using R-Car Salvator-X/XS development boards with R-Car H3/M3/M3N/E3 SoCs. Additional support for R-Car Starter Kit with Kingfisher is also possible on request, as only very limited testing has been done for that environment.
+
+    \image html Slide4.jpg
+
+    Our software features hypervisor-less, concurrent operating systems running in different core domains. The different operating systems communicate using VIRTIO over shared memory.
+    To enable very quick boot timing, the environment boots from the Cortex-R7 which starts the Cortex-R7 RTOS followed by the Cortex-A53/57 Rich OS.  
+
+    An RTOS running on the Cortex-R7 has the advantage of executing time and safety critical applications. The Rich OS uses Renesas developed virtualized drivers that enable hardware requests that are managed by the RTOS.  
+
+    Our environment supports FreeRTOS and Trampoline (Open Source AutoSAR implementation) for the Cortex-R7 RTOS.  
+    On the Cortex-A53/57 we support Green Hills INTEGRITY, Linux, Android 10 and Android 11.  
+
+    @section B System Overview
+    \image html Slide5.jpg
+
+    The system uses two system servers on the RTOS to realize shared hardware resources. Taurus and CIO (Common IO) servers.
+
+    The Taurus server listens for requests from the Rich OS using virtio over shared memory. For example, Para-DRM is our virtualized DRM driver. This driver sends request to Taurus for display functionality, such as requesting a layer, layer position, etc.
+
+    The CIO server listens to requests from both RTOS applications and from Taurus. The CIO manages the requests from these concurrent operating systems to handle hardware interactions. In most cases, RTOS applications should not directly use driver level APIs but instead communicate to the CIO server.
+
+    @section C Cortex-R7 System Overview
+    \image html Slide6.jpg
+
+    The RTOS features many example applications, drivers and middleware.
+
+    The applications include 2D graphics, audio, camera input and many others.
+    2D graphics applications use our Window Manager and Draw2D APIs to interace with the DU (Display Unit), VSPDs (Video Signal Processors) and DHD (DaveHD 2D GPU)
+
+    The system uses an OSAL (Operating System Abstraction Layer) to allow easy integration with different operating systems.
+
+    @section D Cortex-A5x System Overview
+    \image html Slide7.jpg
+
+    The Rich OS uses several virtualized drivers for hardware sharing functionality. It is important to highlight there are no changes required to applications or middleware, only the low-level kernel drivers.
+
+    The Rich OS must also contain an .elf file of the RTOS system in the Root FS. This is necessary to ensure the virtual communication queues are established correctly.
+
+    @section E Debugging Concept
+    \image html Slide8.jpg
+
+    The two operating systems can debugged together or independently. Our team has great familiarity with the Lauterbach tools and scripts. We have some familiarity with Green Hills Probe.
+    
+    There is no conflict with other tooling but note that we may not have any experience.
+    
+    \image html Slide9.jpg
+
+    @section F Boot Process
+    \image html Slide11.jpg
+
+    Our original boot process was from the Cortex-A53/57, which then boots the Cortex-R7.
+
+    \image html Slide12.jpg
+
+    Our fastboot boot process instead boots from the Cortex-R7. This enables much faster boot times.
+
+    The software is operational with either process.
+
+    @section G FFI (Freedom From Interference)
+    @subsection H Interrupt Handling Rich OS VS RTOS
+    \image html Slide13.jpg
+
+    For interrupt handling, Renesas R-Car SoCs feature two distinct GIC (Generic Interrupt Controller)
+
+    @subsection I Memory Overlap
+    \image html Slide14.jpg
+
+    The current implementation expects the Rich OS to take care not to corrupt or interfere with the memory of the RTOS, such as making the region "no-map" for Linux.
+
+    Renesas R-Car SoCs have dedicated IP for FFI memory protection called LifeC. More information about LifeC can be obtained from Renesas FuSa team.
+
+    @section J CR7 SDK Components
+    @subsection K OSAL Concept
+    \image html Slide17.jpg
+
+    For the Cortex-R7, we provide two sample OSAL implementations. FreeRTOS and Trampoline (Open Source AutoSAR)
+
+    This layer enables porting to other operating systems easier. Applications, drivers and middleware should remain unchanged between different OSAL implementations.
+
+    @subsection N Para-Virtualization
+    \image html Slide21.jpg
+
+    The Rich OS features several para-virtualized drivers to access hardware resources controlled by the RTOS. 
+    
+    These para-drivers use shared memory to communicate "requests" to the RTOS system. We ensure that the API of these drivers is identical to that of the original driver, so there will be no changes necessary to other parts of the system.
+
+    @subsection O Inter-CPU Communications
+    \image html Slide22.jpg
+
+    Communication between RTOS and Rich OS is achieved by exchanging messages over shared memory using virtio protocol. The MFIS IP of R-Car SoCs is used to generate interrupts across core domains to signal a new message is available.
+
+    Rich OS can use rproc, for example, to read information about the communication queues from the RTOS .elf file.
+
+    The GPU does not use virtio-GPU. Instead, we have provided our own Para-DRM driver. This allows the Rich OS to have full access to the 3D GPU and simply share the framebuffer with the RTOS, providing much greater performance than a fully virtualized GPU.
+
+    @subsection P CIO Framework
+    \image html Slide24.jpg
+
+    The CIO server controls access to hardware resources from the Rich OS and RTOS. This diagram intends to show the interaction between clients and the CIO server.
+
+    @subsection Q Draw 2D
+    \image html Slide26.jpg
+
+    Simple 2D rendering can be done on the Cortex-R7 system using our DRW2D library. The functionality can be used for entire 2D applications, such as an instrument cluster.
+
+    We provide an implementation for CPU rendering, as well as with the DaveHD 2D GPU. Example applications are also provided.
+    
+    @subsection R Window Manager
+    \image html Slide28.jpg
+
+    The Window Manager is our implementation for creating and controlling planes, layers and displays. The 2D graphics applications provide examples of using the Window Manager APIs.
+ */
+ 
+  

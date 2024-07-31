@@ -1,0 +1,42 @@
+From 1db040998f038df66d7906f3c2f9bb0cfbe05c82 Mon Sep 17 00:00:00 2001
+From: Bjorn Andersson <bjorn.andersson@linaro.org>
+Date: Fri, 5 Jan 2018 15:58:04 -0800
+Subject: [PATCH 12/34] remoteproc: Drop dangling find_rsc_table dummies
+
+[ Upstream commit 4f6fd5a03779cefdf3401ed20690f67ff76cf1ff]
+
+As the core now deals with the lack of a resource table, remove the
+dangling custom dummy implementations of find_rsc_table from drivers.
+
+Reviewed-By: Loic Pallardy <loic.pallardy@st.com>
+Tested-By: Loic Pallardy <loic.pallardy@st.com>
+Signed-off-by: Bjorn Andersson <bjorn.andersson@linaro.org>
+---
+ include/linux/remoteproc.h | 4 ----
+ 1 file changed, 4 deletions(-)
+
+diff --git a/include/linux/remoteproc.h b/include/linux/remoteproc.h
+index cc853745e3a1..728d421fffe9 100644
+--- a/include/linux/remoteproc.h
++++ b/include/linux/remoteproc.h
+@@ -333,7 +333,6 @@ struct firmware;
+  * @kick:	kick a virtqueue (virtqueue id given as a parameter)
+  * @da_to_va:	optional platform hook to perform address translations
+  * @load_rsc_table:	load resource table from firmware image
+- * @find_rsc_table:	find the resource table inside the firmware image
+  * @find_loaded_rsc_table: find the loaded resouce table
+  * @load:		load firmeware to memory, where the remote processor
+  *			expects to find it
+@@ -346,9 +345,6 @@ struct rproc_ops {
+ 	void (*kick)(struct rproc *rproc, int vqid);
+ 	void * (*da_to_va)(struct rproc *rproc, u64 da, int len);
+ 	int (*load_rsc_table)(struct rproc *rproc, const struct firmware *fw);
+-	struct resource_table *(*find_rsc_table)(struct rproc *rproc,
+-						 const struct firmware *fw,
+-						 int *tablesz);
+ 	struct resource_table *(*find_loaded_rsc_table)(
+ 				struct rproc *rproc, const struct firmware *fw);
+ 	int (*load)(struct rproc *rproc, const struct firmware *fw);
+-- 
+2.17.1
+

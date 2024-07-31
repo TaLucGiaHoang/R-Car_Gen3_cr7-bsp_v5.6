@@ -1,0 +1,24 @@
+From 5bbd65d00b53782a4db4289ced66d075cbb1fe7d Mon Sep 17 00:00:00 2001
+From: huyhuynh <huy.huynh.xt@renesas.com>
+Date: Fri, 3 Nov 2023 08:57:13 +0700
+Subject: [PATCH 1/2] Add safe rendering ebisu
+
+---
+ meta-rcar-gen3/conf/machine/ebisu.conf | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/meta-rcar-gen3/conf/machine/ebisu.conf b/meta-rcar-gen3/conf/machine/ebisu.conf
+index c1c09166..617c821d 100644
+--- a/meta-rcar-gen3/conf/machine/ebisu.conf
++++ b/meta-rcar-gen3/conf/machine/ebisu.conf
+@@ -7,6 +7,7 @@ SOC_FAMILY = "r8a77990"
+ DEFAULTTUNE ?= "cortexa53"
+ require conf/machine/include/tune-cortexa53.inc
+ require conf/machine/include/rcar_common.inc
++require include/safe-rendering-control.inc
+ 
+ # Device tree for E3
+ KERNEL_DEVICETREE = " \
+-- 
+2.25.1
+

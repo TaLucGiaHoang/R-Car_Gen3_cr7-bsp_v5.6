@@ -1,0 +1,268 @@
+From 95ac67e0ec7eaeed1226c16f52d09a3e3e4cc1a0 Mon Sep 17 00:00:00 2001
+From: Nam Nguyen <nam.nguyen.yh@renesas.com>
+Date: Thu, 5 Oct 2023 08:38:47 +0300
+Subject: [PATCH 30/40] drm: rcar-rvgc: Add/Update License, update Copyright
+ date
+
+Some file source of R-Car RVGC DRM driver were missing license,
+this patch is for adding them.
+
+Other contain MIT and GPLv2 License term,
+remove them and replace with SPDX aswell.
+
+It also update the Copyright date to latest
+
+Signed-off-by: Nam Nguyen <nam.nguyen.yh@renesas.com>
+Signed-off-by: Vladyslav Andrishko <vladyslav.andrishko@globallogic.com>
+---
+ drivers/gpu/drm/rcar-rvgc/r_taurus_bridge.h   |  6 ++
+ .../gpu/drm/rcar-rvgc/r_taurus_protocol_ids.h |  7 ++
+ .../drm/rcar-rvgc/r_taurus_rvgc_protocol.h    |  6 ++
+ drivers/gpu/drm/rcar-rvgc/rcar_rvgc_drv.c     | 67 ++-----------------
+ drivers/gpu/drm/rcar-rvgc/rcar_rvgc_drv.h     | 10 +--
+ drivers/gpu/drm/rcar-rvgc/rcar_rvgc_kms.c     |  7 ++
+ drivers/gpu/drm/rcar-rvgc/rcar_rvgc_kms.h     |  7 ++
+ drivers/gpu/drm/rcar-rvgc/rcar_rvgc_pipe.c    |  7 ++
+ drivers/gpu/drm/rcar-rvgc/rcar_rvgc_pipe.h    | 10 +--
+ drivers/gpu/drm/rcar-rvgc/rcar_rvgc_taurus.c  |  7 ++
+ drivers/gpu/drm/rcar-rvgc/rcar_rvgc_taurus.h  |  7 ++
+ 11 files changed, 63 insertions(+), 78 deletions(-)
+
+diff --git a/drivers/gpu/drm/rcar-rvgc/r_taurus_bridge.h b/drivers/gpu/drm/rcar-rvgc/r_taurus_bridge.h
+index a0c26de252c8..b1aac5eed0b2 100644
+--- a/drivers/gpu/drm/rcar-rvgc/r_taurus_bridge.h
++++ b/drivers/gpu/drm/rcar-rvgc/r_taurus_bridge.h
+@@ -1,3 +1,9 @@
++/* SPDX-License-Identifier: GPL-2.0-only OR MIT */
++/*
++ *  r_taurus_bridge.h --  R-Car Taurus Bridge
++ *
++ * Copyright (C) 2022 Renesas Electronics Corporation
++ */
+ 
+ #ifndef R_TAURUS_BRIDGE_H
+ #define R_TAURUS_BRIDGE_H
+diff --git a/drivers/gpu/drm/rcar-rvgc/r_taurus_protocol_ids.h b/drivers/gpu/drm/rcar-rvgc/r_taurus_protocol_ids.h
+index 4b5496e7990c..bc536624b2a7 100644
+--- a/drivers/gpu/drm/rcar-rvgc/r_taurus_protocol_ids.h
++++ b/drivers/gpu/drm/rcar-rvgc/r_taurus_protocol_ids.h
+@@ -1,3 +1,10 @@
++/* SPDX-License-Identifier: GPL-2.0-only OR MIT */
++/*
++ *  r_taurus_protocol_ids.h --  R-Car Taurus Protocol IDs
++ *
++ * Copyright (C) 2022 Renesas Electronics Corporation
++ */
++
+ #ifndef _R_TAURUS_PROTOCOL_IDS_H_
+ #define _R_TAURUS_PROTOCOL_IDS_H_
+ 
+diff --git a/drivers/gpu/drm/rcar-rvgc/r_taurus_rvgc_protocol.h b/drivers/gpu/drm/rcar-rvgc/r_taurus_rvgc_protocol.h
+index fa185d961038..7a3ef87a5bbf 100644
+--- a/drivers/gpu/drm/rcar-rvgc/r_taurus_rvgc_protocol.h
++++ b/drivers/gpu/drm/rcar-rvgc/r_taurus_rvgc_protocol.h
+@@ -1,3 +1,9 @@
++/* SPDX-License-Identifier: GPL-2.0-only OR MIT */
++/*
++ * r_taurus_rvgc_protocol.h  --  R-Car Taurus RVGC Protocol
++ *
++ * Copyright (C) 2022 Renesas Electronics Corporation
++ */
+ 
+ #ifndef R_TAURUS_RVGC_PROTOCOL_H
+ #define R_TAURUS_RVGC_PROTOCOL_H
+diff --git a/drivers/gpu/drm/rcar-rvgc/rcar_rvgc_drv.c b/drivers/gpu/drm/rcar-rvgc/rcar_rvgc_drv.c
+index 64c184f8dcd3..5e0309f352ad 100644
+--- a/drivers/gpu/drm/rcar-rvgc/rcar_rvgc_drv.c
++++ b/drivers/gpu/drm/rcar-rvgc/rcar_rvgc_drv.c
+@@ -1,65 +1,8 @@
+-/*************************************************************************/ /*
+- rcar_rvgc_drv.c  --  R-Car RVGC DRM driver
+-
+- Copyright (C) 2021-2022 Renesas Electronics Corporation
+-
+- License        Dual MIT/GPLv2
+-
+- The contents of this file are subject to the MIT license as set out below.
+-
+- Permission is hereby granted, free of charge, to any person obtaining a copy
+- of this software and associated documentation files (the "Software"), to deal
+- in the Software without restriction, including without limitation the rights
+- to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+- copies of the Software, and to permit persons to whom the Software is
+- furnished to do so, subject to the following conditions:
+-
+- The above copyright notice and this permission notice shall be included in
+- all copies or substantial portions of the Software.
+-
+- Alternatively, the contents of this file may be used under the terms of
+- the GNU General Public License Version 2 ("GPL") in which case the provisions
+- of GPL are applicable instead of those above.
+-
+- If you wish to allow use of your version of this file only under the terms of
+- GPL, and not to allow others to use your version of this file under the terms
+- of the MIT license, indicate your decision by deleting the provisions above
+- and replace them with the notice and other provisions required by GPL as set
+- out in the file called "GPL-COPYING" included in this distribution. If you do
+- not delete the provisions above, a recipient may use your version of this file
+- under the terms of either the MIT license or GPL.
+-
+- This License is also included in this distribution in the file called
+- "MIT-COPYING".
+-
+- EXCEPT AS OTHERWISE STATED IN A NEGOTIATED AGREEMENT: (A) THE SOFTWARE IS
+- PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING
+- BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR
+- PURPOSE AND NONINFRINGEMENT; AND (B) IN NO EVENT SHALL THE AUTHORS OR
+- COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
+- IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
+- CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+-
+-
+- GPLv2:
+- If you wish to use this file under the terms of GPL, following terms are
+- effective.
+-
+- This program is free software; you can redistribute it and/or modify
+- it under the terms of the GNU General Public License as published by
+- the Free Software Foundation; version 2 of the License.
+-
+- This program is distributed in the hope that it will be useful,
+- but WITHOUT ANY WARRANTY; without even the implied warranty of
+- MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+- GNU General Public License for more details.
+-
+- You should have received a copy of the GNU General Public License
+- along with this program; if not, write to the Free Software
+- Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+-*/ /*************************************************************************/
+-
+-//#define DEBUG
++// SPDX-License-Identifier: GPL-2.0-only OR MIT
++/* rcar_rvgc_drv.c  --  R-Car RVGC DRM driver
++*
++* Copyright (C) 2022 Renesas Electronics Corporation
++*/
+ 
+ #include <linux/device.h>
+ #include <linux/mm.h>
+diff --git a/drivers/gpu/drm/rcar-rvgc/rcar_rvgc_drv.h b/drivers/gpu/drm/rcar-rvgc/rcar_rvgc_drv.h
+index e2b94882524a..29d2ce59fd9a 100644
+--- a/drivers/gpu/drm/rcar-rvgc/rcar_rvgc_drv.h
++++ b/drivers/gpu/drm/rcar-rvgc/rcar_rvgc_drv.h
+@@ -1,14 +1,8 @@
++/* SPDX-License-Identifier: GPL-2.0-only OR MIT */
+ /*
+  * rcar_rvgc_drv.h  --  R-Car Display Unit DRM driver
+  *
+- * Copyright (C) 2013-2017 Renesas Electronics Corporation
+- *
+- * Contact: Laurent Pinchart (laurent.pinchart@ideasonboard.com)
+- *
+- * This program is free software; you can redistribute it and/or modify
+- * it under the terms of the GNU General Public License as published by
+- * the Free Software Foundation; either version 2 of the License, or
+- * (at your option) any later version.
++ * Copyright (C) 2022 Renesas Electronics Corporation
+  */
+ 
+ #ifndef __RCAR_RVGC_DRV_H__
+diff --git a/drivers/gpu/drm/rcar-rvgc/rcar_rvgc_kms.c b/drivers/gpu/drm/rcar-rvgc/rcar_rvgc_kms.c
+index 378a504786e5..cd3c80e52c43 100644
+--- a/drivers/gpu/drm/rcar-rvgc/rcar_rvgc_kms.c
++++ b/drivers/gpu/drm/rcar-rvgc/rcar_rvgc_kms.c
+@@ -1,3 +1,10 @@
++// SPDX-License-Identifier: GPL-2.0-only OR MIT
++/*
++ * rcar_rvgc_kms.c  --  R-Car RVGC DRM driver
++ *
++ * Copyright (C) 2022 Renesas Electronics Corporation
++ */
++
+ #include <drm/drm_device.h>
+ #include <drm/drm_atomic.h>
+ #include <drm/drm_atomic_helper.h>
+diff --git a/drivers/gpu/drm/rcar-rvgc/rcar_rvgc_kms.h b/drivers/gpu/drm/rcar-rvgc/rcar_rvgc_kms.h
+index 730b829e8701..bc570707c99a 100644
+--- a/drivers/gpu/drm/rcar-rvgc/rcar_rvgc_kms.h
++++ b/drivers/gpu/drm/rcar-rvgc/rcar_rvgc_kms.h
+@@ -1,3 +1,10 @@
++/* SPDX-License-Identifier: GPL-2.0-only OR MIT */
++/*
++ * rcar_rvgc_kms.h  --  R-Car RVGC DRM driver
++ *
++ * Copyright (C) 2022 Renesas Electronics Corporation
++ */
++
+ #ifndef __RCAR_RVGC_KMS_H__
+ #define __RCAR_RVGC_KMS_H__
+ 
+diff --git a/drivers/gpu/drm/rcar-rvgc/rcar_rvgc_pipe.c b/drivers/gpu/drm/rcar-rvgc/rcar_rvgc_pipe.c
+index 3fe80f3ac6d0..4428320a52ad 100644
+--- a/drivers/gpu/drm/rcar-rvgc/rcar_rvgc_pipe.c
++++ b/drivers/gpu/drm/rcar-rvgc/rcar_rvgc_pipe.c
+@@ -1,3 +1,10 @@
++// SPDX-License-Identifier: GPL-2.0-only OR MIT
++/*
++ * rcar_rvgc_pipe.c  --  R-Car RVGC DRM driver
++ *
++ * Copyright (C) 2022 Renesas Electronics Corporation
++ */
++
+ #include <drm/drm_device.h>
+ 
+ #include "rcar_rvgc_drv.h"
+diff --git a/drivers/gpu/drm/rcar-rvgc/rcar_rvgc_pipe.h b/drivers/gpu/drm/rcar-rvgc/rcar_rvgc_pipe.h
+index e3fcbe985da7..b87d6a307ffb 100644
+--- a/drivers/gpu/drm/rcar-rvgc/rcar_rvgc_pipe.h
++++ b/drivers/gpu/drm/rcar-rvgc/rcar_rvgc_pipe.h
+@@ -1,14 +1,8 @@
++/* SPDX-License-Identifier: GPL-2.0-only OR MIT */
+ /*
+  * rcar_rvgc_pipe.h  --  R-Car Display Unit DRM driver
+  *
+- * Copyright (C) 2013-2017 Renesas Electronics Corporation
+- *
+- * Contact: Laurent Pinchart (laurent.pinchart@ideasonboard.com)
+- *
+- * This program is free software; you can redistribute it and/or modify
+- * it under the terms of the GNU General Public License as published by
+- * the Free Software Foundation; either version 2 of the License, or
+- * (at your option) any later version.
++ * Copyright (C) 2022 Renesas Electronics Corporation
+  */
+ 
+ #ifndef __RCAR_RVGC_PIPE_H__
+diff --git a/drivers/gpu/drm/rcar-rvgc/rcar_rvgc_taurus.c b/drivers/gpu/drm/rcar-rvgc/rcar_rvgc_taurus.c
+index a5155818e393..e44a4e6563f5 100644
+--- a/drivers/gpu/drm/rcar-rvgc/rcar_rvgc_taurus.c
++++ b/drivers/gpu/drm/rcar-rvgc/rcar_rvgc_taurus.c
+@@ -1,3 +1,10 @@
++// SPDX-License-Identifier: GPL-2.0-only OR MIT
++/*
++ *  rcar_rvgc_taurus.c --  R-Car RVGC Taurus
++ *
++ * Copyright (C) 2022 Renesas Electronics Corporation
++ */
++
+ #include "rcar_rvgc_taurus.h"
+ 
+ #include <linux/rpmsg.h>
+diff --git a/drivers/gpu/drm/rcar-rvgc/rcar_rvgc_taurus.h b/drivers/gpu/drm/rcar-rvgc/rcar_rvgc_taurus.h
+index c8ccf1ff1fd1..a3ce9cc2ca63 100644
+--- a/drivers/gpu/drm/rcar-rvgc/rcar_rvgc_taurus.h
++++ b/drivers/gpu/drm/rcar-rvgc/rcar_rvgc_taurus.h
+@@ -1,3 +1,10 @@
++/* SPDX-License-Identifier: GPL-2.0-only OR MIT */
++/*
++ *  rcar_rvgc_taurus.h --  R-Car RVGC Taurus
++ *
++ * Copyright (C) 2022 Renesas Electronics Corporation
++ */
++
+ #ifndef __RCAR_RVGC_TAURUS_H__
+ #define __RCAR_RVGC_TAURUS_H__
+ 
+-- 
+2.25.1
+

@@ -1,0 +1,318 @@
+From b81d94ca9da56196a1cb354d75099a8626f99224 Mon Sep 17 00:00:00 2001
+From: Sergii Piatakov <sergii.piatakov@globallogic.com>
+Date: Sun, 27 Nov 2022 12:21:25 +0000
+Subject: [PATCH 1/1] Switch the HAL to work with rcar-vivid para driver
+
+This commit switches the HAL to the rcar-vivid para driver that is used
+to interact between CR7 and CA5x.
+
+List of changes.
+1. Added a separate "Vivid" configuration. The "Vivid" mode is enabled
+   explicitly on build time (instead of the previously flexible way of
+   platform detection). See for details changes in the *.rc file.
+2. Add a simple implementation of the function to enumerate cameras
+   (`enumerateCamerasVivid`). Only one camera `/dev/video0` is
+   hardcoded. The function only checks the current mode via V4L2 API and
+   doesn't perform any additional settings or pipeline configurations.
+3. Change the default format from `V4L2_PIX_FMT_XBGR32` to
+   `V4L2_PIX_FMT_ABGR32`.
+4. Ignore the error if a driver doesn't support cropping and continues
+   work instead of an erroneous break.
+5. Track stride values for the producer (`rcar-vivid` driver) and
+   consumer (`gralloc`), to detect cases when they can't negotiate the
+   same value.
+6. Added additional call of camera initialization when streaming is
+   started, this is necessary to stride value negotiation when a desired
+   value for the consumer (`gralloc`) is known.
+8. Add a naive implementation of picture recovery for cases when the
+   consumer and producer use different stride values. The current
+   implementation is based on picture lines moving in memory and
+   performed by a CPU. This implementation has significant CPU
+   utilization and must be avoided in the production.
+9. Add some additional logs.
+
+Test: use EVS with CR7 SDK
+Signed-off-by: Sergii Piatakov <sergii.piatakov@globallogic.com>
+---
+ EvsCamera.cpp                                 | 44 +++++++++++++++----
+ EvsCamera.h                                   |  4 +-
+ EvsEnumerator.cpp                             | 38 ++++++++++++++++
+ EvsEnumerator.h                               |  2 +
+ ...ware.automotive.evs@1.1-service.renesas.rc |  2 +-
+ service.cpp                                   |  2 +
+ 6 files changed, 81 insertions(+), 11 deletions(-)
+
+diff --git a/EvsCamera.cpp b/EvsCamera.cpp
+index 9c0d49c..9e915af 100644
+--- a/EvsCamera.cpp
++++ b/EvsCamera.cpp
+@@ -34,7 +34,7 @@ namespace V1_1 {
+ namespace renesas {
+ 
+ #define BYTES_PER_PIXEL 4
+-#define CAMERA_FORMAT V4L2_PIX_FMT_XBGR32
++#define CAMERA_FORMAT V4L2_PIX_FMT_ABGR32
+ #define MIN_UNDEQUEUED_BUFFERS 1
+ #define MIN_BUFFERS_IN_FLIGHT 3
+ #define MAX_BUFFERS_IN_FLIGHT 20
+@@ -122,8 +122,7 @@ bool EvsCamera::initialize(const char* deviceName)
+             crop.c.top, crop.c.left, crop.c.width, crop.c.height);
+ 
+     if (ioctl(mFd, VIDIOC_S_CROP, &crop) < 0) {
+-        ALOGE("VIDIOC_S_CROP: %s", strerror(errno));
+-        return false;
++        ALOGW("VIDIOC_S_CROP: %s, ignored", strerror(errno));
+     }
+ 
+     // Set our desired output format
+@@ -133,15 +132,17 @@ bool EvsCamera::initialize(const char* deviceName)
+     format.fmt.pix.width = mWidth;
+     format.fmt.pix.height = mHeight;
+     format.fmt.pix.field = V4L2_FIELD_NONE;
++    format.fmt.pix.bytesperline = mStrider * BYTES_PER_PIXEL;
+ 
+-    ALOGI("Requesting format %c%c%c%c (0x%08X) w=%u h=%u",
++    ALOGI("Requesting format %c%c%c%c (0x%08X) w=%u h=%u bpl=%u",
+           ((char*)&format.fmt.pix.pixelformat)[0],
+           ((char*)&format.fmt.pix.pixelformat)[1],
+           ((char*)&format.fmt.pix.pixelformat)[2],
+           ((char*)&format.fmt.pix.pixelformat)[3],
+           format.fmt.pix.pixelformat,
+           format.fmt.pix.width,
+-          format.fmt.pix.height);
++          format.fmt.pix.height,
++          format.fmt.pix.bytesperline);
+ 
+     if (ioctl(mFd, VIDIOC_S_FMT, &format) < 0) {
+         ALOGE("VIDIOC_S_FMT: %s", strerror(errno));
+@@ -151,6 +152,7 @@ bool EvsCamera::initialize(const char* deviceName)
+     // Report the current output format
+     format.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+     if (ioctl(mFd, VIDIOC_G_FMT, &format) == 0) {
++        mStridew = format.fmt.pix.bytesperline / BYTES_PER_PIXEL;
+         ALOGI("Current camera output format:  fmt=0x%X, %dx%d, pitch=%d",
+                format.fmt.pix.pixelformat,
+                format.fmt.pix.width,
+@@ -339,6 +341,11 @@ Return<EvsResult> EvsCamera::startVideoStream(const ::android::sp<IEvsCameraStre
+         }
+     }
+ 
++    if(!initialize(mDescription.v1.cameraId.c_str())) {
++        ALOGE("Failed to initialize v4l device %s\n", mDescription.v1.cameraId.c_str());
++        return EvsResult::BUFFER_NOT_AVAILABLE;
++    }
++
+     if(registerBuffers() != android::NO_ERROR) {
+         return EvsResult::BUFFER_NOT_AVAILABLE;
+     }
+@@ -719,6 +726,7 @@ Return<void> EvsCamera::importExternalBuffers(const hidl_vec<BufferDesc_1_1>& bu
+             mHeight = pDesc->height;
+             // Import a buffer to add
+             buffer_handle_t memHandle = nullptr;
++            ALOGI("Import external buffer: %dx%d, stride %d.", pDesc->width, pDesc->height, pDesc->stride);
+             status_t result = mapper.importBuffer(b.buffer.nativeHandle,
+                                                   pDesc->width,
+                                                   pDesc->height,
+@@ -816,7 +824,7 @@ unsigned EvsCamera::increaseAvailableFrames_Locked(unsigned numToAdd) {
+     while (added < numToAdd) {
+         buffer_handle_t memHandle = nullptr;
+         status_t result = alloc.allocate(mWidth, mHeight, mFormat, 1, mUsage,
+-                                         &memHandle, &mStride, 0, "EvsCamera");
++                                         &memHandle, &mStrider, 0, "EvsCamera");
+         if (result != NO_ERROR) {
+             ALOGE("Error %d allocating %d x %d graphics buffer", result, mWidth, mHeight);
+             break;
+@@ -825,6 +833,7 @@ unsigned EvsCamera::increaseAvailableFrames_Locked(unsigned numToAdd) {
+             ALOGE("We didn't get a buffer handle back from the allocator");
+             break;
+         }
++        ALOGI("Allocated graphics buffer: %dx%d, stride %d.", mWidth, mHeight, mStrider);
+ 
+         // Find a place to store the new buffer
+         bool stored = false;
+@@ -919,7 +928,7 @@ void EvsCamera::generateFrames_1_0() {
+             BufferDesc_1_0 buff = {
+                 .width      = mWidth,
+                 .height     = mHeight,
+-                .stride     = mStride,
++                .stride     = mStrider,
+                 .pixelSize  = BYTES_PER_PIXEL,
+                 .format     = HAL_PIXEL_FORMAT_RGBA_8888,
+                 .usage      = static_cast<uint32_t>(mUsage),
+@@ -1013,7 +1022,7 @@ void EvsCamera::generateFrames_1_1() {
+             pDesc->layers = 1;
+             pDesc->format = HAL_PIXEL_FORMAT_RGBA_8888;
+             pDesc->usage  = mUsage;
+-            pDesc->stride = mStride;
++            pDesc->stride = mStrider;
+             buff_1_1.buffer.nativeHandle = mBuffers[idx].handle;
+             buff_1_1.pixelSize = BYTES_PER_PIXEL;
+             buff_1_1.bufferId = idx;
+@@ -1118,10 +1127,16 @@ int EvsCamera::dequeueBuffer() {
+         ALOGE("Unable to dequeue buffer[%d]: %s \n", buf.index,  strerror(errno));
+         return -1;
+     }
++
++    if (mStridew != mStrider) {
++        normalizeBufferStride(&buf);
++    }
++
+     mapper.unlock(mBuffers[buf.index].handle);
+     return buf.index;
+ }
+ 
++
+ void EvsCamera::queueBuffer(int idx) {
+     int ret = android::NO_ERROR;
+     v4l2_buffer buf;
+@@ -1141,7 +1156,7 @@ void EvsCamera::queueBuffer(int idx) {
+     buf.memory = mMemType;
+     buf.index = idx;
+     buf.m.userptr = (unsigned long) pixels;
+-    buf.length = mWidth * mHeight * BYTES_PER_PIXEL;
++    buf.length = mStrider * mHeight * BYTES_PER_PIXEL;
+ 
+     ret = ioctl(mFd, VIDIOC_QBUF, &buf);
+     if (ret < 0) {
+@@ -1149,6 +1164,17 @@ void EvsCamera::queueBuffer(int idx) {
+     }
+ }
+ 
++
++void EvsCamera::normalizeBufferStride(v4l2_buffer* buf)
++{
++    char* data = reinterpret_cast<char*>(buf->m.userptr);
++    for (uint32_t h = mHeight - 1; h > 0; --h) {
++        memmove(data + h * mStrider * BYTES_PER_PIXEL
++              , data + h * mStridew * BYTES_PER_PIXEL
++                         , mStridew * BYTES_PER_PIXEL);
++    }
++}
++
+ } // namespace renesas
+ } // namespace V1_1
+ } // namespace evs
+diff --git a/EvsCamera.h b/EvsCamera.h
+index d74d0b1..ed62bcb 100644
+--- a/EvsCamera.h
++++ b/EvsCamera.h
+@@ -104,6 +104,7 @@ private:
+     void generateFrames_1_0();
+     void generateFrames_1_1();
+     void returnBuffer(uint32_t, buffer_handle_t);
++    void normalizeBufferStride(v4l2_buffer*);
+ 
+     CameraDesc mDescription = {};   // The properties of this camera
+ 
+@@ -113,7 +114,8 @@ private:
+     uint32_t mHeight = 0;           // Vertical pixel count in the buffers
+     uint32_t mFormat = 0;           // Values from android_pixel_format_t
+     uint64_t mUsage  = 0;           // Values from from Gralloc.h
+-    uint32_t mStride = 0;           // Bytes per line in the buffers
++    uint32_t mStridew= 0;           // Bytes per line in the buffers for writer
++    uint32_t mStrider= 0;           // Bytes per line in the buffers for reader
+ 
+     sp<IEvsCameraStream_1_0> mStream = nullptr;  // The callback used to deliver each frame
+ 
+diff --git a/EvsEnumerator.cpp b/EvsEnumerator.cpp
+index 609d42f..a4e33d5 100644
+--- a/EvsEnumerator.cpp
++++ b/EvsEnumerator.cpp
+@@ -70,6 +70,11 @@ EvsEnumerator::EvsEnumerator(Platform platform, sp<IAutomotiveDisplayProxyServic
+                 ALOGE("Error during enumerate cameras.");
+             }
+             break;
++        case Platform::Vivid:
++            if(!enumerateCamerasVivid()) {
++                ALOGE("Error during enumerate cameras.");
++            }
++            break;
+         case Platform::Unknown:
+         default:
+             ALOGE("Unknown hardware environment!");
+@@ -375,6 +380,39 @@ bool EvsEnumerator::enumerateCamerasKingfisher() {
+ }
+ 
+ 
++bool EvsEnumerator::enumerateCamerasVivid() {
++    const std::vector<const char *> cameraNames {
++        "/dev/video0"
++    };
++
++    for (auto cn : cameraNames) {
++        const int fd = open(cn, O_RDWR);
++        if (-1 == fd) {
++            ALOGE("Error while opening device %s: %s.", cn, strerror(errno));
++            continue;
++        }
++
++        v4l2_format format;
++        std::memset(&format, 0x00, sizeof(format));
++        format.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
++        if (ioctl(fd, VIDIOC_G_FMT, &format) < 0) {
++            ALOGE("VIDIOC_G_FMT: %s for device %s.", strerror(errno), cn);
++        } else {
++            sCameraList.emplace_back(CreateCameraMetadata(format.fmt.pix.width
++                                                        , format.fmt.pix.height)
++                                                    , cn, format.fmt.pix.width
++                                                        , format.fmt.pix.height);
++            ALOGI("Camera %s (%ux%u) is successfully probed.",
++                    cn, format.fmt.pix.width, format.fmt.pix.height);
++        }
++
++        close(fd);
++    }
++
++    return true;
++}
++
++
+ void EvsEnumerator::enumerateDisplays() {
+     if (sDisplayProxyService != nullptr) {
+         // Get a display ID list.
+diff --git a/EvsEnumerator.h b/EvsEnumerator.h
+index df66ca1..86f1c65 100644
+--- a/EvsEnumerator.h
++++ b/EvsEnumerator.h
+@@ -44,6 +44,7 @@ enum class Platform {
+     Unknown
+   , Salvator
+   , Kingfisher
++  , Vivid
+ };
+ 
+ 
+@@ -107,6 +108,7 @@ private:
+ 
+     static bool enumerateCamerasSalvator();
+     static bool enumerateCamerasKingfisher();
++    static bool enumerateCamerasVivid();
+     static void enumerateDisplays();
+ 
+     static sp<IAutomotiveDisplayProxyService> sDisplayProxyService;
+diff --git a/android.hardware.automotive.evs@1.1-service.renesas.rc b/android.hardware.automotive.evs@1.1-service.renesas.rc
+index 5148da0..6069958 100644
+--- a/android.hardware.automotive.evs@1.1-service.renesas.rc
++++ b/android.hardware.automotive.evs@1.1-service.renesas.rc
+@@ -1,4 +1,4 @@
+-service vendor.evs-1-1 /vendor/bin/hw/android.hardware.automotive.evs@1.1-service.renesas ${ro.hardware}
++service vendor.evs-1-1 /vendor/bin/hw/android.hardware.automotive.evs@1.1-service.renesas vivid
+     interface android.hardware.automotive.evs@1.1::IEvsEnumerator EvsEnumeratorHw
+     interface android.hardware.automotive.evs@1.0::IEvsEnumerator EvsEnumeratorHw
+     priority -20
+diff --git a/service.cpp b/service.cpp
+index 825c95c..5585f2f 100644
+--- a/service.cpp
++++ b/service.cpp
+@@ -49,6 +49,8 @@ int main(int argc, char ** argv) {
+             platform = Platform::Salvator;
+         } else if (!strcmp(argv[1], "kingfisher")) {
+             platform = Platform::Kingfisher;
++        } else if (!strcmp(argv[1], "vivid")) {
++            platform = Platform::Vivid;
+         }
+     }
+ 
+-- 
+2.17.1
+

@@ -1,0 +1,27 @@
+var group__canfdmain5 =
+[
+    [ "R_CIO_CANFD_BRS", "group__canfdmain5.html#gac47bbf78893721e85e2bdbf6b7ddc5c8", null ],
+    [ "R_CIO_CANFD_CAN_MAX_DLC", "group__canfdmain5.html#gaa8e26af90d2f74dfaffb31585cc563a9", null ],
+    [ "R_CIO_CANFD_CFFIFO_IDX", "group__canfdmain5.html#gae0731a382ba6795155f6977661d314bf", null ],
+    [ "R_CIO_CANFD_CHANNEL_NUMRULES", "group__canfdmain5.html#gab3bc17341513650644c0c84e99c1fb57", null ],
+    [ "R_CIO_CANFD_CHANNELS_MASK", "group__canfdmain5.html#gaf665d853d55af24558a824d88d895fea", null ],
+    [ "R_CIO_CANFD_EFF_FLAG", "group__canfdmain5.html#ga1e20816a0e3240f1fac691dd9c304205", null ],
+    [ "R_CIO_CANFD_EFF_MASK", "group__canfdmain5.html#gac72fa0506ddbcb3d11a388882e4db225", null ],
+    [ "R_CIO_CANFD_ERR_FLAG", "group__canfdmain5.html#ga540f1ae9235164df83e58b604dda0eef", null ],
+    [ "R_CIO_CANFD_ERR_MASK", "group__canfdmain5.html#ga080caad0d0b4be0b7ba5992bc1c9dff6", null ],
+    [ "R_CIO_CANFD_ESI", "group__canfdmain5.html#ga4747a115e4a49a0661196c76fc43b74b", null ],
+    [ "R_CIO_CANFD_FD_MAX_DLC", "group__canfdmain5.html#gabd85d820347d958faad58bc228590752", null ],
+    [ "R_CIO_CANFD_FDF", "group__canfdmain5.html#ga809c7866c0f2ef6dc20f647cf69f3c38", null ],
+    [ "R_CIO_CANFD_FIFO_DEPTH", "group__canfdmain5.html#gad9134ec8e856b536a6e2e0ac4e198523", null ],
+    [ "R_CIO_CANFD_GAFL_PAGENUM", "group__canfdmain5.html#gafd05c2d6275f43c303d3d2dec71af7d1", null ],
+    [ "R_CIO_CANFD_MAX_ERR_ACTIVE", "group__canfdmain5.html#ga229d02ca35ae925147aa40caaf2b51e4", null ],
+    [ "R_CIO_CANFD_MAX_ERR_WARNING", "group__canfdmain5.html#gafeaa56969e7c1a68fafcb869d007330d", null ],
+    [ "R_CIO_CANFD_NUM_CHANNELS", "group__canfdmain5.html#ga06135e5a568444fe3943a4760b9e39d4", null ],
+    [ "R_CIO_CANFD_PRV_MAX_OPEN", "group__canfdmain5.html#gac8994b9c59db4112d1580e76fa4c050e", null ],
+    [ "R_CIO_CANFD_PRV_RXBUF_SIZE", "group__canfdmain5.html#ga5198cb6c6f21ea0391de7ddfcf178550", null ],
+    [ "R_CIO_CANFD_PRV_TXBUF_SIZE", "group__canfdmain5.html#ga0df603c1d9a1387f4353762d10f34bad", null ],
+    [ "R_CIO_CANFD_RFFIFO_IDX", "group__canfdmain5.html#gaebb14383bec3ed6c6a72b9f9fcf06578", null ],
+    [ "R_CIO_CANFD_RTR_FLAG", "group__canfdmain5.html#ga894806ab87c1796ba99a21fe8b35c898", null ],
+    [ "R_CIO_CANFD_SFF_ID_BITS", "group__canfdmain5.html#ga5a1c9218bbdb4be78ccf728bdbc5ca69", null ],
+    [ "R_CIO_CANFD_SFF_MASK", "group__canfdmain5.html#ga8a5185d3a66ff6ec1a2b6f16aec8e9d0", null ]
+];

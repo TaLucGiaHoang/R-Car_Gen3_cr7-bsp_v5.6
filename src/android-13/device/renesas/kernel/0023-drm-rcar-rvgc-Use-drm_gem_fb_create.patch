@@ -1,0 +1,37 @@
+From 39c533bac0f0b26776dc671f17c4b32729cc926e Mon Sep 17 00:00:00 2001
+From: Khiem Nguyen <khiem.nguyen.xt@renesas.com>
+Date: Wed, 10 Mar 2021 17:28:43 +0700
+Subject: [PATCH 23/40] drm: rcar-rvgc: Use drm_gem_fb_create()
+
+Applied changes same as commit 365c3851
+(drm/rcar-du: Use drm_gem_fb_create()).
+
+Signed-off-by: Khiem Nguyen <khiem.nguyen.xt@renesas.com>
+---
+ drivers/gpu/drm/rcar-rvgc/rcar_rvgc_kms.c | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/drivers/gpu/drm/rcar-rvgc/rcar_rvgc_kms.c b/drivers/gpu/drm/rcar-rvgc/rcar_rvgc_kms.c
+index 72399ae0788e..3a8c80cc51f6 100644
+--- a/drivers/gpu/drm/rcar-rvgc/rcar_rvgc_kms.c
++++ b/drivers/gpu/drm/rcar-rvgc/rcar_rvgc_kms.c
+@@ -2,6 +2,7 @@
+ #include <drm/drm_atomic.h>
+ #include <drm/drm_atomic_helper.h>
+ #include <drm/drm_fb_cma_helper.h>
++#include <drm/drm_gem_framebuffer_helper.h>
+ 
+ #include <linux/kthread.h>
+ #include <linux/delay.h>
+@@ -56,7 +57,7 @@ static struct drm_framebuffer* rcar_rvgc_fb_create(struct drm_device* dev, struc
+ 		return ERR_PTR(-EINVAL);
+ 	}
+ 
+-	return drm_fb_cma_create(dev, file_priv, mode_cmd);
++	return drm_gem_fb_create(dev, file_priv, mode_cmd);
+ }
+ 
+ /********** VBlank Handling **********/
+-- 
+2.25.1
+

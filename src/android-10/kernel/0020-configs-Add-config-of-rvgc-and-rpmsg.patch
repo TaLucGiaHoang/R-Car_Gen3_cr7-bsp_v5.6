@@ -1,0 +1,38 @@
+From 861d548b2763eead084698e48acb12bb4ea11544 Mon Sep 17 00:00:00 2001
+From: Baoan Du <baoan.du.xj@renesas.com>
+Date: Thu, 25 Mar 2021 14:14:47 +0800
+Subject: [PATCH 20/34] configs: Add config of rvgc and rpmsg
+
+---
+ arch/arm64/configs/android_salvator_defconfig | 11 ++++++++---
+ 1 file changed, 8 insertions(+), 3 deletions(-)
+
+diff --git a/arch/arm64/configs/android_salvator_defconfig b/arch/arm64/configs/android_salvator_defconfig
+index ce44acb6bff0..0ddbc0f2e4f2 100644
+--- a/arch/arm64/configs/android_salvator_defconfig
++++ b/arch/arm64/configs/android_salvator_defconfig
+@@ -387,9 +387,9 @@ CONFIG_VIDEO_RENESAS_VSP1=y
+ # CONFIG_MEDIA_SUBDRV_AUTOSELECT is not set
+ CONFIG_VIDEO_ADV748X=y
+ CONFIG_DRM=y
+-CONFIG_DRM_RCAR_DU=y
+-CONFIG_DRM_RCAR_DW_HDMI=y
+-CONFIG_DRM_RCAR_LVDS=y
++# CONFIG_DRM_RCAR_DU is not set
++# CONFIG_DRM_RCAR_DW_HDMI is not set
++# CONFIG_DRM_RCAR_LVDS is not set
+ CONFIG_DRM_PANEL_LVDS=y
+ CONFIG_DRM_DUMB_VGA_DAC=y
+ CONFIG_DRM_DW_HDMI_CEC=y
+@@ -543,3 +543,8 @@ CONFIG_CRYPTO_GHASH_ARM64_CE=y
+ CONFIG_CRYPTO_AES_ARM64_CE_CCM=y
+ CONFIG_CRYPTO_AES_ARM64_CE_BLK=y
+ CONFIG_CRYPTO_AES_ARM64_NEON_BLK=y
++CONFIG_RCAR_MFIS=y
++CONFIG_DRM_RCAR_RVGC=m
++CONFIG_REMOTEPROC=y
++CONFIG_RCAR_CR7_REMOTEPROC=m
++CONFIG_RPMSG_VIRTIO=m
+-- 
+2.17.1
+

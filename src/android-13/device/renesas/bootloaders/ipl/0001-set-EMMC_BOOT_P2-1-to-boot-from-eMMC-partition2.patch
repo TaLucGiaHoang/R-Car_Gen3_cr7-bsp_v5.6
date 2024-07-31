@@ -1,0 +1,205 @@
+From cf9f569644bae3f37786f15decc3efb65344976f Mon Sep 17 00:00:00 2001
+From: tiezhuangdong <tiezhuang.dong.yh@renesas.com>
+Date: Sat, 7 May 2022 14:36:13 +0800
+Subject: [PATCH 1/2] set EMMC_BOOT_P2=1 to boot from eMMC partition2
+
+---
+ plat/renesas/rcar/bl2_avb_ab_flow.c           | 18 ++++++++++---
+ plat/renesas/rcar/bl2_avb_ab_flow.h           |  3 +++
+ plat/renesas/rcar/bl2_plat_setup.c            | 26 ++++++++++++++++++-
+ plat/renesas/rcar/platform.mk                 | 12 +++++++++
+ .../rcar_layout_create/emmc_ipl_addr.h        | 16 ++++++++++--
+ tools/renesas/rcar_layout_create/makefile     | 11 ++++++++
+ tools/renesas/rcar_layout_create/sa6.c        |  2 +-
+ 7 files changed, 80 insertions(+), 8 deletions(-)
+
+diff --git a/plat/renesas/rcar/bl2_avb_ab_flow.c b/plat/renesas/rcar/bl2_avb_ab_flow.c
+index 5fb247af1..339eee5ab 100644
+--- a/plat/renesas/rcar/bl2_avb_ab_flow.c
++++ b/plat/renesas/rcar/bl2_avb_ab_flow.c
+@@ -642,17 +642,27 @@ static AvbABFlowResult avb_ab_get_curr_slot(const AvbABData *data, int *slot_idx
+ 	return AVB_AB_FLOW_RESULT_OK;
+ }
+ 
+-static int32_t boot_partition = 0;
+-static uint32_t avb_ab_flow_success = 0;
+-
+-static void avb_ab_set_boot_partition(int slot_idx)
++#if (EMMC_BOOT_P2==1)
++static int32_t boot_partition = 1;
++#else
++ static int32_t boot_partition = 0;
++#endif
++ static uint32_t avb_ab_flow_success = 0;
++
++#if (EMMC_BOOT_P2==1)
++void avb_ab_set_boot_partition(int slot_idx)
++#else
++ static void avb_ab_set_boot_partition(int slot_idx)
++#endif
+ {
+ 	if (slot_idx == AVB_AB_SLOT_A) {
++		NOTICE("eMMC boot from partition1...\n");
+ 		mmc_drv_obj.partition_access = PARTITION_ID_BOOT_1;
+ 		mmc_drv_obj.boot_partition_en = PARTITION_ID_BOOT_1;
+ 		boot_partition = PARTITION_ID_BOOT_1;
+ 		emmc_select_partition(PARTITION_ID_BOOT_1);
+ 	} else {
++		NOTICE("eMMC boot from partition2...\n");
+ 		mmc_drv_obj.partition_access = PARTITION_ID_BOOT_2;
+ 		mmc_drv_obj.boot_partition_en = PARTITION_ID_BOOT_2;
+ 		boot_partition = PARTITION_ID_BOOT_2;
+diff --git a/plat/renesas/rcar/bl2_avb_ab_flow.h b/plat/renesas/rcar/bl2_avb_ab_flow.h
+index 71c083e2f..f40b5ae80 100644
+--- a/plat/renesas/rcar/bl2_avb_ab_flow.h
++++ b/plat/renesas/rcar/bl2_avb_ab_flow.h
+@@ -93,6 +93,9 @@ typedef enum {
+ 	AVB_AB_FLOW_RESULT_ERROR_INVALID_ARGUMENT
+ } AvbABFlowResult;
+ 
++#if (EMMC_BOOT_P2==1)
++void avb_ab_set_boot_partition(int slot_idx);
++#endif
+ AvbABFlowResult avb_ab_flow(void);
+ 
+ int32_t avb_get_boot_partition_idx(void);
+diff --git a/plat/renesas/rcar/bl2_plat_setup.c b/plat/renesas/rcar/bl2_plat_setup.c
+index 00610806b..5802936df 100644
+--- a/plat/renesas/rcar/bl2_plat_setup.c
++++ b/plat/renesas/rcar/bl2_plat_setup.c
+@@ -753,6 +753,10 @@ static void bl2_advertise_dram_size(uint32_t product)
+ 	bl2_advertise_dram_entries(dram_config);
+ }
+ 
++#if (EMMC_BOOT_P2==1)
++#define BOOT_PARTITION_1	0
++#define BOOT_PARTITION_2	1
++#endif
+ void bl2_el3_early_platform_setup(u_register_t arg1, u_register_t arg2,
+ 				  u_register_t arg3, u_register_t arg4)
+ {
+@@ -1101,10 +1105,30 @@ lcm_state:
+ 	    boot_dev == MODEMR_BOOT_DEV_EMMC_50X8) {
+ #if (RCAR_BOOT_EMMC == 1)
+ 		if (avb_ab_flow() != AVB_AB_FLOW_RESULT_OK)
++#if (EMMC_BOOT_P2==1)
++		{
++			NOTICE("eMMC boot from partition2 now...\n");
++			avb_ab_set_boot_partition(BOOT_PARTITION_2);
++			rcar_io_emmc_setup();
++		}
++#else
++		{
++			NOTICE("boot from hyperflash...\n");
+ 			rcar_io_setup();
++		}
++#endif
+ 		else
+ #endif
+-		rcar_io_emmc_setup();
++#if (EMMC_BOOT_P2==1)
++		{
++			avb_ab_set_boot_partition(BOOT_PARTITION_2);
++			rcar_io_emmc_setup();
++		}
++#else
++		{
++			rcar_io_emmc_setup();
++		}
++#endif
+ 	} else {
+ 		rcar_io_setup();
+ 	}
+diff --git a/plat/renesas/rcar/platform.mk b/plat/renesas/rcar/platform.mk
+index 314899151..4c08e9746 100644
+--- a/plat/renesas/rcar/platform.mk
++++ b/plat/renesas/rcar/platform.mk
+@@ -205,6 +205,18 @@ endif
+ endif
+ $(eval $(call add_define,RCAR_BOOT_EMMC))
+ 
++# Boot from eMMC partition 2
++ifndef EMMC_BOOT_P2
++EMMC_BOOT_P2 := 0
++else
++ifeq (${EMMC_BOOT_P2},1)
++EMMC_BOOT_P2 := 1
++else
++EMMC_BOOT_P2 := 0
++endif
++endif
++$(eval $(call add_define,EMMC_BOOT_P2))
++
+ # Process RCAR_SECURE_BOOT flag
+ ifndef RCAR_SECURE_BOOT
+ RCAR_SECURE_BOOT := 1
+diff --git a/tools/renesas/rcar_layout_create/emmc_ipl_addr.h b/tools/renesas/rcar_layout_create/emmc_ipl_addr.h
+index 5221da6c4..06da900b0 100644
+--- a/tools/renesas/rcar_layout_create/emmc_ipl_addr.h
++++ b/tools/renesas/rcar_layout_create/emmc_ipl_addr.h
+@@ -4,7 +4,18 @@
+  * SPDX-License-Identifier: BSD-3-Clause
+  */
+ 
+-
++#if (EMMC_BOOT_P2==1) /* eMMC boot from partition 2 */
++#define RCAR_PLAT_EMMC_BOOT_P2  1
++/* IPL addresses for eMMC */
++#define RCAR_EMMC_CERT_HEADER	(0x0006C400U)
++/* 256K for BL31(0x80000 - 0x40000)*/
++#define RCAR_ARM_TRUSTED_ADDR	(0x0007C400U)
++/* 1.5M space for TEE (0x200000 - 0x80000) */
++#define RCAR_OPTEE_ADDR		    (0x000BC400U)
++/* 2M min space for BL31(0x400000 - 0x200000) */
++#define RCAR_UBOOT_ADDR		    (0x0023C400U)
++#else
++#define RCAR_PLAT_EMMC_BOOT_P2  0
+ /* IPL addresses for eMMC */
+ #define RCAR_EMMC_CERT_HEADER	(0x00030000U)
+ /* 256K for BL31(0x80000 - 0x40000)*/
+@@ -12,4 +23,5 @@
+ /* 1.5M space for TEE (0x200000 - 0x80000) */
+ #define RCAR_OPTEE_ADDR		(0x00080000U)
+ /* 2M min space for BL31(0x400000 - 0x200000) */
+-#define RCAR_UBOOT_ADDR		(0x00200000U)
+\ No newline at end of file
++#define RCAR_UBOOT_ADDR		(0x00200000U)
++#endif
+diff --git a/tools/renesas/rcar_layout_create/makefile b/tools/renesas/rcar_layout_create/makefile
+index f8b70c3f4..00452a720 100644
+--- a/tools/renesas/rcar_layout_create/makefile
++++ b/tools/renesas/rcar_layout_create/makefile
+@@ -63,6 +63,17 @@ RCAR_VMA_ADJUST_ADDR := 0xE6312000
+ endif
+ $(eval $(call add_define,RCAR_VMA_ADJUST_ADDR))
+ 
++# Process EMMC_BOOT_P2 flag
++ifndef EMMC_BOOT_P2
++EMMC_BOOT_P2 := 0
++else
++ifeq (${EMMC_BOOT_P2},0)
++EMMC_BOOT_P2 := 0
++else
++EMMC_BOOT_P2 := 1
++endif
++endif
++$(eval $(call add_define,EMMC_BOOT_P2))
+ 
+ ###################################################
+ 
+diff --git a/tools/renesas/rcar_layout_create/sa6.c b/tools/renesas/rcar_layout_create/sa6.c
+index 2832305c7..bb12cc422 100644
+--- a/tools/renesas/rcar_layout_create/sa6.c
++++ b/tools/renesas/rcar_layout_create/sa6.c
+@@ -10,7 +10,7 @@
+ #define RCAR_SA6_TYPE_HYPERFLASH	(0)
+ #define RCAR_SA6_TYPE_EMMC		(1)
+ 
+-#if (RCAR_SA6_TYPE == RCAR_SA6_TYPE_HYPERFLASH)
++#if ((RCAR_PLAT_EMMC_BOOT_P2 == 0) && (RCAR_SA6_TYPE == RCAR_SA6_TYPE_HYPERFLASH))
+ 
+ /* Number of content cert for Non-secure Target Program(BL33x) */
+ #define RCAR_IMAGE_NUM			(0x00000001U)
+-- 
+2.25.1
+

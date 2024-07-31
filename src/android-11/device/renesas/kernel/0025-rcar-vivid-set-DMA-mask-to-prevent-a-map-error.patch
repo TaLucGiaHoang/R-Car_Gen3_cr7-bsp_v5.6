@@ -1,0 +1,55 @@
+From 7143ed033d7d2f2be39ff654ac2b4ee5fcae1555 Mon Sep 17 00:00:00 2001
+From: Sergii Piatakov <sergii.piatakov@globallogic.com>
+Date: Sun, 27 Nov 2022 20:41:45 +0000
+Subject: [PATCH 25/27] rcar-vivid: set DMA mask to prevent a map error
+
+Fix DMA map error:
+```
+virtio0.taurus-camera.-1.2: DMA map on device without dma_mask
+...
+Call trace:
+ dma_direct_map_page+0x184/0x1b0
+ dma_direct_map_sg+0x5c/0xc4
+ vb2_dc_get_userptr+0x1e0/0x354
+ __buf_prepare+0x6cc/0x1054
+ vb2_core_qbuf+0xa0/0x52c
+ vb2_ioctl_qbuf+0xd0/0x104
+ v4l_qbuf+0x48/0x58
+ __video_do_ioctl+0x368/0x3c8
+ video_usercopy+0x4f4/0xa30
+ video_ioctl2+0x38/0x48
+ v4l2_ioctl+0x6c/0x80
+ do_vfs_ioctl+0x658/0x14cc
+ __arm64_sys_ioctl+0x78/0xa0
+ el0_svc_common+0x9c/0x164
+ el0_svc_handler+0x78/0x94
+ el0_svc+0x8/0xc
+```
+The issue is observed on Kernel 5.4.72 (but wasn't observed on
+Kernel 4.14.178).
+
+Test: try to open vivid camera device using V4L2 API.
+Signed-off-by: Sergii Piatakov <sergii.piatakov@globallogic.com>
+---
+ drivers/media/platform/rcar-vivid/rcar-vivid-drv.c | 5 +++++
+ 1 file changed, 5 insertions(+)
+
+diff --git a/drivers/media/platform/rcar-vivid/rcar-vivid-drv.c b/drivers/media/platform/rcar-vivid/rcar-vivid-drv.c
+index 9abd13ba097e..cbdc29814dcc 100755
+--- a/drivers/media/platform/rcar-vivid/rcar-vivid-drv.c
++++ b/drivers/media/platform/rcar-vivid/rcar-vivid-drv.c
+@@ -211,6 +211,11 @@ static int rcar_vivid_probe(struct rpmsg_device *rpdev)
+ 
+         rvivid->vivid[i] = vivid[i];
+     }
++
++    ret = dma_coerce_mask_and_coherent(rvivid->dev, DMA_BIT_MASK(32));
++    if (ret)
++        goto error;
++
+     return 0;
+ error:
+     rcar_vivid_remove(rpdev);
+-- 
+2.25.1
+

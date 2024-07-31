@@ -1,0 +1,72 @@
+From d6e50d65ed410ca419f95638e6e71f67c97e4817 Mon Sep 17 00:00:00 2001
+From: Phong Hoang <phong.hoang.wz@renesas.com>
+Date: Thu, 15 Apr 2021 11:23:56 +0700
+Subject: [PATCH 22/27] remoteproc: use dynamic allocation if bad carveout rsc
+ configuration
+
+In case bad carveout rsc configuration and coprocessor don't build
+pa to da itself, should try to use dynamic allocation for avoiding
+unexpected behaviors.
+
+Fixes: 60f849a5c15 (remoteproc: "fix rproc_alloc_carveout() for rproc with iommu domain")
+
+Signed-off-by: Phong Hoang <phong.hoang.wz@renesas.com>
+---
+ drivers/remoteproc/remoteproc_core.c | 13 ++++++++++---
+ include/linux/remoteproc.h           |  2 ++
+ 2 files changed, 12 insertions(+), 3 deletions(-)
+
+diff --git a/drivers/remoteproc/remoteproc_core.c b/drivers/remoteproc/remoteproc_core.c
+index 8ead5a1bd8c7..14d376c5fd7c 100644
+--- a/drivers/remoteproc/remoteproc_core.c
++++ b/drivers/remoteproc/remoteproc_core.c
+@@ -761,9 +761,15 @@ static int rproc_alloc_carveout(struct rproc *rproc,
+ 		 * Don't stop rproc_start sequence as coprocessor may
+ 		 * build pa to da translation on its side.
+ 		 */
+-		if (mem->da != (u32)dma)
+-			dev_warn(dev->parent,
+-				 "Allocated carveout doesn't fit device address request\n");
++		if (mem->da != (u32)dma) {
++			if (rproc->has_pa_to_da) {
++				dev_warn(dev->parent,
++					 "Allocated carveout doesn't fit device address request\n");
++			} else {
++				dev_dbg(dev, "Bad carveout rsc configuration. Try to use dynamic alloc.\n");
++				goto dynamic_alloc;
++			}
++		}
+ 	}
+ 
+ 	/*
+@@ -813,6 +819,7 @@ static int rproc_alloc_carveout(struct rproc *rproc,
+ 	}
+ 
+ 	if (mem->da == FW_RSC_ADDR_ANY) {
++dynamic_alloc:
+ 		/* Update device address as undefined by requester */
+ 		if ((u64)dma & HIGH_BITS_MASK)
+ 			dev_warn(dev, "DMA address cast in 32bit to fit resource table format\n");
+diff --git a/include/linux/remoteproc.h b/include/linux/remoteproc.h
+index 4fd5bedab4fa..e448d77b5c91 100644
+--- a/include/linux/remoteproc.h
++++ b/include/linux/remoteproc.h
+@@ -478,6 +478,7 @@ struct rproc_dump_segment {
+  * @cached_table: copy of the resource table
+  * @table_sz: size of @cached_table
+  * @has_iommu: flag to indicate if remote processor is behind an MMU
++ * @has_pa_to_da: flag to indicate if remote processor translates pa to da itself
+  * @auto_boot: flag to indicate if remote processor should be auto-started
+  * @skip_fw_load: remote processor has been preloaded before start sequence
+  * @dump_segments: list of segments in the firmware
+@@ -512,6 +513,7 @@ struct rproc {
+ 	struct resource_table *cached_table;
+ 	size_t table_sz;
+ 	bool has_iommu;
++	bool has_pa_to_da;
+ 	bool auto_boot;
+ 	bool skip_fw_load;
+ 	struct list_head dump_segments;
+-- 
+2.25.1
+

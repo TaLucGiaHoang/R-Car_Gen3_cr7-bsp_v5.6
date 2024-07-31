@@ -1,0 +1,81 @@
+From 9027786f2e3728d9640cae45d3c5fcf52e88bf0e Mon Sep 17 00:00:00 2001
+From: Sergii Piatakov <sergii.piatakov@globallogic.com>
+Date: Wed, 31 Aug 2022 09:01:23 +0000
+Subject: [PATCH 2/2] fix passing the RCAR_BOOT_EMMC define
+
+The definition RCAR_BOOT_EMMC is used in the BL2 source code. It is used
+to select a boot device (HF or eMMC) and may be configured via
+environment variables.
+
+Everything worked well on the older Android version, but starting from
+Android 11, the soong build system changes the behavior and doesn't pass
+environment from the configuration stage to the build stage (see for
+details: build/make/Changes.md). As a result, it is not possible anymore
+to change a value RCAR_BOOT_EMMC via the environment (build parameters).
+
+The old behavior can be restored by adding `ALLOW_NINJA_ENV=true` but
+according to the documentation, it may have undesired side effects.
+
+To fix the issue it is proposed to handle the RCAR_BOOT_EMMC in the
+configuration stage and explicitly pass it to the build stage via
+makefile (but not environment variable).
+
+Test: $ TARGET_BOARD_PLATFORM=r8a77965 BUILD_BOOTLOADERS=true \
+        BUILD_BOOTLOADERS_SREC=true RCAR_BOOT_EMMC=0 make ipl_bl
+Signed-off-by: Sergii Piatakov <sergii.piatakov@globallogic.com>
+---
+ Android.mk                    | 13 +++++++++++--
+ plat/renesas/rcar/platform.mk |  6 ------
+ 2 files changed, 11 insertions(+), 8 deletions(-)
+
+diff --git a/Android.mk b/Android.mk
+index 22fab19f6..fcbfa16dd 100644
+--- a/Android.mk
++++ b/Android.mk
+@@ -114,6 +114,15 @@ endif # ($(TARGET_BOARD_PLATFORM),r8a77965)
+ endif # ($(TARGET_BOARD_PLATFORM),r8a7796)
+ endif # ($(TARGET_BOARD_PLATFORM),r8a7795)
+ 
++# Boot from eMMC
++ifeq (${RCAR_BOOT_EMMC},1)
++RCAR_BOOT_EMMC_FLAGS := \
++    RCAR_BOOT_EMMC=1
++else
++RCAR_BOOT_EMMC_FLAGS := \
++    RCAR_BOOT_EMMC=0
++endif # (${RCAR_BOOT_EMMC},1)
++
+ PLATFORM_FLAGS += \
+     BUILD=$(IPL_BUILD) \
+     CROSS_COMPILE=$(BSP_GCC_CROSS_COMPILE)
+@@ -161,8 +170,8 @@ ipl_sa_hf:
+ ipl_bl:
+ 	mkdir -p $(IPL_OUT_ABS)
+ 	export $(PLATFORM_FLAGS)
+-	$(ANDROID_MAKE) IPL_OUT=$(IPL_OUT_ABS) $(PLATFORM_FLAGS) -C $(IPL_SRC) clean
+-	$(ANDROID_MAKE) IPL_OUT=$(IPL_OUT_ABS) $(PLATFORM_FLAGS) -C $(IPL_SRC) bl2 bl31 rcar_layout_tool rcar_srecord
++	$(ANDROID_MAKE) IPL_OUT=$(IPL_OUT_ABS) $(PLATFORM_FLAGS) $(RCAR_BOOT_EMMC_FLAGS) -C $(IPL_SRC) clean
++	$(ANDROID_MAKE) IPL_OUT=$(IPL_OUT_ABS) $(PLATFORM_FLAGS) $(RCAR_BOOT_EMMC_FLAGS) -C $(IPL_SRC) bl2 bl31 rcar_layout_tool rcar_srecord
+ 	cp -vF $(IPL_BL2_BINARY) $(IPL_BL31_BINARY) $(IPL_BL2_SREC) $(IPL_BL31_SREC) $(PRODUCT_OUT_ABS)/
+ 
+ scan-build-ipl_bl:
+diff --git a/plat/renesas/rcar/platform.mk b/plat/renesas/rcar/platform.mk
+index 4c08e9746..544a002d5 100644
+--- a/plat/renesas/rcar/platform.mk
++++ b/plat/renesas/rcar/platform.mk
+@@ -196,12 +196,6 @@ $(eval $(call add_define,RCAR_RPC_HYPERFLASH_LOCKED))
+ # Boot from eMMC bl31-33
+ ifndef RCAR_BOOT_EMMC
+ RCAR_BOOT_EMMC := 1
+-else
+-ifeq (${RCAR_BOOT_EMMC},1)
+-RCAR_BOOT_EMMC := 1
+-else
+-RCAR_BOOT_EMMC := 0
+-endif
+ endif
+ $(eval $(call add_define,RCAR_BOOT_EMMC))
+ 
+-- 
+2.25.1
+

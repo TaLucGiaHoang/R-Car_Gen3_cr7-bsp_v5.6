@@ -1,0 +1,332 @@
+From 3ca92e865c85d5741c143b9a3cb91769d9c1322d Mon Sep 17 00:00:00 2001
+From: Baoan Du <baoan.du.xj@renesas.com>
+Date: Thu, 25 Mar 2021 14:33:25 +0800
+Subject: [PATCH 14/27] rvgc: Optimize display pipe operation
+
+---
+ drivers/gpu/drm/rcar-rvgc/rcar_rvgc_drv.c  | 38 +++++++++-----
+ drivers/gpu/drm/rcar-rvgc/rcar_rvgc_drv.h  |  3 --
+ drivers/gpu/drm/rcar-rvgc/rcar_rvgc_kms.c  | 61 ++++++++++------------
+ drivers/gpu/drm/rcar-rvgc/rcar_rvgc_kms.h  |  1 +
+ drivers/gpu/drm/rcar-rvgc/rcar_rvgc_pipe.c | 29 ++++++++++
+ drivers/gpu/drm/rcar-rvgc/rcar_rvgc_pipe.h |  5 ++
+ 6 files changed, 87 insertions(+), 50 deletions(-)
+
+diff --git a/drivers/gpu/drm/rcar-rvgc/rcar_rvgc_drv.c b/drivers/gpu/drm/rcar-rvgc/rcar_rvgc_drv.c
+index ddafb92e9e69..3c40012b2859 100644
+--- a/drivers/gpu/drm/rcar-rvgc/rcar_rvgc_drv.c
++++ b/drivers/gpu/drm/rcar-rvgc/rcar_rvgc_drv.c
+@@ -33,7 +33,11 @@
+ #include <linux/of_reserved_mem.h>
+ #include "r_taurus_rvgc_protocol.h"
+ 
+-#define RCAR_RVGC_DRM_NAME     "rcar-rvgc"
++/* Renesas hwcomposer in Android will try to open a drm device
++ * named "rcar-du".
++ * We need to give the same name here, if we want to avoid any
++ * changes to Android HWC */
++#define RCAR_RVGC_DRM_NAME	"rcar-du" /* "rcar-rvgc" */
+ 
+ 
+ /* -----------------------------------------------------------------------------
+@@ -44,6 +48,8 @@ static int rcar_rvgc_cb(struct rpmsg_device *rpdev, void *data, int len,
+ 			void *priv, u32 src)
+ {
+ 	struct rcar_rvgc_device *rcrvgc = dev_get_drvdata(&rpdev->dev);
++	struct rcar_rvgc_pipe *rvgc_pipe;
++	unsigned int display_mapping;
+ 	struct taurus_event_list *event;
+ 	struct list_head *i;
+ 	struct taurus_rvgc_res_msg *res = (struct taurus_rvgc_res_msg*)data;
+@@ -60,23 +66,27 @@ static int rcar_rvgc_cb(struct rpmsg_device *rpdev, void *data, int len,
+ 
+ 		switch (res->hdr.Aux) {
+ 		case RVGC_PROTOCOL_EVENT_VBLANK_DISPLAY0:
+-			set_bit(0, (long unsigned int*) &rcrvgc->vblank_pending);
++			display_mapping = 0;
+ 			break;
+ 		case RVGC_PROTOCOL_EVENT_VBLANK_DISPLAY1:
+-			set_bit(1, (long unsigned int*) &rcrvgc->vblank_pending);
++			display_mapping = 1;
+ 			break;
+ 		case RVGC_PROTOCOL_EVENT_VBLANK_DISPLAY2:
+-			set_bit(2, (long unsigned int*) &rcrvgc->vblank_pending);
++			display_mapping = 2;
+ 			break;
+ 		case RVGC_PROTOCOL_EVENT_VBLANK_DISPLAY3:
+-			set_bit(3, (long unsigned int*) &rcrvgc->vblank_pending);
++			display_mapping = 3;
+ 			break;
+ 		default:
+ 			/* event not recognized */
+ 			return 0;
+ 		}
+ 
+-		wake_up_interruptible(&rcrvgc->vblank_pending_wait_queue);
++		rvgc_pipe = rvgc_pipe_find_by_display(rcrvgc, display_mapping);
++		if (rvgc_pipe) {
++			rvgc_pipe->vblank_pending = 1;
++			wake_up_interruptible(&rcrvgc->vblank_pending_wait_queue);
++		}
+ 
+ 		return 0;
+ 	}
+@@ -96,7 +106,7 @@ static int rcar_rvgc_cb(struct rpmsg_device *rpdev, void *data, int len,
+ 				event->ack_received = 1;
+ 				complete(&event->ack);
+ 			}
+-			//break;
++			break;
+ 		}
+ 	}
+ 	read_unlock(&rcrvgc->event_list_lock);
+@@ -157,11 +167,14 @@ static void rcar_rvgc_remove(struct rpmsg_device *rpdev)
+ {
+ 	struct rcar_rvgc_device *rcrvgc = dev_get_drvdata(&rpdev->dev);
+ 	struct drm_device *ddev = rcrvgc->ddev;
++	int i;
+ 
+-	if (!rcrvgc->vsync_thread)
+-		dev_warn(rcrvgc->dev, "vsync_thread is not running\n");
+-	else
+-		kthread_stop(rcrvgc->vsync_thread);
++	for (i = 0; i < rcrvgc->nr_rvgc_pipes; i++) {
++		if (!rcrvgc->rvgc_pipes[i].vsync_thread)
++			dev_warn(rcrvgc->dev, "vsync_thread is not running\n");
++		else
++			kthread_stop(rcrvgc->rvgc_pipes[i].vsync_thread);
++	}
+ 
+ 	if (rcrvgc->ddev) {
+ 		drm_dev_unregister(ddev);
+@@ -193,9 +206,6 @@ static int rcar_rvgc_probe(struct rpmsg_device *rpdev)
+ 	rcrvgc->dev = &rpdev->dev;
+ 	rcrvgc->rpdev = rpdev;
+ 
+-	/* Initialize vblank_pending state */
+-	rcrvgc->vblank_pending = 0;
+-
+ 	/* Initialize taurus event list and its lock */
+ 	INIT_LIST_HEAD(&rcrvgc->taurus_event_list_head);
+ 	rwlock_init(&rcrvgc->event_list_lock);
+diff --git a/drivers/gpu/drm/rcar-rvgc/rcar_rvgc_drv.h b/drivers/gpu/drm/rcar-rvgc/rcar_rvgc_drv.h
+index 62ec34cda3a3..c42a15c6922d 100644
+--- a/drivers/gpu/drm/rcar-rvgc/rcar_rvgc_drv.h
++++ b/drivers/gpu/drm/rcar-rvgc/rcar_rvgc_drv.h
+@@ -38,11 +38,8 @@ struct rcar_rvgc_device {
+ 	unsigned int nr_rvgc_pipes;
+ 	struct rcar_rvgc_pipe *rvgc_pipes;
+ 
+-	uint8_t vblank_pending;
+ 	wait_queue_head_t vblank_pending_wait_queue;
+ 
+-	struct task_struct *vsync_thread;
+-
+ 	struct list_head taurus_event_list_head;
+ 	rwlock_t event_list_lock;
+ };
+diff --git a/drivers/gpu/drm/rcar-rvgc/rcar_rvgc_kms.c b/drivers/gpu/drm/rcar-rvgc/rcar_rvgc_kms.c
+index c9244ce96859..378fe83c0bd1 100644
+--- a/drivers/gpu/drm/rcar-rvgc/rcar_rvgc_kms.c
++++ b/drivers/gpu/drm/rcar-rvgc/rcar_rvgc_kms.c
+@@ -15,7 +15,6 @@
+ #include "r_taurus_rvgc_protocol.h"
+ 
+ static wait_queue_head_t vblank_enable_wait_queue;
+-static atomic_t global_vblank_enable = ATOMIC_INIT(0);
+ 
+ struct rcar_rvgc_format_info {
+         u32 fourcc;
+@@ -67,41 +66,31 @@ static struct drm_framebuffer *rcar_rvgc_fb_create(struct drm_device *dev, struc
+ /********** VBlank Handling **********/
+ static int vsync_thread_fn(void *data)
+ {
+-	struct rcar_rvgc_device *rcrvgc = (struct rcar_rvgc_device*)data;
++	struct rcar_rvgc_pipe *rvgc_pipe = (struct rcar_rvgc_pipe *)data;
++	struct rcar_rvgc_device *rcrvgc = rvgc_pipe->rcar_rvgc_dev;
+ 	struct drm_crtc *crtc;
+-	struct rcar_rvgc_pipe *rvgc_pipe;
+-	unsigned int nr_rvgc_pipes = rcrvgc->nr_rvgc_pipes;
+-	int i;
+-	int pipe_vblk_pending;
+-	unsigned int display_idx;
+ 	struct drm_pending_vblank_event *event;
+ 	unsigned long flags;
+ 
+ 	while (!kthread_should_stop()) {
+ 
+-		wait_event_interruptible(vblank_enable_wait_queue, atomic_read(&global_vblank_enable));
++		wait_event_interruptible(vblank_enable_wait_queue, atomic_read(&rvgc_pipe->global_vblank_enable));
+ 
+-		wait_event_interruptible(rcrvgc->vblank_pending_wait_queue, rcrvgc->vblank_pending);
++		wait_event_interruptible(rcrvgc->vblank_pending_wait_queue, rvgc_pipe->vblank_pending);
+ 
+-		for (i=0; i<nr_rvgc_pipes; i++) {
+-			rvgc_pipe = &rcrvgc->rvgc_pipes[i];
+-			display_idx = rvgc_pipe->display_mapping;;
++		rvgc_pipe->vblank_pending = 0;
+ 
+-			pipe_vblk_pending = test_and_clear_bit(display_idx, (long unsigned int*) &rcrvgc->vblank_pending);
++		if (rvgc_pipe->vblank_enabled) {
++			crtc = &rvgc_pipe->drm_simple_pipe.crtc;
+ 
+-			if (pipe_vblk_pending && rvgc_pipe->vblank_enabled) {
+-				crtc = &rvgc_pipe->drm_simple_pipe.crtc;
++			drm_crtc_handle_vblank(crtc);
+ 
+-				drm_crtc_handle_vblank(crtc);
+-
+-				spin_lock_irqsave(&crtc->dev->event_lock, flags);
+-				event = rvgc_pipe->event;
+-				rvgc_pipe->event = NULL;
+-				spin_unlock_irqrestore(&crtc->dev->event_lock, flags);
+-
+-				if (event == NULL)
+-					continue;
++			spin_lock_irqsave(&crtc->dev->event_lock, flags);
++			event = rvgc_pipe->event;
++			rvgc_pipe->event = NULL;
++			spin_unlock_irqrestore(&crtc->dev->event_lock, flags);
+ 
++			if (event != NULL) {
+ 				spin_lock_irqsave(&crtc->dev->event_lock, flags);
+ 				drm_crtc_send_vblank_event(crtc, event);
+ 				spin_unlock_irqrestore(&crtc->dev->event_lock, flags);
+@@ -125,7 +114,7 @@ int rcar_rvgc_crtc_enable_vblank(struct drm_device *dev, unsigned int pipe)
+ 	dev_dbg(dev->dev, "%s(%d)\n", __FUNCTION__, pipe);
+ 
+ 	rvgc_pipe->vblank_enabled = 1;
+-	atomic_inc(&global_vblank_enable);
++	atomic_inc(&rvgc_pipe->global_vblank_enable);
+ 	wake_up_interruptible(&vblank_enable_wait_queue);
+ 
+ 	return ret;
+@@ -140,8 +129,8 @@ void rcar_rvgc_crtc_disable_vblank(struct drm_device *dev, unsigned int pipe)
+ 	dev_dbg(dev->dev, "%s(%d)\n", __FUNCTION__, pipe);
+ 
+ 	rvgc_pipe->vblank_enabled = 0;
+-	atomic_dec(&global_vblank_enable);
+-	WARN_ON(atomic_read(&global_vblank_enable) < 0);
++	atomic_dec(&rvgc_pipe->global_vblank_enable);
++	WARN_ON(atomic_read(&rvgc_pipe->global_vblank_enable) < 0);
+ 	return;
+ }
+ 
+@@ -205,6 +194,10 @@ int rcar_rvgc_modeset_init(struct rcar_rvgc_device *rcrvgc)
+ 	rcrvgc->rvgc_pipes = kzalloc(sizeof(struct rcar_rvgc_pipe) * nr_rvgc_pipes, GFP_KERNEL);
+ 	if (!rcrvgc->rvgc_pipes)
+ 		return -ENOMEM;
++	for (i = 0; i < nr_rvgc_pipes; i++) {
++		rcrvgc->rvgc_pipes[i].vblank_pending = 0;
++		atomic_set(&rcrvgc->rvgc_pipes[i].global_vblank_enable, 0);
++	}
+ 
+ 	dev_info(rcrvgc->dev, "Number of virtual displays = %u\n", rcrvgc->nr_rvgc_pipes);
+ 
+@@ -254,12 +247,14 @@ int rcar_rvgc_modeset_init(struct rcar_rvgc_device *rcrvgc)
+ 	/* Reset crtcs, encoders and connectors */
+ 	drm_mode_config_reset(dev);
+ 
+-	if (rcrvgc->vsync_thread)
+-		dev_warn(rcrvgc->dev, "vsync_thread is already running\n");
+-	else
+-		rcrvgc->vsync_thread = kthread_run(vsync_thread_fn,
+-						rcrvgc,
+-						"rvgc_vsync kthread");
++	for  (i=0; i < nr_rvgc_pipes; i++) {
++		if (rcrvgc->rvgc_pipes[i].vsync_thread)
++			dev_warn(rcrvgc->dev, "vsync_thread is already running\n");
++		else
++			rcrvgc->rvgc_pipes[i].vsync_thread = kthread_run(vsync_thread_fn,
++							&rcrvgc->rvgc_pipes[i],
++							"rvgc_vsync kthread");
++	}
+ 
+ exit:
+ 	return ret;
+diff --git a/drivers/gpu/drm/rcar-rvgc/rcar_rvgc_kms.h b/drivers/gpu/drm/rcar-rvgc/rcar_rvgc_kms.h
+index 1cec7bff984a..9fab5539b93b 100644
+--- a/drivers/gpu/drm/rcar-rvgc/rcar_rvgc_kms.h
++++ b/drivers/gpu/drm/rcar-rvgc/rcar_rvgc_kms.h
+@@ -19,6 +19,7 @@ const struct rcar_rvgc_format_info *rcar_rvgc_format_info(u32 fourcc);
+ int rcar_rvgc_modeset_init(struct rcar_rvgc_device *rcrvgc);
+ 
+ int rcar_rvgc_async_commit(struct drm_device *dev, struct drm_crtc *crtc);
++
+ int rcar_rvgc_crtc_enable_vblank(struct drm_device *dev, unsigned int pipe);
+ void rcar_rvgc_crtc_disable_vblank(struct drm_device *dev, unsigned int pipe);
+ 
+diff --git a/drivers/gpu/drm/rcar-rvgc/rcar_rvgc_pipe.c b/drivers/gpu/drm/rcar-rvgc/rcar_rvgc_pipe.c
+index cc7380a1150d..af1dd83d906a 100644
+--- a/drivers/gpu/drm/rcar-rvgc/rcar_rvgc_pipe.c
++++ b/drivers/gpu/drm/rcar-rvgc/rcar_rvgc_pipe.c
+@@ -189,6 +189,8 @@ static void rvgc_display_pipe_update(struct drm_simple_display_pipe *pipe,
+ 	unsigned int display_layer = rvgc_pipe->display_layer;
+ 	unsigned long flags;
+ 
++	struct drm_pending_vblank_event *event;
++
+ 	/* No need to notify the Taurus server. Just send the vblank
+ 	 * event to notify the DRM that the commit is completed. */
+ 	if (crtc->state->active_changed || (new_plane_state->fb == old_state->fb)) {
+@@ -237,6 +239,19 @@ static void rvgc_display_pipe_update(struct drm_simple_display_pipe *pipe,
+ 			__FUNCTION__,
+ 			rvgc_pipe->display_mapping);
+ 	}
++
++	spin_lock_irqsave(&crtc->dev->event_lock, flags);
++	event = rvgc_pipe->event;
++	rvgc_pipe->event = NULL;
++	spin_unlock_irqrestore(&crtc->dev->event_lock, flags);
++
++	if (event != NULL) {
++		spin_lock_irqsave(&crtc->dev->event_lock, flags);
++		drm_crtc_send_vblank_event(crtc, event);
++		spin_unlock_irqrestore(&crtc->dev->event_lock, flags);
++
++		drm_crtc_vblank_put(crtc);
++	}
+ }
+ 
+ static int rvgc_display_pipe_prepare_fb(struct drm_simple_display_pipe *pipe,
+@@ -339,3 +354,17 @@ struct rcar_rvgc_pipe* rvgc_pipe_find(struct rcar_rvgc_device *rcrvgc, unsigned
+ 	}
+ 	return rvgc_pipe;
+ }
++
++struct rcar_rvgc_pipe* rvgc_pipe_find_by_display(struct rcar_rvgc_device *rcrvgc, unsigned int display_mapping)
++{
++	struct rcar_rvgc_pipe *rvgc_pipe = NULL;
++	unsigned int nr_rvgc_pipes = rcrvgc->nr_rvgc_pipes;
++	int i;
++	for (i=0; i < nr_rvgc_pipes; i++) {
++		if (rcrvgc->rvgc_pipes[i].display_mapping == display_mapping) {
++			rvgc_pipe = &rcrvgc->rvgc_pipes[i];
++			break;
++		}
++	}
++	return rvgc_pipe;
++}
+\ No newline at end of file
+diff --git a/drivers/gpu/drm/rcar-rvgc/rcar_rvgc_pipe.h b/drivers/gpu/drm/rcar-rvgc/rcar_rvgc_pipe.h
+index 97530a421ad6..42fed506bfdb 100644
+--- a/drivers/gpu/drm/rcar-rvgc/rcar_rvgc_pipe.h
++++ b/drivers/gpu/drm/rcar-rvgc/rcar_rvgc_pipe.h
+@@ -28,9 +28,14 @@ struct rcar_rvgc_pipe {
+ 	unsigned int vblank_enabled;
+ 	struct drm_simple_display_pipe drm_simple_pipe;
+ 	struct drm_pending_vblank_event *event;
++
++	struct task_struct *vsync_thread;
++	atomic_t global_vblank_enable;
++	uint8_t vblank_pending;
+ };
+ 
+ int rcar_rvgc_pipe_init(struct rcar_rvgc_device *rvgc_dev, struct rcar_rvgc_pipe *rvgc_pipe);
+ struct rcar_rvgc_pipe* rvgc_pipe_find(struct rcar_rvgc_device *rcrvgc, unsigned int pipe_idx);
++struct rcar_rvgc_pipe* rvgc_pipe_find_by_display(struct rcar_rvgc_device *rcrvgc, unsigned int display_mapping);
+ 
+ #endif /* __RCAR_RVGC_PIPE_H__ */
+-- 
+2.25.1
+

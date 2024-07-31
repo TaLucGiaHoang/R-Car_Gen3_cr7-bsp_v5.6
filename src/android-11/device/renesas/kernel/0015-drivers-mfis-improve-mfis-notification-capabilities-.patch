@@ -1,0 +1,463 @@
+From 7c227e7d5ce328044a43117c966a5b9afe46ee7b Mon Sep 17 00:00:00 2001
+From: Yongbo Zhang <yongbo.zhang.xh@renesas.com>
+Date: Mon, 1 Nov 2021 15:42:49 +0800
+Subject: [PATCH 15/27] drivers: mfis: improve mfis notification capabilities
+ by using multi-channel
+
+In the original design, the rpmsg bus only used the MFIS0 channel for kick notification.
+It may be an important factor limiting the high throughput and low latency of the rpmsg
+bus. Therefore, it is necessary to use multi-channel design to enhance the notification
+capability of MFIS.
+
+MFIS multi-channel design improves kick notification parallelism through interrupt
+statistics:
+before:
+console:/ # cat /proc/interrupts | grep mfis
+ 14:      48983          0          0          0          0          0          0          0     GIC-0 256 Level     e6260000.mfis
+ 15:          0          0          0          0          0          0          0          0     GIC-0 257 Level     e6260000.mfis
+ 16:          0          0          0          0          0          0          0          0     GIC-0 258 Level     e6260000.mfis
+ 17:          0          0          0          0          0          0          0          0     GIC-0 259 Level     e6260000.mfis
+ 18:          0          0          0          0          0          0          0          0     GIC-0 260 Level     e6260000.mfis
+ 19:          0          0          0          0          0          0          0          0     GIC-0 261 Level     e6260000.mfis
+ 20:          0          0          0          0          0          0          0          0     GIC-0 262 Level     e6260000.mfis
+ 21:          0          0          0          0          0          0          0          0     GIC-0 263 Level     e6260000.mfis
+
+now:
+console:/ # cat /proc/interrupts | grep mfis
+ 14:      38349          0          0          0          0          0          0          0     GIC-0 256 Level     e6260000.mfis
+ 15:        872          0          0          0          0          0          0          0     GIC-0 257 Level     e6260000.mfis
+ 16:         15          0          0          0          0          0          0          0     GIC-0 258 Level     e6260000.mfis
+ 17:          1          0          0          0          0          0          0          0     GIC-0 259 Level     e6260000.mfis
+ 18:          0          0          0          0          0          0          0          0     GIC-0 260 Level     e6260000.mfis
+ 19:          0          0          0          0          0          0          0          0     GIC-0 261 Level     e6260000.mfis
+ 20:          0          0          0          0          0          0          0          0     GIC-0 262 Level     e6260000.mfis
+ 21:          0          0          0          0          0          0          0          0     GIC-0 263 Level     e6260000.mfis
+
+Unfortunately, the comparison of rpmsg bus throughput and latency is not available.
+Signed-off-by: Yongbo Zhang <yongbo.zhang.xh@renesas.com>
+---
+ .../dts/renesas/salvator-xs_cr7_rproc.dtsi    |  11 +-
+ drivers/misc/rcar-mfis/rcar_mfis_drv.c        | 113 +++++++++---------
+ drivers/misc/rcar-mfis/rcar_mfis_drv.h        |   7 +-
+ drivers/remoteproc/rcar_cr7_remoteproc.c      |  61 ++--------
+ include/misc/rcar-mfis/rcar_mfis_public.h     |   5 +-
+ 5 files changed, 84 insertions(+), 113 deletions(-)
+
+diff --git a/arch/arm64/boot/dts/renesas/salvator-xs_cr7_rproc.dtsi b/arch/arm64/boot/dts/renesas/salvator-xs_cr7_rproc.dtsi
+index f5d76ba66962..c3436ca2a9c7 100644
+--- a/arch/arm64/boot/dts/renesas/salvator-xs_cr7_rproc.dtsi
++++ b/arch/arm64/boot/dts/renesas/salvator-xs_cr7_rproc.dtsi
+@@ -84,9 +84,16 @@
+ 	mfis: mfis@e6260000 {
+ 		compatible = "renesas,mfis";
+ 		reg = <0x0 0xe6260000 0x0 0x200>;
+-		interrupts = <0x00 0xe0 0x04 0x00 0xe1 0x04 0x00 0xe2 0x04 0x00 0xe3 0x04 0x00 0xe4 0x04 0x00 0xe5 0x04 0x00 0xe6 0x04 0x00 0xe7 0x04>;
++		interrupts = <GIC_SPI 224 IRQ_TYPE_LEVEL_HIGH
++			      GIC_SPI 225 IRQ_TYPE_LEVEL_HIGH
++			      GIC_SPI 226 IRQ_TYPE_LEVEL_HIGH
++			      GIC_SPI 227 IRQ_TYPE_LEVEL_HIGH
++			      GIC_SPI 228 IRQ_TYPE_LEVEL_HIGH
++			      GIC_SPI 229 IRQ_TYPE_LEVEL_HIGH
++			      GIC_SPI 230 IRQ_TYPE_LEVEL_HIGH
++			      GIC_SPI 231 IRQ_TYPE_LEVEL_HIGH>;
+ 		interrupt-names = "eicr0", "eicr1", "eicr2", "eicr3", "eicr4", "eicr5", "eicr6", "eicr7";
+-		renesas,mfis-channels = <0 1 2 3>;
++		renesas,mfis-channels = <0 1 2 3 4 5 6 7>;
+ 		status = "okay";
+ 
+ 		/delete-node/ mfis-as;
+diff --git a/drivers/misc/rcar-mfis/rcar_mfis_drv.c b/drivers/misc/rcar-mfis/rcar_mfis_drv.c
+index 3e2d410d632d..48778719f2f2 100644
+--- a/drivers/misc/rcar-mfis/rcar_mfis_drv.c
++++ b/drivers/misc/rcar-mfis/rcar_mfis_drv.c
+@@ -22,26 +22,37 @@
+ #include <linux/io.h>
+ #include <linux/interrupt.h>
+ #include <linux/slab.h>     /* kmalloc() */
+-#include <linux/notifier.h>
++#include <linux/workqueue.h>
+ 
+ #include "rcar_mfis_drv.h"
+-#include <misc/rcar-mfis/rcar_mfis_public.h>
+ 
++#define LCKR(n) (0x00C0 + n * 0x4)
+ #define IICR(n) (0x0400 + n * 0x8)
+ #define EICR(n) (0x0404 + n * 0x8)
+ #define IMBR(n) (0x0440 + n * 0x4)
+ #define EMBR(n) (0x0460 + n * 0x4)
+ 
+-static struct rcar_mfis_dev* rcmfis_dev = NULL;
++static u32 num_mfis_channels;
++
++static struct rcar_mfis_dev *rcmfis_dev = NULL;
++
++static int mfis_hw_trylock(uint32_t ch)
++{
++	return !ioread32(rcmfis_dev->mmio_base + LCKR(ch));
++}
++
++static void mfis_hw_unlock(uint32_t ch)
++{
++	iowrite32(0, rcmfis_dev->mmio_base + LCKR(ch));
++}
+ 
+ static irqreturn_t mfis_irq_handler(int irq, void *data)
+ {
+ 	u32 value = 0;
+-	struct rcar_mfis_msg msg;
+ 	struct platform_device *pdev = rcmfis_dev->pdev;
+ 	struct device *dev = &pdev->dev;
+ 
+-	struct rcar_mfis_ch* rcar_mfis_ch = (struct rcar_mfis_ch*)data;
++	struct rcar_mfis_ch *rcar_mfis_ch = (struct rcar_mfis_ch *)data;
+ 	unsigned int ch = rcar_mfis_ch->id;
+ 
+ 	dev_dbg(dev, "interrupt! ch %d\n", ch);
+@@ -49,10 +60,12 @@ static irqreturn_t mfis_irq_handler(int irq, void *data)
+ 	value = rcar_mfis_reg_read(rcmfis_dev, EICR(ch));
+ 	if (value & 0x1)
+ 	{
+-		msg.mbr = rcar_mfis_reg_read(rcmfis_dev, EMBR(ch));
+-		msg.icr = value >> 1; //get rid of EIR bit
++		rcar_mfis_ch->msg.mbr = rcar_mfis_reg_read(rcmfis_dev, EMBR(ch));
++		rcar_mfis_ch->msg.icr = value >> 1; //get rid of EIR bit
++
++		mfis_hw_unlock(ch);
+ 
+-		atomic_notifier_call_chain(&rcar_mfis_ch->notifier_head, msg.icr, rcar_mfis_ch->notifier_data);
++		queue_work(rcmfis_dev->work_queue, &rcar_mfis_ch->work);
+ 
+ 		/* clear interrupt flag */
+ 		rcar_mfis_reg_write(rcmfis_dev, EICR(ch), value & (~0x1));
+@@ -63,12 +76,22 @@ static irqreturn_t mfis_irq_handler(int irq, void *data)
+ 	return IRQ_NONE;
+ }
+ 
++static void rcar_mfis_work(struct work_struct *_work)
++{
++	struct rcar_mfis_ch *rcar_mfis_ch;
++
++	rcar_mfis_ch = container_of(_work, struct rcar_mfis_ch, work);
++
++	if (rcmfis_dev->callback)
++		rcmfis_dev->callback(rcar_mfis_ch->msg.icr);
++}
++
+ static struct rcar_mfis_ch* rcar_mfis_channel_get(unsigned int channel)
+ {
+ 	struct rcar_mfis_ch *rcar_mfis_ch = NULL;
+ 	int i;
+ 
+-	for (i=0; i<NUM_MFIS_CHANNELS; i++) {
++	for (i = 0; i < NUM_MFIS_CHANNELS; i++) {
+ 		if (rcmfis_dev->channels[i].initialized && rcmfis_dev->channels[i].id == channel) {
+ 			rcar_mfis_ch = &rcmfis_dev->channels[i];
+ 			break;
+@@ -77,15 +100,31 @@ static struct rcar_mfis_ch* rcar_mfis_channel_get(unsigned int channel)
+ 	return rcar_mfis_ch;
+ }
+ 
++static uint32_t request_mfis_channel(void)
++{
++	uint32_t i;
++
++	for (i = 0; i < num_mfis_channels; i++) {
++		if (mfis_hw_trylock(i))
++			return i;
++	}
++
++	return -EINVAL;
++}
+ 
+ /****** Exported functions ******/
+ 
+-int rcar_mfis_trigger_interrupt(int channel, struct rcar_mfis_msg msg)
++int rcar_mfis_trigger_interrupt(struct rcar_mfis_msg msg)
+ {
+ 	struct rcar_mfis_ch* rcar_mfis_ch;
+ 	int ret = 0;
++	u32 channel;
+ 	u32 icr;
+ 
++	do {
++		channel = request_mfis_channel();
++	} while(channel < 0);
++
+ 	rcar_mfis_ch = rcar_mfis_channel_get(channel);
+ 	if (!rcar_mfis_ch) {
+ 		return -EINVAL;
+@@ -104,48 +143,11 @@ int rcar_mfis_trigger_interrupt(int channel, struct rcar_mfis_msg msg)
+ }
+ EXPORT_SYMBOL(rcar_mfis_trigger_interrupt);
+ 
+-int rcar_mfis_register_notifier(int channel, struct notifier_block *nb, void *data)
+-{
+-	struct rcar_mfis_ch* rcar_mfis_ch;
+-	struct atomic_notifier_head *nh;
+-
+-	rcar_mfis_ch = rcar_mfis_channel_get(channel);
+-	if (!rcar_mfis_ch) {
+-		return -EINVAL;
+-	}
+-
+-    if(NULL == rcmfis_dev){
+-        printk("mfis driver not propoerly loaded. Check device tree for renesas,mfis\n");
+-        return -ENXIO;
+-    }
+-
+-
+-	rcar_mfis_ch->notifier_data = data;
+-
+-	nh = &rcar_mfis_ch->notifier_head;
+-	return atomic_notifier_chain_register(nh, nb);
+-}
+-EXPORT_SYMBOL(rcar_mfis_register_notifier);
+-
+-int rcar_mfis_unregister_notifier(int channel, struct notifier_block *nb)
++void rcar_mfis_register_irq_cb(void (*callback)(int val))
+ {
+-	struct rcar_mfis_ch* rcar_mfis_ch;
+-	struct atomic_notifier_head *nh;
+-
+-	rcar_mfis_ch = rcar_mfis_channel_get(channel);
+-	if (!rcar_mfis_ch) {
+-		return -EINVAL;
+-	}
+-
+-    if(NULL == rcmfis_dev){
+-        printk("mfis driver not propoerly loaded. Check device tree for renesas,mfis\n");
+-        return -ENXIO;
+-    }
+-
+-	nh = &rcar_mfis_ch->notifier_head;
+-	return atomic_notifier_chain_unregister(nh, nb);
++	rcmfis_dev->callback = callback;
+ }
+-EXPORT_SYMBOL(rcar_mfis_unregister_notifier);
++EXPORT_SYMBOL(rcar_mfis_register_irq_cb);
+ 
+ static int rcar_mfis_probe(struct platform_device *pdev)
+ {
+@@ -155,7 +157,6 @@ static int rcar_mfis_probe(struct platform_device *pdev)
+ 	struct resource *irq = NULL;
+ 	struct device *dev = &pdev->dev;
+ 	int i = 0;
+-	u32 num_mfis_channels = 0;
+ 	u32 value = 0;
+ 
+ 	dev_dbg(dev, "R-Car MFIS probe start\n");
+@@ -186,7 +187,9 @@ static int rcar_mfis_probe(struct platform_device *pdev)
+ 
+ 	rcmfis_dev->mmio_base = mmio_base;
+ 
+-	for (i=0; i<num_mfis_channels; i++)
++	rcmfis_dev->work_queue = create_singlethread_workqueue("mfis_wq");
++
++	for (i = 0; i < num_mfis_channels; i++)
+ 	{
+ 		struct rcar_mfis_ch *mfis_ch;
+ 
+@@ -208,8 +211,6 @@ static int rcar_mfis_probe(struct platform_device *pdev)
+ 
+ 		mfis_ch->id = value;
+ 
+-		ATOMIC_INIT_NOTIFIER_HEAD(&mfis_ch->notifier_head);
+-
+ 		/* Get IRQ resource */
+ 		irq = platform_get_resource(pdev, IORESOURCE_IRQ, mfis_ch->id);
+ 		if (!irq) {
+@@ -224,6 +225,8 @@ static int rcar_mfis_probe(struct platform_device *pdev)
+ 			continue;
+ 		}
+ 
++		INIT_WORK(&mfis_ch->work, rcar_mfis_work);
++
+ 		mfis_ch->initialized = 1;
+ 		dev_dbg(dev, "channel %d initialized (%s)\n", mfis_ch->id, irq->name);
+ 	}
+@@ -239,8 +242,10 @@ static int rcar_mfis_probe(struct platform_device *pdev)
+ static int rcar_mfis_remove(struct platform_device *pdev)
+ {
+ 	struct device *dev = &pdev->dev;
++	int i;
+ 
+ 	dev_dbg(dev, "R-Car MFIS remove\n");
++	destroy_workqueue(rcmfis_dev->work_queue);
+ 	kfree(rcmfis_dev);
+ 
+ 	return 0;
+diff --git a/drivers/misc/rcar-mfis/rcar_mfis_drv.h b/drivers/misc/rcar-mfis/rcar_mfis_drv.h
+index 38e7100f30fe..f00059b1f93a 100644
+--- a/drivers/misc/rcar-mfis/rcar_mfis_drv.h
++++ b/drivers/misc/rcar-mfis/rcar_mfis_drv.h
+@@ -4,12 +4,13 @@
+ #include <linux/platform_device.h>
+ #include <linux/io.h>
+ #include <linux/notifier.h>
++#include <misc/rcar-mfis/rcar_mfis_public.h>
+ 
+ struct rcar_mfis_ch {
+ 	unsigned int id;
+ 	int initialized;
+-	struct atomic_notifier_head notifier_head;
+-	void *notifier_data;
++	struct rcar_mfis_msg msg;
++	struct work_struct work;
+ };
+ 
+ #define NUM_MFIS_CHANNELS       8
+@@ -18,6 +19,8 @@ struct rcar_mfis_dev {
+ 	struct platform_device *pdev;
+ 	void __iomem *mmio_base;
+ 	struct rcar_mfis_ch channels[NUM_MFIS_CHANNELS];
++	void (*callback)(int val);
++	struct workqueue_struct *work_queue;
+ };
+ 
+ static inline u32 rcar_mfis_reg_read(struct rcar_mfis_dev *mfis_dev, u32 reg)
+diff --git a/drivers/remoteproc/rcar_cr7_remoteproc.c b/drivers/remoteproc/rcar_cr7_remoteproc.c
+index 206ffde90f7c..e30c90638551 100644
+--- a/drivers/remoteproc/rcar_cr7_remoteproc.c
++++ b/drivers/remoteproc/rcar_cr7_remoteproc.c
+@@ -13,7 +13,6 @@
+ #include <linux/err.h>
+ #include <linux/interrupt.h>
+ #include <linux/io.h>
+-#include <linux/notifier.h>
+ #include <linux/kernel.h>
+ #include <linux/module.h>
+ #include <linux/of_address.h>
+@@ -25,7 +24,6 @@
+ #include "remoteproc_internal.h"
+ 
+ #include <misc/rcar-mfis/rcar_mfis_public.h>
+-#define MFIS_CHANNEL 0 //use this mfis channel to trigger interrupts
+ 
+ static char *rcar_cr7_fw_name;
+ module_param(rcar_cr7_fw_name, charp, S_IRUGO);
+@@ -61,53 +59,22 @@ MODULE_PARM_DESC(rcar_cr7_fw_name,
+  */
+ struct rcar_cr7_rproc {
+ 	struct rproc *rproc;
+-	struct work_struct workqueue;
+ 	bool cr7_already_running;
+ 	void __iomem *mem_va;
+ 	phys_addr_t mem_da;
+ 	u64 mem_len;
+ };
+ 
+-/**
+- * handle_event() - inbound virtqueue message workqueue function
+- *
+- * This callback is registered with the R-Car MFIS atomic notifier
+- * chain and is called every time the remote processor (Cortex-R7)
+- * wants to notify us of pending messages available.
+- */
+-static void handle_event(struct work_struct *work)
+-{
+-        struct rcar_cr7_rproc *rrproc =
+-                container_of(work, struct rcar_cr7_rproc, workqueue);
+-
+-	/* Process incoming buffers on all our vrings */
+-        rproc_vq_interrupt(rrproc->rproc, 0);
+-        rproc_vq_interrupt(rrproc->rproc, 1);
+-}
++static struct rcar_cr7_rproc *_rrproc = NULL;
+ 
+-/**
+- * cr7_interrupt_cb()
+- *
+- * This callback is registered with the R-Car MFIS atomic notifier
+- * chain and is called every time the remote processor (Cortex-R7)
+- * wants to notify us of pending messages available.
+- */
+-static int cr7_interrupt_cb(struct notifier_block *self, unsigned long action, void *data)
++static void rproc_vq_callback(int vqid)
+ {
+-	struct rcar_cr7_rproc *rrproc = (struct rcar_cr7_rproc *)data;
+-	struct device *dev = rrproc->rproc->dev.parent;
++	if (unlikely(NULL == _rrproc))
++		return;
+ 
+-	dev_dbg(dev, "%s\n", __FUNCTION__);
+-
+-	schedule_work(&rrproc->workqueue);
+-
+-	return NOTIFY_DONE;
++        rproc_vq_interrupt(_rrproc->rproc, vqid);
+ }
+ 
+-static struct notifier_block rcar_cr7_notifier_block = {
+-	.notifier_call = cr7_interrupt_cb,
+-};
+-
+ static int is_cr7_running(void)
+ {
+ 	void *mmio_apmu_base;
+@@ -214,7 +181,7 @@ static void rcar_cr7_rproc_kick(struct rproc *rproc, int vqid)
+ 	msg.mbr = 0;
+ 
+ 	do {
+-	    ret = rcar_mfis_trigger_interrupt(MFIS_CHANNEL, msg);
++	    ret = rcar_mfis_trigger_interrupt(msg);
+ 	    if (ret)
+ 		udelay(500);
+ 
+@@ -334,27 +301,19 @@ static int rcar_cr7_rproc_probe(struct platform_device *pdev)
+ 	if (is_cr7_running())
+ 		rrproc->cr7_already_running = true;
+ 
+-	INIT_WORK(&rrproc->workqueue, handle_event);
+-
+ 	platform_set_drvdata(pdev, rrproc);
+ 
+-	ret = rcar_mfis_register_notifier(MFIS_CHANNEL, &rcar_cr7_notifier_block, rrproc);
+-	if (ret) {
+-		dev_err(dev, "cannot register notifier on mfis channel %d\n", MFIS_CHANNEL);
+-		goto free_rproc;
+-	}
++	_rrproc = rrproc;
++	rcar_mfis_register_irq_cb(rproc_vq_callback);
+ 
+ 	ret = rproc_add(rproc);
+ 	if (ret) {
+ 		dev_err(dev, "rproc_add failed: %d\n", ret);
+-		goto unregister_notifier;
++		goto free_rproc;
+ 	}
+ 
+ 	return 0;
+ 
+-unregister_notifier:
+-	rcar_mfis_unregister_notifier(MFIS_CHANNEL, &rcar_cr7_notifier_block);
+-	flush_work(&rrproc->workqueue);
+ free_rproc:
+ 	rproc_free(rproc);
+ 	return ret;
+@@ -365,8 +324,6 @@ static int rcar_cr7_rproc_remove(struct platform_device *pdev)
+ 	struct rcar_cr7_rproc *rrproc = platform_get_drvdata(pdev);
+ 	struct rproc *rproc = rrproc->rproc;
+ 
+-	rcar_mfis_unregister_notifier(MFIS_CHANNEL, &rcar_cr7_notifier_block);
+-	flush_work(&rrproc->workqueue);
+ 	rproc_del(rproc);
+ 	rproc_free(rproc);
+ 
+diff --git a/include/misc/rcar-mfis/rcar_mfis_public.h b/include/misc/rcar-mfis/rcar_mfis_public.h
+index 0ba9b01f19d8..62048686d9ff 100644
+--- a/include/misc/rcar-mfis/rcar_mfis_public.h
++++ b/include/misc/rcar-mfis/rcar_mfis_public.h
+@@ -6,8 +6,7 @@ struct rcar_mfis_msg {
+ 	u32 mbr;
+ };
+ 
+-int rcar_mfis_trigger_interrupt(int channel, struct rcar_mfis_msg msg);
+-int rcar_mfis_register_notifier(int channel, struct notifier_block *nb, void *data);
+-int rcar_mfis_unregister_notifier(int channel, struct notifier_block *nb);
++int rcar_mfis_trigger_interrupt(struct rcar_mfis_msg msg);
++void rcar_mfis_register_irq_cb(void (*callback)(int vqid));
+ 
+ #endif
+-- 
+2.25.1
+

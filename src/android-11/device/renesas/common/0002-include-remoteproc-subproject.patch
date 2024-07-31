@@ -1,0 +1,27 @@
+From f92b0a510c7cfb0bee8c0793218c4370d9a996c4 Mon Sep 17 00:00:00 2001
+From: Sergii Piatakov <sergii.piatakov@globallogic.com>
+Date: Fri, 25 Aug 2023 09:20:39 +0000
+Subject: [PATCH 2/2] include remoteproc subproject
+
+Test: buind, flash and run a DUT, ensure that firmware file is
+      successfully loaded by rpmsg module.
+Signed-off-by: Sergii Piatakov <sergii.piatakov@globallogic.com>
+---
+ DeviceCommon.mk | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/DeviceCommon.mk b/DeviceCommon.mk
+index 123851c..f74beb9 100644
+--- a/DeviceCommon.mk
++++ b/DeviceCommon.mk
+@@ -461,6 +461,7 @@ endif
+ 
+ # ----------------------------------------------------------------------
+ $(call inherit-product, frameworks/base/data/sounds/AudioPackage5.mk)
++$(call inherit-product-if-exists, vendor/renesas/firmware/remoteproc/remoteproc.mk)
+ 
+ ifneq (,$(wildcard vendor/google/products/gms.mk))
+     $(call inherit-product, vendor/google/products/gms.mk)
+-- 
+2.17.1
+

@@ -1,0 +1,6 @@
+{
+    "cmake.sourceDirectory": "${workspaceFolder}/src/vlib",
+    "cmake.configureOnOpen": true,
+    "cmake.buildDirectory": "${workspaceFolder}/${env.BUILD_DIRECTORY}",
+    "cmake.generator":"Unix Makefiles",
+}

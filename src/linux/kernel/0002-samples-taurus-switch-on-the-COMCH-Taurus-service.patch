@@ -1,0 +1,799 @@
+From 43331a6a2b981c4b17f6684d04e342e0daf95116 Mon Sep 17 00:00:00 2001
+From: Sergii Piatakov <sergii.piatakov@globallogic.com>
+Date: Fri, 12 May 2023 13:15:47 +0000
+Subject: [PATCH 2/3] samples/taurus: switch on the COMCH Taurus service
+
+The previous version of the sample interacted via the Taurus "virtdev"
+service. This approach is outdated, the "virtdev" service is replaced by
+its successor the "comch" service.
+
+This patch provides the following changes:
+ - replace the "virtdev" protocol (in the file
+   `r_virtdev_drv_api_priv.h`) by the "comch" protocol (in the file
+   `r_taurus_comch_protocol.h`;
+ - add `r_taurus_protocol_ids.h` since the "comch" protocol depends on
+   it;
+ - update the sample to interact with the "comch" service;
+ - align formatting of the `r_taurus_bridge.h` with the current version
+   of the CR7 SDK (auxiliary changes);
+ - update License headers and Copyrights (auxiliary changes).
+
+The example sends in an infinite loop the following commands one by one:
+ - R_TAURUS_CMD_OPEN  - to open a communication channel;
+ - R_TAURUS_CMD_WRITE - to send hardcoded message to the CR7;
+ - R_TAURUS_CMD_READ  - to receive a message from the CR7;
+ - R_TAURUS_CMD_CLOSE - to close a communication channel.
+After each iteration, the sample sleeps two seconds.
+Also, the example receives signals from the CR7 side (signal is the
+special type of command with result R_TAURUS_CMD_NOP and id 0). The
+signal is sent by the test application from the CR7 every three seconds
+after opening a new channel. That's why the delay between iterations is
+two seconds, this is necessary to wait enough and receive the signal
+before the channel will be closed.
+
+Prerequisites:
+ - header files with protocol must be aligned with the CR7 part;
+ - CR7 Taurus must be built with the "comch" service support;
+ - name of the module must match the service name on the CR7 side
+   ("taurus-comch").
+
+To run the sample, build and load the module, check the minicom output.
+The sample has been successfully tested on the following setup:
+ - M3N v1.1, Salvator-XS;
+ - CR7 SDK v5.3;
+ - Linux Kernel v5.10.41 (Yocto 5.9.0).
+
+Signed-off-by: Vladyslav Andrishko <vladyslav.andrishko@globallogic.com>
+Signed-off-by: Sergii Piatakov <sergii.piatakov@globallogic.com>
+---
+ .../renesas_taurus_client/r_taurus_bridge.h   | 112 +++++-----
+ .../r_taurus_comch_protocol.h                 | 149 +++++++++++++
+ .../r_taurus_protocol_ids.h                   |  18 ++
+ .../r_virtdev_drv_api_priv.h                  |  73 -------
+ .../taurus_client_sample.c                    | 199 ++++++++++--------
+ 5 files changed, 338 insertions(+), 213 deletions(-)
+ create mode 100644 samples/renesas_taurus_client/r_taurus_comch_protocol.h
+ create mode 100644 samples/renesas_taurus_client/r_taurus_protocol_ids.h
+ delete mode 100644 samples/renesas_taurus_client/r_virtdev_drv_api_priv.h
+
+diff --git a/samples/renesas_taurus_client/r_taurus_bridge.h b/samples/renesas_taurus_client/r_taurus_bridge.h
+index e030d9e005e2..1bf9eee9c9cc 100644
+--- a/samples/renesas_taurus_client/r_taurus_bridge.h
++++ b/samples/renesas_taurus_client/r_taurus_bridge.h
+@@ -2,7 +2,7 @@
+ /*
+  * r_taurus_bridge.h  --  Renesas Taurus client sample driver
+  *
+- * Copyright (C) 2022 Renesas Electronics Corporation
++ * Copyright (C) 2023 Renesas Electronics Corporation
+  */
+ 
+ #ifndef R_TAURUS_BRIDGE_H
+@@ -25,37 +25,37 @@ extern "C" {
+    endianess. Therefore only explicit types and no pointers shall be used in this
+    file. Endianess of the guest is assumed to be the same as for TAURUS itself.
+    Padding of structures is basically also assumed to be the same for TAURUS and
+-   a guest. If there is any confluct, the guest will have to adapt to the 
++   a guest. If there is any confluct, the guest will have to adapt to the
+    protocol interpretation of TAURUS.
+  */
+ 
+ /*******************************************************************************
+-  Section: Includes
+-*/
++   Section: Includes
++ */
+ 
+ #ifndef __KERNEL__
+ #include <stdint.h>
+ #endif
+ 
+-    
++
+ /*******************************************************************************
+-  Section: Global Defines
+-*/
++   Section: Global Defines
++ */
+ 
+ 
+ /* TAURUS command identifier */
+-    
++
+ #define R_TAURUS_CMD_NOP           0
+ #define R_TAURUS_CMD_OPEN          1
+ #define R_TAURUS_CMD_CLOSE         2
+-#define R_TAURUS_CMD_READ          3 
++#define R_TAURUS_CMD_READ          3
+ #define R_TAURUS_CMD_WRITE         4
+ #define R_TAURUS_CMD_IOCTL         5
+ #define R_TAURUS_CMD_STATUS        6
+ #define R_TAURUS_CMD_EXIT          7
+ 
+ /* TAURUS command result values */
+-   
++
+ #define R_TAURUS_RES_ACK           0
+ #define R_TAURUS_RES_NACK          1
+ #define R_TAURUS_RES_COMPLETE      2
+@@ -68,72 +68,72 @@ extern "C" {
+ #define R_TAURUS_SIG_FATAL_ERROR   0x30     /* TAURUS detected a fatal problem and does not work reliable */
+ #define R_TAURUS_SIG_REBOOTING     0x40     /* TAURUS will reboot */
+ #define R_TAURUS_SIG_REBOOT        0x50     /* TAURUS asks the guest to reboot */
+-#define R_TAURUS_SIG_RESET         0x60     /* TAURUS will reset the entire system including the guest */    
+-    
++#define R_TAURUS_SIG_RESET         0x60     /* TAURUS will reset the entire system including the guest */
++
+ 
+ /*******************************************************************************
+-  Section: Global Types
+-*/
++   Section: Global Types
++ */
+ 
+ /*******************************************************************************
+-  Type: R_TAURUS_CmdMsg_t
+-
+-  TAURUS command message.
+-
+-  Members:
+-  Id            - Transaction Id
+-  Per           - Identifier for the peripheral
+-  Channel       - Channel of the peripheral
+-  Cmd           - Command (Open, Read, Write, Close, IoCtl)
+-  Par1          - Auxiliary parameter, typically buffer
+-  Par2          - Auxiliary parameter, typically size
+-  Par3          - Auxiliary parameter
+-*/
+-    
++   Type: R_TAURUS_CmdMsg_t
++
++   TAURUS command message.
++
++   Members:
++   Id            - Transaction Id
++   Per           - Identifier for the peripheral
++   Channel       - Channel of the peripheral
++   Cmd           - Command (Open, Read, Write, Close, IoCtl)
++   Par1          - Auxiliary parameter, typically buffer
++   Par2          - Auxiliary parameter, typically size
++   Par3          - Auxiliary parameter
++ */
++
+ typedef struct {
+-    uint32_t          Id;
+-    uint32_t          Per;
+-    uint32_t          Channel;
+-    uint32_t          Cmd;
+-    uint64_t          Par1;
+-    uint64_t          Par2;
+-    uint64_t          Par3;
++    uint32_t Id;
++    uint32_t Per;
++    uint32_t Channel;
++    uint32_t Cmd;
++    uint64_t Par1;
++    uint64_t Par2;
++    uint64_t Par3;
+ } R_TAURUS_CmdMsg_t;
+ 
+ 
+ /*******************************************************************************
+-  Type: R_TAURUS_Result_t
++   Type: R_TAURUS_Result_t
+ 
+-  TAURUS command message.
++   TAURUS command message.
++
++   Members:
++   Id            - Transaction Id
++   Per           - Identifier for the peripheral
++   Result        - Result (ACK, NAK, COMP, ERR)
++   Aux           - Auxiliary result parameter (e.g. written data lentgh)
++ */
+ 
+-  Members:
+-  Id            - Transaction Id
+-  Per           - Identifier for the peripheral
+-  Result        - Result (ACK, NAK, COMP, ERR)
+-  Aux           - Auxiliary result parameter (e.g. written data lentgh)
+-*/
+-    
+ typedef struct {
+-    uint32_t        Id;
+-    uint32_t        Per;
+-    uint32_t        Channel;
+-    uint32_t        Result;
++    uint32_t Id;
++    uint32_t Per;
++    uint32_t Channel;
++    uint32_t Result;
+     uint64_t        Aux;
+ } R_TAURUS_ResultMsg_t;
+ 
+ 
+ /*******************************************************************************
+-  Type: R_TAURUS_SignalId_t
++   Type: R_TAURUS_SignalId_t
+ 
+-  Identifier of signal sent to the guest.
++   Identifier of signal sent to the guest.
+ 
+-  TAURUS can trigger an interrupt for the guest. This identifier specifies the 
+-  reason for the interrupt. Usually this shall be used to inform the guest
+-  about peripheral interrupts, so that the guest can check all virtual drivers,
+-  but it can also signal TAURUS conditions.
++   TAURUS can trigger an interrupt for the guest. This identifier specifies the
++   reason for the interrupt. Usually this shall be used to inform the guest
++   about peripheral interrupts, so that the guest can check all virtual drivers,
++   but it can also signal TAURUS conditions.
+ 
+-  For details see: R_TAURUS_SIG_XXX definitions
+-*/
++   For details see: R_TAURUS_SIG_XXX definitions
++ */
+ 
+ typedef uint32_t R_TAURUS_SignalId_t;
+ 
+diff --git a/samples/renesas_taurus_client/r_taurus_comch_protocol.h b/samples/renesas_taurus_client/r_taurus_comch_protocol.h
+new file mode 100644
+index 000000000000..cc7131289fdb
+--- /dev/null
++++ b/samples/renesas_taurus_client/r_taurus_comch_protocol.h
+@@ -0,0 +1,149 @@
++/* SPDX-License-Identifier: GPL-2.0-only OR MIT */
++/*
++ * r_taurus_comch_protocol.h  --  Renesas Taurus COMCH protocol
++ *
++ * Copyright (C) 2023 Renesas Electronics Corporation
++ */
++
++#ifndef R_TAURUS_COMCH_PROTOCOL_H
++#define R_TAURUS_COMCH_PROTOCOL_H
++#include "r_taurus_bridge.h"
++#include "r_taurus_protocol_ids.h"
++
++#ifndef __packed
++#define __packed       __attribute__((__packed__))
++#endif
++
++#define COMCH_PROTOCOL_EVENT_PKT_AVAIL                   ((TAURUS_PROTOCOL_COMCH_ID << 24) | 0x000000)
++
++
++#define COMCH_PROTOCOL_OPEN                              ((TAURUS_PROTOCOL_COMCH_ID << 24) | 0xE00000)
++
++struct taurus_comch_init_in {
++    uint64_t cookie;
++    char AppName[64];
++} __packed;
++struct taurus_comch_init_out {
++    uint64_t cookie;
++    uint64_t res;
++    int Id;
++} __packed;
++
++#define COMCH_PROTOCOL_IOC_MYFUNCTION1                    ((TAURUS_PROTOCOL_COMCH_ID << 24) | 0xF00000)
++
++struct taurus_comch_myfunction1_in{
++    uint64_t cookie;
++    uint64_t parm1;
++    uint64_t parm2;
++} __packed;
++struct taurus_comch_myfunction1_out {
++    uint64_t cookie;
++    uint64_t retvalue1;
++    uint64_t res;
++} __packed;
++
++
++#define COMCH_PROTOCOL_IOC_MYFUNCTION2                    ((TAURUS_PROTOCOL_COMCH_ID << 24) | 0xF00001)
++
++struct taurus_comch_myfunction2_in{
++    uint64_t cookie;
++    uint64_t parm1;
++    uint64_t parm2;
++} __packed;
++struct taurus_comch_myfunction2_out {
++    uint64_t cookie;
++    uint64_t retvalue1;
++    uint64_t res;
++} __packed;
++
++
++
++
++#define COMCH_PROTOCOL_CLOSE                             ((TAURUS_PROTOCOL_COMCH_ID << 24) | 0xE00001)
++
++struct taurus_comch_close_in {
++    uint64_t cookie;
++} __packed;
++
++struct taurus_comch_close_out {
++    uint64_t cookie;
++    uint64_t res;
++} __packed;
++
++#define COMCH_PROTOCOL_IOC_TRANSMIT                      ((TAURUS_PROTOCOL_COMCH_ID << 24) | 0xF0000B)
++/* Write can transfer data via Data buffer pointer or internal buffer Message Buffer */
++
++struct taurus_comch_transmit_in{
++    uint64_t cookie;
++    uint16_t type;
++    uint16_t LenByte;
++    uint32_t BufferAddress;
++    char MessageBuffer[64];
++} __packed;
++
++struct taurus_comch_transmit_out{
++    uint64_t cookie;
++    uint64_t res;
++} __packed;
++
++
++#define COMCH_PROTOCOL_IOC_RECEIVE                       ((TAURUS_PROTOCOL_COMCH_ID << 24) | 0xF0000C)
++
++struct taurus_comch_receive_in{
++    uint64_t cookie;
++    uint16_t type;
++} __packed;
++
++struct taurus_comch_receive_out {
++    uint64_t cookie;
++    uint16_t LenByte;
++    uint32_t BufferAddress;
++    char MessageBuffer[64];
++    uint64_t res;
++} __packed;
++
++#define COMCH_PROTOCOL_STATUS                            ((TAURUS_PROTOCOL_COMCH_ID << 24) | 0xF00009)
++
++struct taurus_comch_get_comch_stats_in{
++    uint64_t cookie;
++    uint8_t CtrlIdx;
++    /* uint32_t* comchStats; */
++} __packed;
++
++struct taurus_comch_get_comch_stats_out{
++    uint64_t cookie;
++    uint32_t comchStats;
++    uint64_t res;
++} __packed;
++
++
++/*******************************************************/
++
++struct taurus_comch_cmd_msg {
++    R_TAURUS_CmdMsg_t hdr;
++    uint32_t type;
++    union {
++        struct taurus_comch_init_in open;
++        struct taurus_comch_myfunction1_in myfunction1;
++        struct taurus_comch_myfunction2_in myfunction2;
++        struct taurus_comch_close_in close;
++        struct taurus_comch_transmit_in transmit;
++        struct taurus_comch_receive_in receive;
++        struct taurus_comch_get_comch_stats_in get_comch_stats;
++    } params;
++};
++
++struct taurus_comch_res_msg {
++    R_TAURUS_ResultMsg_t hdr;
++    uint32_t type;
++    union {
++        struct taurus_comch_init_out open;
++        struct taurus_comch_myfunction1_out myfunction1;
++        struct taurus_comch_myfunction2_out myfunction2;
++        struct taurus_comch_close_out close;
++        struct taurus_comch_transmit_out transmit;
++        struct taurus_comch_receive_out receive;
++        struct taurus_comch_get_comch_stats_out get_comch_stats;
++    } params;
++};
++#endif /* R_TAURUS_COMCH_PROTOCOL_H */
+diff --git a/samples/renesas_taurus_client/r_taurus_protocol_ids.h b/samples/renesas_taurus_client/r_taurus_protocol_ids.h
+new file mode 100644
+index 000000000000..7461ba1d5b43
+--- /dev/null
++++ b/samples/renesas_taurus_client/r_taurus_protocol_ids.h
+@@ -0,0 +1,18 @@
++/* SPDX-License-Identifier: GPL-2.0-only OR MIT */
++/*
++ * r_taurus_protocol_ids.h  --  Renesas Taurus protocol IDs
++ *
++ * Copyright (C) 2023 Renesas Electronics Corporation
++ */
++
++#ifndef _R_TAURUS_PROTOCOL_IDS_H_
++#define _R_TAURUS_PROTOCOL_IDS_H_
++
++#define TAURUS_PROTOCOL_VIRTDEV_ID      (0x10)
++#define TAURUS_PROTOCOL_RVGC_ID         (0x01)
++#define TAURUS_PROTOCOL_CAMERA_ID       (0x02)
++#define TAURUS_PROTOCOL_CAN_ID          (0x03)
++#define TAURUS_PROTOCOL_ETHER_ID        (0x04)
++#define TAURUS_PROTOCOL_COMCH_ID        (0x05)
++
++#endif
+diff --git a/samples/renesas_taurus_client/r_virtdev_drv_api_priv.h b/samples/renesas_taurus_client/r_virtdev_drv_api_priv.h
+deleted file mode 100644
+index 70e89b412585..000000000000
+--- a/samples/renesas_taurus_client/r_virtdev_drv_api_priv.h
++++ /dev/null
+@@ -1,73 +0,0 @@
+-/* SPDX-License-Identifier: GPL-2.0-only OR MIT */
+-/*
+- * r_virtdev_drv_api_priv.h  --  Renesas Taurus client sample driver
+- *
+- * Copyright (C) 2022 Renesas Electronics Corporation
+- */
+-
+-#ifndef R_VIRTDEV_DRV_API_PRIV_H
+-#define R_VIRTDEV_DRV_API_PRIV_H
+-
+-#include "r_taurus_bridge.h"
+-
+-#ifndef __packed
+-# define __packed       __attribute__((__packed__))
+-#endif
+-
+-/********************* IOCTLs **************************/
+-
+-#define TAURUS_VIRTDEV_IOC_OP1          0x0
+-
+-struct taurus_virtdev_ioc_op1_in {
+-    uint8_t     string[32];
+-    uint32_t    par1;
+-    uint64_t    par2;
+-    uint16_t    par3;
+-} __packed;
+-
+-struct taurus_virtdev_ioc_op1_out {
+-    uint64_t    par1;
+-    uint32_t    par2;
+-    uint8_t     string[16];
+-    uint16_t    par3;
+-} __packed;
+-
+-
+-#define TAURUS_VIRTDEV_IOC_OP2          0x1
+-
+-struct taurus_virtdev_ioc_op2_in {
+-    uint32_t    par1;
+-    uint8_t     string[32];
+-    uint16_t    par2;
+-    uint64_t    par3;
+-} __packed;
+-
+-struct taurus_virtdev_ioc_op2_out {
+-    uint64_t    par1;
+-    uint32_t    par2;
+-    uint8_t     string[8];
+-    uint16_t    par3;
+-} __packed;
+-
+-/*******************************************************/
+-
+-struct taurus_virtdev_cmd_msg {
+-    R_TAURUS_CmdMsg_t   hdr;
+-    uint32_t            type;
+-    union {
+-        struct taurus_virtdev_ioc_op1_in ioc_op1;
+-        struct taurus_virtdev_ioc_op2_in ioc_op2;
+-    } params;
+-};                                                    
+-
+-struct taurus_virtdev_res_msg {
+-    R_TAURUS_ResultMsg_t        hdr;
+-    uint32_t                    type;
+-    union {
+-        struct taurus_virtdev_ioc_op1_out ioc_op1;
+-        struct taurus_virtdev_ioc_op2_out ioc_op2;
+-    } params;
+-};
+-
+-
+-#endif /* R_VIRTDEV_DRV_API_PRIV_H */
+diff --git a/samples/renesas_taurus_client/taurus_client_sample.c b/samples/renesas_taurus_client/taurus_client_sample.c
+index f7e4ed3a033e..3cd3529b8f5a 100644
+--- a/samples/renesas_taurus_client/taurus_client_sample.c
++++ b/samples/renesas_taurus_client/taurus_client_sample.c
+@@ -12,14 +12,27 @@
+ #include <linux/kthread.h>
+ #include <linux/rpmsg.h>
+ #include <linux/list.h>
++#include <linux/delay.h>
+ #include <linux/spinlock.h>
+ #include <linux/string.h>
+ 
+-#include "r_virtdev_drv_api_priv.h"
++#include "r_taurus_comch_protocol.h"
++
++
++#define		COMCH_CHANNEL_ID	0x00
++#define		INIT_ID_VALUE		0x0100
++#define		INIT_COOKIE_VALUE	0x0a00
++
++#define		FLOW_STAGE_OPEN		0
++#define		FLOW_STAGE_WRITE	1
++#define		FLOW_STAGE_READ		2
++#define		FLOW_STAGE_CLOSE	3
++#define		FLOW_STAGES			4
++
+ 
+ struct taurus_event_list {
+ 	uint32_t id;
+-	struct taurus_virtdev_res_msg result;
++	struct taurus_comch_res_msg result;
+ 	struct list_head list;
+ 	struct completion ack;
+ 	bool ack_received;
+@@ -33,29 +46,101 @@ struct taurus_sample_instance_data {
+ };
+ 
+ 
++static uint32_t get_unique_id()
++{
++	static uint32_t unique_id = INIT_ID_VALUE;
++	return unique_id++;
++}
++
++
++static void prepare_command_open(struct taurus_comch_cmd_msg *cmd_msg)
++{
++	static uint32_t cookie = INIT_COOKIE_VALUE;
++
++	cmd_msg->hdr.Id = get_unique_id();
++	cmd_msg->hdr.Channel = COMCH_CHANNEL_ID;
++	cmd_msg->hdr.Cmd = R_TAURUS_CMD_OPEN;
++	cmd_msg->hdr.Par1 = COMCH_PROTOCOL_OPEN;
++	cmd_msg->type = COMCH_PROTOCOL_OPEN;
++	cmd_msg->params.open.cookie = cookie++;
++}
++
++static void prepare_command_write(struct taurus_comch_cmd_msg *cmd_msg, uint32_t session_cookie
++						, const char *message, uint32_t message_size)
++{
++	cmd_msg->hdr.Id = get_unique_id();
++	cmd_msg->hdr.Channel = COMCH_CHANNEL_ID;
++	cmd_msg->hdr.Cmd = R_TAURUS_CMD_WRITE;
++	cmd_msg->hdr.Par1 = COMCH_PROTOCOL_IOC_TRANSMIT;
++	cmd_msg->type = COMCH_PROTOCOL_IOC_TRANSMIT;
++	cmd_msg->params.transmit.cookie = session_cookie;
++	cmd_msg->params.transmit.type = 0;
++	cmd_msg->params.transmit.LenByte = message_size;
++	memcpy(cmd_msg->params.transmit.MessageBuffer, message, message_size);
++}
++
++static void prepare_command_read(struct taurus_comch_cmd_msg *cmd_msg, uint32_t session_cookie)
++{
++	cmd_msg->hdr.Id = get_unique_id();
++	cmd_msg->hdr.Channel = COMCH_CHANNEL_ID;
++	cmd_msg->hdr.Cmd = R_TAURUS_CMD_READ;
++	cmd_msg->hdr.Par1 = COMCH_PROTOCOL_IOC_RECEIVE;
++	cmd_msg->type = COMCH_PROTOCOL_IOC_RECEIVE;
++	cmd_msg->params.transmit.cookie = session_cookie;
++	cmd_msg->params.transmit.type = 0;
++}
++
++static void prepare_command_close(struct taurus_comch_cmd_msg *cmd_msg, uint32_t session_cookie)
++{
++	cmd_msg->hdr.Id = get_unique_id();
++	cmd_msg->hdr.Channel = COMCH_CHANNEL_ID;
++	cmd_msg->hdr.Cmd = R_TAURUS_CMD_CLOSE;
++	cmd_msg->hdr.Par1 = COMCH_PROTOCOL_CLOSE;
++	cmd_msg->type = COMCH_PROTOCOL_CLOSE;
++	cmd_msg->params.close.cookie = session_cookie;
++}
++
++
+ static int taurus_sample_kthreadfn(void *data)
+ {
+ 	int ret = 0;
+-	uint32_t cnt = 0x100;
++	int flow = FLOW_STAGE_OPEN;
+ 	struct rpmsg_device *rpdev = (struct rpmsg_device*)data;
+ 	struct taurus_sample_instance_data *idata = dev_get_drvdata(&rpdev->dev);
+-	struct taurus_virtdev_cmd_msg cmd_msg;
+-	struct taurus_virtdev_res_msg *res_msg;
++	struct taurus_comch_cmd_msg cmd_msg;
++	struct taurus_comch_res_msg *res_msg;
+ 	struct taurus_event_list *event;
+-	char string[] = "Virtdev IOCTL OP1";
+-	
++	char message[] = "Message from CA5x to CR7.";
++	uint32_t session_cookie;
++
+ 	dev_dbg(&rpdev->dev, "%s():%d\n", __FUNCTION__, __LINE__);
+ 
+ 	while (!kthread_should_stop()) {
+-		cmd_msg.hdr.Id = cnt;
+-		cmd_msg.hdr.Channel = 0xff;
+-		cmd_msg.hdr.Cmd = R_TAURUS_CMD_IOCTL;
+-		cmd_msg.hdr.Par1 = TAURUS_VIRTDEV_IOC_OP1;
+-		cmd_msg.type = TAURUS_VIRTDEV_IOC_OP1;
+-		memcpy(cmd_msg.params.ioc_op1.string, string, sizeof(string));
+-		cmd_msg.params.ioc_op1.par1 = 0x1234ABCD;
+-		cmd_msg.params.ioc_op1.par2 = 0xFFEE1234ABCDEEFF;
+-		cmd_msg.params.ioc_op1.par3 = 0xCAFE;
++		switch (flow % FLOW_STAGES) {
++		case FLOW_STAGE_OPEN:
++			prepare_command_open(&cmd_msg);
++			session_cookie = cmd_msg.params.open.cookie;
++			dev_info(&rpdev->dev, "Opening. Id: %u, cookie: %lu\n", cmd_msg.hdr.Id, (unsigned long)cmd_msg.params.transmit.cookie);
++			break;
++		case FLOW_STAGE_WRITE:
++			prepare_command_write(&cmd_msg, session_cookie, message, sizeof(message));
++			dev_info(&rpdev->dev, "Writing. Id: %u, message: %s\n", cmd_msg.hdr.Id, message);
++			break;
++		case FLOW_STAGE_READ:
++			prepare_command_read(&cmd_msg, session_cookie);
++			dev_info(&rpdev->dev, "Reading. Id: %u\n", cmd_msg.hdr.Id);
++			break;
++		case FLOW_STAGE_CLOSE:
++			prepare_command_close(&cmd_msg, session_cookie);
++			dev_info(&rpdev->dev, "Closing. Id: %u, cookie: %lu\n", cmd_msg.hdr.Id, (unsigned long)cmd_msg.params.transmit.cookie);
++			break;
++		}
++
++		ret = rpmsg_send(rpdev->ept, &cmd_msg, sizeof(struct taurus_comch_cmd_msg));
++		if (ret) {
++			dev_err(&rpdev->dev, "rpmsg_send failed in %d: %d\n", __LINE__, ret);
++			return ret;
++		}
+ 
+ 		event = devm_kzalloc(&rpdev->dev, sizeof(*event), GFP_KERNEL);
+ 		if (!event)
+@@ -69,35 +154,6 @@ static int taurus_sample_kthreadfn(void *data)
+ 		list_add(&event->list, &idata->taurus_event_list_head);
+ 		write_unlock(&idata->event_list_lock);
+ 
+-		/* send a message to our remote processor */
+-		ret = rpmsg_send(rpdev->ept, &cmd_msg, sizeof(struct taurus_virtdev_cmd_msg));
+-		if (ret) {
+-			dev_err(&rpdev->dev, "rpmsg_send failed: %d\n", ret);
+-			return ret;
+-		}
+-
+-		dev_info(&rpdev->dev,
+-			"sent command:\n" \
+- 			"     cmd_msg.hdr.Id               = 0x%x\n" \
+-			"     cmd_msg.hdr.Channel          = 0x%x\n" \
+-			"     cmd_msg.hdr.Cmd              = 0x%x\n" \
+-			"     cmd_msg.hdr.Par1             = 0x%llx\n" \
+-			"     cmd_msg.hdr.type             = 0x%x\n" \
+-			"     cmd_msg.params.ioc_op1.sting = %s\n" \
+-			"     cmd_msg.params.ioc_op1.par1  = 0x%.8x\n" \
+-			"     cmd_msg.params.ioc_op1.par2  = 0x%.16llx\n" \
+-			"     cmd_msg.params.ioc_op1.par3  = 0x%.4x\n",
+-			cmd_msg.hdr.Id,
+-			cmd_msg.hdr.Channel,
+-			cmd_msg.hdr.Cmd,
+-			cmd_msg.hdr.Par1,
+-			cmd_msg.type,
+-			cmd_msg.params.ioc_op1.string,
+-			cmd_msg.params.ioc_op1.par1,
+-			cmd_msg.params.ioc_op1.par2,
+-			cmd_msg.params.ioc_op1.par3);
+-			
+-
+ 		ret = wait_for_completion_interruptible(&event->ack);
+ 		if (ret == -ERESTARTSYS) {
+ 			/* we were interrupted */
+@@ -118,52 +174,27 @@ static int taurus_sample_kthreadfn(void *data)
+ 			continue;
+ 		}
+ 
+-		dev_info(&rpdev->dev,
+-			"received ack:\n" \
+- 			"     event->result.hdr.Id      = 0x%x\n" \
+-			"     event->result.hdr.Channel = 0x%x\n" \
+-			"     event->result.hdr.Result  = 0x%x\n" \
+-			"     event->result.hdr.Aux     = 0x%llx\n",
+-			event->result.hdr.Id,
+-			event->result.hdr.Channel,
+-			event->result.hdr.Result,
+-			event->result.hdr.Aux);
+-
+ 		ret = wait_for_completion_interruptible(&event->completed);
+ 		if (ret == -ERESTARTSYS) {
+ 			/* we were interrupted */
+ 			return 0;
+ 		};
+ 
+-		dev_info(&rpdev->dev,
+-			"received result:\n" \
+- 			"     event->result.hdr.Id                = 0x%x\n" \
+-			"     event->result.hdr.Channel           = 0x%x\n" \
+-			"     event->result.hdr.Result            = 0x%x\n" \
+-			"     event->result.hdr.Aux               = 0x%llx\n" \
+-			"     event->result.type                  = 0x%x\n" \
+-			"     event->result.params.ioc_op1.par1   = 0x%.16llx\n" \
+-			"     event->result.params.ioc_op1.par2   = 0x%.8x\n" \
+-			"     event->result.params.ioc_op1.string = %s\n" \
+-			"     event->result.params.ioc_op1.par3   = 0x%.4x\n",
+-			event->result.hdr.Id,
+-			event->result.hdr.Channel,
+-			event->result.hdr.Result,
+-			event->result.hdr.Aux,
+-			event->result.type,
+-			event->result.params.ioc_op1.par1,
+-			event->result.params.ioc_op1.par2,
+-			event->result.params.ioc_op1.string,
+-			event->result.params.ioc_op1.par3);
+-			
++		if (flow == FLOW_STAGE_READ)
++			dev_info(&rpdev->dev, "Response: %s.\n", res_msg->params.receive.MessageBuffer);
++
++		dev_info(&rpdev->dev, "Completed.\n");
++
+ 		write_lock(&idata->event_list_lock);
+ 		list_del(&event->list);
+ 		write_unlock(&idata->event_list_lock);
+ 
+ 		devm_kfree(&rpdev->dev, event);
++		flow++;
+ 
+-		cnt++;
++		msleep(2000); /* just for debugging purposes */
+ 	}
++
+ 	return ret;
+ }
+ 
+@@ -173,7 +204,7 @@ static int taurus_sample_cb(struct rpmsg_device *rpdev, void *data, int len,
+ 	struct taurus_sample_instance_data *idata = dev_get_drvdata(&rpdev->dev);
+ 	struct taurus_event_list *event;
+ 	struct list_head *i;
+-	struct taurus_virtdev_res_msg *res = (struct taurus_virtdev_res_msg*)data;
++	struct taurus_comch_res_msg *res = (struct taurus_comch_res_msg*)data;
+ 	uint32_t res_id = res->hdr.Id;
+ 
+ 	dev_dbg(&rpdev->dev, "%s():%d\n", __FUNCTION__, __LINE__);
+@@ -184,7 +215,7 @@ static int taurus_sample_cb(struct rpmsg_device *rpdev, void *data, int len,
+ 		 * command. Just process the signal and return.*/
+ 
+ 		/* process res->hdr.Aux */
+-		dev_dbg(&rpdev->dev, "Signal received! Aux = %llx\n", res->hdr.Aux);
++		dev_info(&rpdev->dev, "Signal received! Aux = %llx\n", res->hdr.Aux);
+ 
+ 		return 0;
+ 	}
+@@ -208,7 +239,7 @@ static int taurus_sample_cb(struct rpmsg_device *rpdev, void *data, int len,
+ 		}
+ 	}
+ 	read_unlock(&idata->event_list_lock);
+-	
++
+ 	return 0;
+ }
+ 
+@@ -217,7 +248,7 @@ static int taurus_sample_probe(struct rpmsg_device *rpdev)
+ 	struct taurus_sample_instance_data *idata;
+ 
+ 	dev_dbg(&rpdev->dev, "%s():%d\n", __FUNCTION__, __LINE__);
+-	
++
+ 	dev_info(&rpdev->dev, "new channel: 0x%x -> 0x%x!\n",
+ 		rpdev->src, rpdev->dst);
+ 
+@@ -230,7 +261,7 @@ static int taurus_sample_probe(struct rpmsg_device *rpdev)
+ 
+ 	dev_set_drvdata(&rpdev->dev, idata);
+ 
+-	idata->taurus_sample_kthread = kthread_run(&taurus_sample_kthreadfn, (void*)rpdev, "taurus-virtdev");
++	idata->taurus_sample_kthread = kthread_run(&taurus_sample_kthreadfn, (void*)rpdev, "taurus-comch");
+ 
+ 	return 0;
+ }
+@@ -245,7 +276,7 @@ static void taurus_sample_remove(struct rpmsg_device *rpdev)
+ }
+ 
+ static struct rpmsg_device_id taurus_driver_sample_id_table[] = {
+-	{ .name	= "taurus-virtdev" },
++	{ .name	= "taurus-comch" },
+ 	{ },
+ };
+ MODULE_DEVICE_TABLE(rpmsg, taurus_driver_sample_id_table);
+-- 
+2.17.1
+

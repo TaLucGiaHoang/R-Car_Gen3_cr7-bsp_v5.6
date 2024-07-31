@@ -1,0 +1,238 @@
+Create new communication server
+===============================	
+Create new folder in
+	r-firmware/vlib/app/taurus/src/perserv/	
+
+e.g. comchserv
+	add directories lib src
+they contains the files:
+$tree 
+.
+├── lib
+│   └── r_comch_sv_api.h
+└── src
+    └── r_comch_sv_main.c
+
+r_comch_sv_api.h contains:
+	extern R_TAURUS_PeripheralServer_t R_Comch_Server;
+
+r_comch_sv_main.c contains:
+The R_Comch_Server struct:
+		
+R_TAURUS_PeripheralServer_t R_Comch_Server = {
+    "COMCH",
+    &locInit,
+    &locDeInit,
+    &locExecute,
+    &locSetSendSignalImpl
+};
+
+And the functions
+	locInit
+	locDeInit
+	locExecute
+	locSetSendSignalImpl
+
+Please check ethernet example.
+You can copy from ethernet example and rename the functions,	
+	
+	locInit and locDeinit function are empty
+	locExecute translated tarus  commands into the driver calls
+
+	locSetSendSignalImpl exectures driver SetSendSignalImpl
+
+
+Integration of new communication server
+=======================================
+	Add new periferal server id to file:
+	cr-firmware/vlib/app/taurus/platform/lib/r_taurus_platform_peri_ids.h
+
++#if defined(R_TAURUS_ENABLE_COMCH)
++    R_TAURUS_COMCH_PERI_ID,
++#endif    
+
+	Add periferal server to file:		
+	cr-firmware/vlib/app/taurus/platform/ros_cr7_r-carx3/src/r_pf_ros_cr7_r-carx3.c
+
+Add include file like this:
+		
++#if defined(R_TAURUS_ENABLE_COMCH)
++#include "r_comch_sv_api.h"
++#endif
+
+Add comserver  like this:
+
+#if defined(R_TAURUS_ENABLE_COMCH)
+    [R_TAURUS_COMCH_PERI_ID] = &R_Comch_Server,
+#endif
+
+Add new service in this file:
+ 	cr-firmware/vlib/app/taurus/comal/src/rpmsg/r_rte_comal_rpmsg_main.c
+Add the new service here:
+	  static R_RTE_COMAL_Rpmsg_Service_t guest1_services[] ;
+like this:
++#if defined(R_TAURUS_ENABLE_COMCH)
++    {
++        .name = "taurus-comch",
++        .service_port = TAURUS_PROTOCOL_COMCH_ID,
++        .guest_port = 0,
++        .peripheral_id = R_TAURUS_COMCH_PERI_ID
++    },
+#endif
+
+Comment:
+	R_RTE_COMAL_SendSignal is patched for ETHERnet. Need to check why.
+
+Add protcol id to this file
+	cr-firmware/vlib/app/taurus/driver/include/r_taurus_protocol_ids.h
+#define TAURUS_PROTOCOL_VIRTDEV_ID      (0x10)
+#define TAURUS_PROTOCOL_RVGC_ID         (0x01)
+#define TAURUS_PROTOCOL_CAMERA_ID       (0x02)
+#define TAURUS_PROTOCOL_CAN_ID          (0x03)
+#define TAURUS_PROTOCOL_ETHER_ID        (0x04)
++#define TAURUS_PROTOCOL_COMCH_ID        (0x05)
+
+	
+	
+Add R_TAURUS_ENABLE_COMCH to cr-firmware/vlib/app/taurus/CMakeLists.txt
+
+add_compile_definitions(
+    RESOURCE_TABLE_BASE=0x70400000
+    R_TAURUS_ENABLE_RVGC
++   R_TAURUS_ENABLE_COMCH
+)
+
+Add server and driverfiles to project
+			
+	add_library(${PROJECT_NAME}-${CMAKE_SYSTEM_PROCESSOR}-${CMAKE_SYSTEM_COMPILER}-${RCAR_TARGET_OS}
+    STATIC
+        src/r_taurus_main.c
+        src/comserv/r_comsv_main.c
+        src/perserv/canserv/src/r_can_sv_main.c
+        src/perserv/rvgcserv/src/r_rvgc_sv_main.c
++        src/perserv/comchserv/src/r_comch_sv_main.c	
+        comal/src/rpmsg/r_rte_comal_rpmsg_main.c
+        comal/src/rpmsg/taurus_rpmsg.c
+        comal/src/rpmsg/taurus_virtqueue.c
+        platform/ros_cr7_r-carx3/src/r_pf_ros_cr7_r-carx3.c
+        driver/rvgc/src/r_rvgc_drv_main.c
++        driver/comch/src/r_comch_drv_main.c
+)
+
+Add include directories
+# taurus includes
+include_directories(
+    src
+    src/comserv
+    src/perserv/lib
+    driver/include
+    driver/can/lib
+    driver/rvgc/lib
++    driver/comch/lib
+    comal/lib
+    bridge/lib
+    platform/lib
+    src/perserv/lib
+    src/perserv/canserv/lib
+    src/perserv/rvgcserv/lib
++    src/perserv/comchserv/lib    
+    ${CMAKE_VLIB_ROOT}/os/osal/include
+)
+
+Add new driver for you communication channel to taurus
+======================================================
+		
+Create new folder in
+	cr-firmware/vlib/app/taurus/driver
+
+e.g comch
+	add lib and source directories
+	
+create 2 files in folder lib
+	r_comch_drv_api.h
+
+these functions have to be created for the driver to be working:
+		
+int R_COMCH_DRV_Open(int Guest, R_TAURUS_CmdMsg_t *Cmd);
+ * @brief Opens the COMCH server	
+int R_COMCH_DRV_Close(int Guest, R_TAURUS_CmdMsg_t *Cmd);
+ * @brief Closes the COMCH server
+ssize_t R_COMCH_DRV_Read(int Guest, R_TAURUS_CmdMsg_t *Cmd);
+ * @brief Read request to the COMCH server	
+ssize_t R_COMCH_DRV_Write(int Guest, R_TAURUS_CmdMsg_t *Cmd);
+ * @brief Write request to the COMCH server	
+ssize_t R_COMCH_DRV_IoCtl(int Guest, R_TAURUS_CmdMsg_t *Cmd);
+ * @brief Request an IOCTL command to the COMCH server
+ssize_t R_COMCH_DRV_Status(int Guest, R_TAURUS_CmdMsg_t *Cmd);
+ * @brief Query status of the COMCH server.	
+void R_COMCH_DRV_SetSendSignalImpl(int (*SendSignalImpl)(int Guest, R_TAURUS_SignalId_t Signal, void* Option));
+ * @brief Store the function pointer callback that is called from the server		
+
+More description can be found in the header file (check eth example)
+						
+	r_taurus_comch_protocol.h
+create 1 file in folder src
+	r_comch_drv_main.c
+
+Add a static instance storage to your driver:
+
+example:
+		
+struct ComchInstance {
+    char AppName[64];
+    int Handle;
+    int Id;
+    int Initialized;
+};
+	
+
+	
+static struct ComchInstance loc_ComchInstances[LOC_NUM_COMCH_IF] = {
+    {
+        .AppName = "MyTestApp",
+        .Id = 0,
+        .Handle = -1,
+        .Initialized = 0,
+    },
+};
+
+implement your R_COMCH_DRV_Open / Close functions:
+
+Add comch  para server to Integrity
+=================================== 
+Copy  the following files:
+	cr-firmware/vlib/app/taurus/driver/include/r_taurus_protocol_ids.h
+	cr-firmware/vlib/app/taurus/driver/comch/lib/r_taurus_comch_protocol.h
+	
+
+
+
+Send Events from Taurus to Cr7
+==============================
+
+Events are message that are send to Integrity initiated by Cr7.
+For commands Integrity is the Initiator and Cr7 will react.
+For Events Cr7 is the initiator.
+
+Events are send using int R_RTE_COMAL_SendSignal(int Guest, R_TAURUS_SignalId_t Signal, void* Option)
+function in r_rte_comal_rpmsg_main.c
+
+THe messages are send with id = 0.
+
+This is set via the driver command locSetSendSignalImpl and will be used in an event loop
+
+This is how the event loops work
+	
+while(1) {
+	wait_for_external trigger to signal(e.g. semaphore message queue)
+	call SetSendSignalImpl to send signal to Integrity
+	This calls R_RTE_COMAL_SendSignal.
+	The message send has the id 0
+	calling	taurus_rpmsg_send(&rpmsg_state->rpmsg_dev,
+}
+
+
+
+
+	
+		

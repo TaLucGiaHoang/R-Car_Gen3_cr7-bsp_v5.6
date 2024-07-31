@@ -1,0 +1,28 @@
+var structtaurus__ether__cmd__msg =
+[
+    [ "close", "structtaurus__ether__cmd__msg.html#a8f21ae28e469c8dc8af8783b96a9b859", null ],
+    [ "enable_egress_time_stamp", "structtaurus__ether__cmd__msg.html#a6cbcb60466898667896445e0a4559339", null ],
+    [ "eth_get_mode", "structtaurus__ether__cmd__msg.html#a48ccd45304d2fdd6cbe2d545cf797093", null ],
+    [ "eth_init", "structtaurus__ether__cmd__msg.html#abc32d190d3150af0c9a9e52f5257f48b", null ],
+    [ "eth_set_mode", "structtaurus__ether__cmd__msg.html#af9289f559d7f662e1ddc600c1eb62e85", null ],
+    [ "get_current_time", "structtaurus__ether__cmd__msg.html#a57bf16d89ccb254faaf6c8f1db99e238", null ],
+    [ "get_drop_count", "structtaurus__ether__cmd__msg.html#aeb5d1181604e1ca02b52301c31cf6c95", null ],
+    [ "get_egress_time_stamp", "structtaurus__ether__cmd__msg.html#a0ce8f92799994461b80f5af22f7f9323", null ],
+    [ "get_ether_stats", "structtaurus__ether__cmd__msg.html#a4d9fdc30af0f1783ba8dae7ce01166ca", null ],
+    [ "get_ingress_time_stamp", "structtaurus__ether__cmd__msg.html#a00226ed4409cf04ceb41429b135457b1", null ],
+    [ "get_phys", "structtaurus__ether__cmd__msg.html#a52bc65199712416b18d3f1e9acbd5464", null ],
+    [ "get_version_info", "structtaurus__ether__cmd__msg.html#abbf31f55d549846094b1856864473e3d", null ],
+    [ "hdr", "structtaurus__ether__cmd__msg.html#af53bc13414500f33582e8667eedc5ff9", null ],
+    [ "params", "structtaurus__ether__cmd__msg.html#ab58533c39463db690f20fb8d1a133e42", null ],
+    [ "read_mii", "structtaurus__ether__cmd__msg.html#a08cc543b52f6554e156489b05894e4a2", null ],
+    [ "receive", "structtaurus__ether__cmd__msg.html#a186343986dd371413c559ab1fb097e21", null ],
+    [ "set_correction_time", "structtaurus__ether__cmd__msg.html#a7c028767c232c46ce40188a982e59423", null ],
+    [ "set_global_time", "structtaurus__ether__cmd__msg.html#a10e61927ba92e403af2245204f28d40f", null ],
+    [ "set_phys", "structtaurus__ether__cmd__msg.html#a60cb46c7f730b3d5a75483a6433b283d", null ],
+    [ "transmit", "structtaurus__ether__cmd__msg.html#a487a91149d38bbeb26e01861abcff82b", null ],
+    [ "tx_buffer", "structtaurus__ether__cmd__msg.html#a7afbc30080e3585c6d27f38c5fff0146", null ],
+    [ "tx_confirmation", "structtaurus__ether__cmd__msg.html#a6dbe3c6ca41936bdcd5ca4f079526477", null ],
+    [ "type", "structtaurus__ether__cmd__msg.html#ad44b615021ed3ccb734fcaf583ef4a03", null ],
+    [ "update_phys", "structtaurus__ether__cmd__msg.html#a6e6889aea962580f0f88a1def921067b", null ],
+    [ "write_mii", "structtaurus__ether__cmd__msg.html#a93f9bc04bba7f0ca6e00cc16f4b0c8a4", null ]
+];

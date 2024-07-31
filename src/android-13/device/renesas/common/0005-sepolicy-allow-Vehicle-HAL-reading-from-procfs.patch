@@ -1,0 +1,27 @@
+From 87ad7a533b56e303e8de46d27f0ffa2408ed7316 Mon Sep 17 00:00:00 2001
+From: Sergii Piatakov <sergii.piatakov@globallogic.com>
+Date: Thu, 25 Jan 2024 23:25:19 +0200
+Subject: [PATCH 5/5] sepolicy: allow Vehicle HAL reading from procfs
+
+This patch is necessary to allow the Vehicle HAL to read the
+`/proc/bus/input/devices` file.
+
+Test: build, flash and run a DUT, ensure that Vehicle HAL is operable
+      and can successfully handle GPIO events.
+Signed-off-by: Sergii Piatakov <sergii.piatakov@globallogic.com>
+---
+ sepolicy/vendor/hal_vehicle_default.te | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/sepolicy/vendor/hal_vehicle_default.te b/sepolicy/vendor/hal_vehicle_default.te
+index 8611056..0b08c5a 100644
+--- a/sepolicy/vendor/hal_vehicle_default.te
++++ b/sepolicy/vendor/hal_vehicle_default.te
+@@ -6,3 +6,4 @@ allowxperm hal_vehicle_default self:can_socket ioctl SIOCGIFINDEX;
+ 
+ allow hal_vehicle_default self:can_socket { bind create read write ioctl };
+ allow hal_vehicle_default sysfs_pmic:file rw_file_perms;
++allow hal_vehicle_default proc:file { read getattr open };
+-- 
+2.25.1
+

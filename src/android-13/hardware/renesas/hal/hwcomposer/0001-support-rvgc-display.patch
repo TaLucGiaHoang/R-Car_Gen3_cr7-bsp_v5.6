@@ -1,0 +1,75 @@
+From 2d5fd80747e574222ac5fe8e0cb90e1deb604033 Mon Sep 17 00:00:00 2001
+From: Baoan Du <baoan.du.xj@renesas.com>
+Date: Tue, 13 Oct 2020 03:09:29 +0000
+Subject: [PATCH 1/1] support rvgc display
+
+---
+ config.h               | 21 +++++++++++++++++++++
+ hwcomposer_defaults.go |  4 ++++
+ 2 files changed, 25 insertions(+)
+
+diff --git a/config.h b/config.h
+index dcafb7d..aaadc59 100644
+--- a/config.h
++++ b/config.h
+@@ -22,7 +22,11 @@
+  define function switch
+ ***********************************/
+ 
++#if defined(TARGET_RVGC_ENABLED)
++#define NUM_DISPLAYS (2)
++#else
+ #define NUM_DISPLAYS (4)
++#endif
+ 
+ struct hwdisplay {
+     char encoder[64];
+@@ -56,6 +60,22 @@ static const hwdisplay hwdisplays[NUM_DISPLAYS] = {
+         "ro.boot.display.res.LVDS",
+     }
+ #else /* LAGER, KOELSCH, ALT, SALVATOR, ULCB*/
++#if defined(TARGET_RVGC_ENABLED)
++    {
++        // primary display
++        "/sys/class/drm/card0-HDMI-A-1/encoder_type",
++        "/sys/class/drm/card0-HDMI-A-1/connector_id",
++        "/sys/class/drm/card0-HDMI-A-1/status",
++        "ro.boot.display.res.HDMI1",
++    },
++    {
++        // external display
++        "/sys/class/drm/card0-HDMI-A-2/encoder_type",
++        "/sys/class/drm/card0-HDMI-A-2/connector_id",
++        "/sys/class/drm/card0-HDMI-A-2/status",
++        "ro.boot.display.res.HDMI2",
++    }
++#else
+     {
+         // primary display
+         "/sys/class/drm/card0-VGA-1/encoder_type",
+@@ -86,6 +106,7 @@ static const hwdisplay hwdisplays[NUM_DISPLAYS] = {
+         "/sys/class/drm/card0-LVDS-1/status",
+         "ro.boot.display.res.LVDS",
+     }
++#endif /* defined(TARGET_RVGC_ENABLED) */
+ #endif /* defined(TARGET_BOARD_KINGFISHER) */
+ };
+ 
+diff --git a/hwcomposer_defaults.go b/hwcomposer_defaults.go
+index 79d0d12..6097d93 100644
+--- a/hwcomposer_defaults.go
++++ b/hwcomposer_defaults.go
+@@ -39,6 +39,10 @@ func globalFlags(ctx android.BaseContext) []string {
+         cflags = append(cflags, "-DHWC_HOTPLUG_SUPPORT=1")
+     }
+ 
++    if ctx.Config().IsEnvTrue("TARGET_RVGC_ENABLED") {
++        cflags = append(cflags, "-DTARGET_RVGC_ENABLED")
++    }
++
+     switch ctx.Config().DeviceName() {
+     case "salvator":
+         cflags = append(cflags, "-DTARGET_BOARD_SALVATOR")
+-- 
+2.25.1
+

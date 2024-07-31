@@ -1,0 +1,75 @@
+From 3159ac17992f04754458941f5ad122e0bb13e75d Mon Sep 17 00:00:00 2001
+From: Baoan Du <baoan.du.xj@renesas.com>
+Date: Tue, 13 Oct 2020 03:09:29 +0000
+Subject: [PATCH] support rvgc display
+
+---
+ Android.mk |  4 ++++
+ config.h   | 21 +++++++++++++++++++++
+ 2 files changed, 25 insertions(+)
+
+diff --git a/Android.mk b/Android.mk
+index 17b34c3..0d63fde 100644
+--- a/Android.mk
++++ b/Android.mk
+@@ -76,6 +76,10 @@ LOCAL_CFLAGS += -Wall -Werror
+ LOCAL_INIT_RC := android.hardware.graphics.composer@2.3-service.renesas.rc
+ LOCAL_VINTF_FRAGMENTS := android.hardware.graphics.composer@2.3-service.renesas.xml
+ 
++ifeq ($(TARGET_RVGC_ENABLED),true)
++LOCAL_CFLAGS += -DTARGET_RVGC_ENABLED
++endif
++
+ ifeq ($(TARGET_ENABLE_HOTPLUG_SUPPORT),true)
+     LOCAL_CFLAGS += -DHWC_HOTPLUG_SUPPORT=1
+ endif
+diff --git a/config.h b/config.h
+index d23dca7..c9a63ba 100644
+--- a/config.h
++++ b/config.h
+@@ -22,7 +22,11 @@
+  define function switch
+ ***********************************/
+ 
++#if defined(TARGET_RVGC_ENABLED)
++#define NUM_DISPLAYS (2)
++#else
+ #define NUM_DISPLAYS (3)
++#endif
+ 
+ struct hwdisplay {
+     char encoder[64];
+@@ -56,6 +60,22 @@ static const hwdisplay hwdisplays[NUM_DISPLAYS] = {
+         "ro.boot.display.res.LVDS",
+     }
+ #else /* LAGER, KOELSCH, ALT, SALVATOR, ULCB*/
++#if defined(TARGET_RVGC_ENABLED)
++    {
++        // primary display
++        "/sys/class/drm/card0-HDMI-A-1/encoder_type",
++        "/sys/class/drm/card0-HDMI-A-1/connector_id",
++        "/sys/class/drm/card0-HDMI-A-1/status",
++        "ro.boot.display.res.HDMI1",
++    },
++    {
++        // external display
++        "/sys/class/drm/card0-HDMI-A-2/encoder_type",
++        "/sys/class/drm/card0-HDMI-A-2/connector_id",
++        "/sys/class/drm/card0-HDMI-A-2/status",
++        "ro.boot.display.res.HDMI2",
++    }
++#else
+     {
+         // primary display
+         "/sys/class/drm/card0-VGA-1/encoder_type",
+@@ -79,6 +99,7 @@ static const hwdisplay hwdisplays[NUM_DISPLAYS] = {
+         "ro.boot.display.res.HDMI2",
+     }
+ #endif
++#endif /* defined(TARGET_RVGC_ENABLED) */
+ #endif /* defined(TARGET_BOARD_KINGFISHER) */
+ };
+ 
+-- 
+2.29.0
+

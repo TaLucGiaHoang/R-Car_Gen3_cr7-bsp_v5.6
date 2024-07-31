@@ -1,0 +1,27 @@
+var group__OSAL__Private__Defines__Static__Variables__DevConfig =
+[
+    [ "gs_int_audmac", "group__OSAL__Private__Defines__Static__Variables__DevConfig.html#gae69cf83ba4c7cd75abd4c82bdf915185", null ],
+    [ "gs_int_audmac", "group__OSAL__Private__Defines__Static__Variables__DevConfig.html#gae69cf83ba4c7cd75abd4c82bdf915185", null ],
+    [ "gs_int_canfd", "group__OSAL__Private__Defines__Static__Variables__DevConfig.html#ga5342d6d6926a207e026e12705d198394", null ],
+    [ "gs_int_canfd", "group__OSAL__Private__Defines__Static__Variables__DevConfig.html#ga5342d6d6926a207e026e12705d198394", null ],
+    [ "gs_int_decoder", "group__OSAL__Private__Defines__Static__Variables__DevConfig.html#gae9b128b7908c471cca4bfdd8afa7adf9", null ],
+    [ "gs_int_decoder", "group__OSAL__Private__Defines__Static__Variables__DevConfig.html#gae9b128b7908c471cca4bfdd8afa7adf9", null ],
+    [ "gs_int_dhd", "group__OSAL__Private__Defines__Static__Variables__DevConfig.html#ga764584c0a90762aa870e9d5eddea42fb", null ],
+    [ "gs_int_dhd", "group__OSAL__Private__Defines__Static__Variables__DevConfig.html#ga764584c0a90762aa870e9d5eddea42fb", null ],
+    [ "gs_int_dmac", "group__OSAL__Private__Defines__Static__Variables__DevConfig.html#ga1aa87f55572e97cecd9b938fd278427d", null ],
+    [ "gs_int_dmac", "group__OSAL__Private__Defines__Static__Variables__DevConfig.html#ga1aa87f55572e97cecd9b938fd278427d", null ],
+    [ "gs_int_doc", "group__OSAL__Private__Defines__Static__Variables__DevConfig.html#gaa7d1ef8386e9bfe55a1cb41402f70b74", null ],
+    [ "gs_int_doc", "group__OSAL__Private__Defines__Static__Variables__DevConfig.html#gaa7d1ef8386e9bfe55a1cb41402f70b74", null ],
+    [ "gs_int_ethernet", "group__OSAL__Private__Defines__Static__Variables__DevConfig.html#gae9386e126e037346049e0a4e8789eb25", null ],
+    [ "gs_int_ethernet", "group__OSAL__Private__Defines__Static__Variables__DevConfig.html#gae9386e126e037346049e0a4e8789eb25", null ],
+    [ "gs_int_ims", "group__OSAL__Private__Defines__Static__Variables__DevConfig.html#gab739a0b30a7b3f81ed1e95c0b36a2873", null ],
+    [ "gs_int_ims", "group__OSAL__Private__Defines__Static__Variables__DevConfig.html#gab739a0b30a7b3f81ed1e95c0b36a2873", null ],
+    [ "gs_int_vin", "group__OSAL__Private__Defines__Static__Variables__DevConfig.html#ga60dcff94326a9e5a1895afae563f16a5", null ],
+    [ "gs_int_vin", "group__OSAL__Private__Defines__Static__Variables__DevConfig.html#ga60dcff94326a9e5a1895afae563f16a5", null ],
+    [ "gs_osal_axi_bus_control", "group__OSAL__Private__Defines__Static__Variables__DevConfig.html#ga19f00de6e9bc87252e5e1fe1fdfa0b6a", null ],
+    [ "gs_osal_axi_bus_control", "group__OSAL__Private__Defines__Static__Variables__DevConfig.html#ga19f00de6e9bc87252e5e1fe1fdfa0b6a", null ],
+    [ "gs_osal_device_control", "group__OSAL__Private__Defines__Static__Variables__DevConfig.html#ga3a87d745c282df5876fd14f1616a27c9", null ],
+    [ "gs_osal_device_control", "group__OSAL__Private__Defines__Static__Variables__DevConfig.html#ga3a87d745c282df5876fd14f1616a27c9", null ],
+    [ "gs_osal_memory_max_configration", "group__OSAL__Private__Defines__Static__Variables__DevConfig.html#ga771e74d8e819816dec94159eadb404c4", null ],
+    [ "gs_osal_memory_max_configration", "group__OSAL__Private__Defines__Static__Variables__DevConfig.html#ga771e74d8e819816dec94159eadb404c4", null ]
+];

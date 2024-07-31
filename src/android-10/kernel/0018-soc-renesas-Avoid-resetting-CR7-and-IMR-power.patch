@@ -1,0 +1,42 @@
+From 6455090e258ed9f7f62aa64684b5966075032040 Mon Sep 17 00:00:00 2001
+From: Baoan Du <baoan.du.xj@renesas.com>
+Date: Thu, 25 Mar 2021 14:06:45 +0800
+Subject: [PATCH 18/34] soc: renesas: Avoid resetting CR7 and IMR power
+
+CR7 and IMR will be reset when stariing kernel. This patch checks and
+avoids this since they are used before kernel up.
+---
+ drivers/soc/renesas/rcar-sysc.c | 12 ++++++++++++
+ 1 file changed, 12 insertions(+)
+
+diff --git a/drivers/soc/renesas/rcar-sysc.c b/drivers/soc/renesas/rcar-sysc.c
+index 7fabcfe0a666..3c6dc1edf01e 100644
+--- a/drivers/soc/renesas/rcar-sysc.c
++++ b/drivers/soc/renesas/rcar-sysc.c
+@@ -116,11 +116,23 @@ static void rcar_sysc_extmask_ctrl(bool on)
+ 		  rcar_sysc_base + extra_regs->sysc_extmask_offs);
+ }
+ 
++static bool rcar_sysc_power_is_off(const struct rcar_sysc_ch *sysc_ch);
++
+ static int rcar_sysc_pwr_on_off(const struct rcar_sysc_ch *sysc_ch, bool on)
+ {
+ 	unsigned int sr_bit, reg_offs;
+ 	int k;
+ 
++	/* Ensure we do *not* turn off the Cortex-R7 if it is on */
++	/* All R-Car SoCs have the Cortex-R7 PWRSR reg at a fixed address */
++	if ((sysc_ch->chan_offs == 0x240) && (!rcar_sysc_power_is_off(sysc_ch)))
++		return 0;
++
++	/* Ensure we do *not* turn off the IMR (A3VC) if it is on */
++	/* All R-Car SoCs have the IMR PWRSR reg at a fixed address PWRSR9 */
++	if ((sysc_ch->chan_offs == 0x380) && (!rcar_sysc_power_is_off(sysc_ch)))
++		return 0;
++
+ 	if (on) {
+ 		sr_bit = SYSCSR_PONENB;
+ 		reg_offs = PWRONCR_OFFS;
+-- 
+2.17.1
+

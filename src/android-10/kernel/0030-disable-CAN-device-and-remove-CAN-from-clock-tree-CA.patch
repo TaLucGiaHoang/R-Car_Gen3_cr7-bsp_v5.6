@@ -1,0 +1,73 @@
+From 311dbd9498d35631233d0b8b2704119ecbf41710 Mon Sep 17 00:00:00 2001
+From: Huiming Liu <huiming.liu.ur@renesas.com>
+Date: Wed, 18 May 2022 19:30:17 +0800
+Subject: [PATCH 30/34] disable CAN device and remove CAN from clock tree(CAN
+ is initialized in CR7 side).
+
+---
+ arch/arm64/boot/dts/renesas/android/salvator.dtsi | 4 ++--
+ drivers/clk/renesas/r8a7795-cpg-mssr.c            | 2 +-
+ drivers/clk/renesas/r8a7796-cpg-mssr.c            | 2 +-
+ drivers/clk/renesas/r8a77965-cpg-mssr.c           | 2 +-
+ 4 files changed, 5 insertions(+), 5 deletions(-)
+
+diff --git a/arch/arm64/boot/dts/renesas/android/salvator.dtsi b/arch/arm64/boot/dts/renesas/android/salvator.dtsi
+index 02e8e34ce11c..ae4476b8a96a 100644
+--- a/arch/arm64/boot/dts/renesas/android/salvator.dtsi
++++ b/arch/arm64/boot/dts/renesas/android/salvator.dtsi
+@@ -129,11 +129,11 @@
+ &can0 {
+ 	pinctrl-0 = <&can0_pins>;
+ 	pinctrl-names = "default";
+-	status = "okay";
++	status = "disabled";
+ };
+ 
+ &can1 {
+ 	pinctrl-0 = <&can1_pins>;
+ 	pinctrl-names = "default";
+-	status = "okay";
++	status = "disabled";
+ };
+diff --git a/drivers/clk/renesas/r8a7795-cpg-mssr.c b/drivers/clk/renesas/r8a7795-cpg-mssr.c
+index 15119479f9dc..49f8ec77f50f 100644
+--- a/drivers/clk/renesas/r8a7795-cpg-mssr.c
++++ b/drivers/clk/renesas/r8a7795-cpg-mssr.c
+@@ -109,7 +109,7 @@ static struct cpg_core_clk r8a7795_core_clks[] __initdata = {
+ 	DEF_FIXED("cl",         R8A7795_CLK_CL,    CLK_PLL1_DIV2, 48, 1),
+ 	DEF_FIXED("cp",         R8A7795_CLK_CP,    CLK_EXTAL,      2, 1),
+ 
+-	DEF_DIV6P1("canfd",     R8A7795_CLK_CANFD, CLK_PLL1_DIV4, 0x244),
++	/* DEF_DIV6P1("canfd",     R8A7795_CLK_CANFD, CLK_PLL1_DIV4, 0x244), */
+ 	DEF_DIV6P1("csi0",      R8A7795_CLK_CSI0,  CLK_PLL1_DIV4, 0x00c),
+ 	DEF_DIV6P1("mso",       R8A7795_CLK_MSO,   CLK_PLL1_DIV4, 0x014),
+ 	DEF_DIV6P1("hdmi",      R8A7795_CLK_HDMI,  CLK_PLL1_DIV4, 0x250),
+diff --git a/drivers/clk/renesas/r8a7796-cpg-mssr.c b/drivers/clk/renesas/r8a7796-cpg-mssr.c
+index b76e055dd8b9..92909baf854b 100644
+--- a/drivers/clk/renesas/r8a7796-cpg-mssr.c
++++ b/drivers/clk/renesas/r8a7796-cpg-mssr.c
+@@ -110,7 +110,7 @@ static const struct cpg_core_clk r8a7796_core_clks[] __initconst = {
+ 	DEF_FIXED("cl",         R8A7796_CLK_CL,    CLK_PLL1_DIV2, 48, 1),
+ 	DEF_FIXED("cp",         R8A7796_CLK_CP,    CLK_EXTAL,      2, 1),
+ 
+-	DEF_DIV6P1("canfd",     R8A7796_CLK_CANFD, CLK_PLL1_DIV4, 0x244),
++	/* DEF_DIV6P1("canfd",     R8A7796_CLK_CANFD, CLK_PLL1_DIV4, 0x244), */
+ 	DEF_DIV6P1("csi0",      R8A7796_CLK_CSI0,  CLK_PLL1_DIV4, 0x00c),
+ 	DEF_DIV6P1("mso",       R8A7796_CLK_MSO,   CLK_PLL1_DIV4, 0x014),
+ 	DEF_DIV6P1("hdmi",      R8A7796_CLK_HDMI,  CLK_PLL1_DIV4, 0x250),
+diff --git a/drivers/clk/renesas/r8a77965-cpg-mssr.c b/drivers/clk/renesas/r8a77965-cpg-mssr.c
+index 5238069090b4..3ea12fe36927 100644
+--- a/drivers/clk/renesas/r8a77965-cpg-mssr.c
++++ b/drivers/clk/renesas/r8a77965-cpg-mssr.c
+@@ -103,7 +103,7 @@ static const struct cpg_core_clk r8a77965_core_clks[] __initconst = {
+ 	DEF_FIXED("cl",		R8A77965_CLK_CL,	CLK_PLL1_DIV2,	48, 1),
+ 	DEF_FIXED("cp",		R8A77965_CLK_CP,	CLK_EXTAL,	2, 1),
+ 
+-	DEF_DIV6P1("canfd",	R8A77965_CLK_CANFD,	CLK_PLL1_DIV4,	0x244),
++	/* DEF_DIV6P1("canfd",	R8A77965_CLK_CANFD,	CLK_PLL1_DIV4,	0x244), */
+ 	DEF_DIV6P1("csi0",	R8A77965_CLK_CSI0,	CLK_PLL1_DIV4,	0x00c),
+ 	DEF_DIV6P1("mso",	R8A77965_CLK_MSO,	CLK_PLL1_DIV4,	0x014),
+ 	DEF_DIV6P1("hdmi",	R8A77965_CLK_HDMI,	CLK_PLL1_DIV4,	0x250),
+-- 
+2.17.1
+

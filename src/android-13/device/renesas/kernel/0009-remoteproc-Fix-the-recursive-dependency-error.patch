@@ -1,0 +1,40 @@
+From 12f80f81acb6b4ab02a0e4d59f4a2228facd1aa6 Mon Sep 17 00:00:00 2001
+From: Khiem Nguyen <khiem.nguyen.xt@renesas.com>
+Date: Wed, 10 Mar 2021 14:31:20 +0700
+Subject: [PATCH 09/40] remoteproc: Fix the recursive dependency error
+
+This patch fixes the compiler error due to recursive dependency
+as below:
+*** Default configuration is based on 'defconfig'
+drivers/video/fbdev/Kconfig:12:error: recursive dependency detected!
+drivers/video/fbdev/Kconfig:12: symbol FB is selected by DRM_KMS_FB_HELPER
+drivers/gpu/drm/Kconfig:80:     symbol DRM_KMS_FB_HELPER depends on DRM_KMS_HELPER
+drivers/gpu/drm/Kconfig:74:     symbol DRM_KMS_HELPER is selected by DRM_VIRTIO_GPU
+drivers/gpu/drm/virtio/Kconfig:2:       symbol DRM_VIRTIO_GPU depends on VIRTIO
+drivers/virtio/Kconfig:2:       symbol VIRTIO is selected by RPMSG_VIRTIO
+drivers/rpmsg/Kconfig:61:       symbol RPMSG_VIRTIO is selected by RCAR_CR7_REMOTEPROC
+drivers/remoteproc/Kconfig:291: symbol RCAR_CR7_REMOTEPROC depends on DMA_CMA
+kernel/dma/Kconfig:110: symbol DMA_CMA is selected by FB_HYPERV
+drivers/video/fbdev/Kconfig:2182:       symbol FB_HYPERV depends on FB
+
+Signed-off-by: Khiem Nguyen <khiem.nguyen.xt@renesas.com>
+---
+ drivers/remoteproc/Kconfig | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/drivers/remoteproc/Kconfig b/drivers/remoteproc/Kconfig
+index ec4ccb9f45c6..681bff91f9e5 100644
+--- a/drivers/remoteproc/Kconfig
++++ b/drivers/remoteproc/Kconfig
+@@ -292,7 +292,7 @@ config RCAR_CR7_REMOTEPROC
+ 	tristate "R-Car Gen3 Cortex-R7 remoteproc support"
+ 	depends on RCAR_MFIS
+ 	depends on DMA_CMA
+-	select RPMSG_VIRTIO
++	depends on RPMSG_VIRTIO
+ 	help
+ 	  Say y here to support ARM Cortex-R7 remote processors via the
+ 	  remote processor framework on R-Car Gen3 SOCs.
+-- 
+2.25.1
+

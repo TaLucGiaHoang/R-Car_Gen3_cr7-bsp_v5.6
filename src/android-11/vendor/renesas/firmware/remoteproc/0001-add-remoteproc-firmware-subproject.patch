@@ -1,0 +1,74 @@
+From 5e7851f0bb34a52e07211724cd14a9b2469c302a Mon Sep 17 00:00:00 2001
+From: Sergii Piatakov <sergii.piatakov@globallogic.com>
+Date: Fri, 25 Aug 2023 09:46:24 +0000
+Subject: [PATCH 1/1] add remoteproc firmware subproject
+
+Test: build Android and ensure that remoteproc firmware binary is
+      shipped to the vendor partition.
+Signed-off-by: Sergii Piatakov <sergii.piatakov@globallogic.com>
+---
+ LICENCE.txt   | 26 ++++++++++++++++++++++++++
+ remoteproc.mk | 18 ++++++++++++++++++
+ 2 files changed, 44 insertions(+)
+ create mode 100644 LICENCE.txt
+ create mode 100644 remoteproc.mk
+
+diff --git a/LICENCE.txt b/LICENCE.txt
+new file mode 100644
+index 0000000..663e47f
+--- /dev/null
++++ b/LICENCE.txt
+@@ -0,0 +1,26 @@
++Copyright (c) 2020, Renesas Electronics Corporation
++All rights reserved.
++
++Redistribution and use in binary form, without modification, are permitted
++provided that the following conditions are met:
++
++1. Redistribution in binary form must reproduce the above copyright notice,
++   this list of conditions and the following disclaimer in the documentation
++   and/or other materials provided with the distribution.
++2. The name of Renesas Electronics Corporation may not be used to endorse or
++   promote products derived from this software without specific prior written
++   permission.
++3. Reverse engineering, decompilation, or disassembly of this software is
++   not permitted.
++
++THIS SOFTWARE IS PROVIDED AS IS AND RENESAS ELECTRONICS CORPORATION DISCLAIMS
++ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
++WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE, AND
++NONINFRINGEMENT OF THIRD PARTY RIGHTS. IN NO EVENT SHALL RENESAS ELECTRONICS
++CORPORATION BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY,
++OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
++SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
++INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
++CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
++ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
++POSSIBILITY OF SUCH DAMAGE.
+diff --git a/remoteproc.mk b/remoteproc.mk
+new file mode 100644
+index 0000000..1a42cb7
+--- /dev/null
++++ b/remoteproc.mk
+@@ -0,0 +1,18 @@
++#
++# Copyright (C) 2017 GlobalLogic
++#
++# Licensed under the Apache License, Version 2.0 (the "License");
++# you may not use this file except in compliance with the License.
++# You may obtain a copy of the License at
++#
++#      http://www.apache.org/licenses/LICENSE-2.0
++#
++# Unless required by applicable law or agreed to in writing, software
++# distributed under the License is distributed on an "AS IS" BASIS,
++# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++# See the License for the specific language governing permissions and
++# limitations under the License.
++#
++
++PRODUCT_COPY_FILES += \
++vendor/renesas/firmware/remoteproc/rproc-cr7-fw:vendor/etc/firmware/rproc-cr7-fw
+-- 
+2.17.1
+

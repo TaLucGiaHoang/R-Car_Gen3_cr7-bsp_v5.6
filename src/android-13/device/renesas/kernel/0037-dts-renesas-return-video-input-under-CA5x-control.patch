@@ -1,0 +1,55 @@
+From 6c3d9c263c353f08b01aa7645166fb0173892c9b Mon Sep 17 00:00:00 2001
+From: Sergii Piatakov <sergii.piatakov@globallogic.com>
+Date: Wed, 31 Jan 2024 12:04:38 +0200
+Subject: [PATCH 37/40] dts: renesas: return video input under CA5x control
+
+The current configuration of the Linux Kernel is supposed to support
+only the RVGC CR7 use case. That means that the real video input is not
+handled by the CR7 side, so it should be used by CA5x.
+
+Test: build, flash and run a DUT, ensure that video input is available
+      and userspace applications (like EVS) work well.
+Signed-off-by: Sergii Piatakov <sergii.piatakov@globallogic.com>
+---
+ .../boot/dts/renesas/salvator-xs_cr7_rproc.dtsi    | 14 --------------
+ 1 file changed, 14 deletions(-)
+
+diff --git a/arch/arm64/boot/dts/renesas/salvator-xs_cr7_rproc.dtsi b/arch/arm64/boot/dts/renesas/salvator-xs_cr7_rproc.dtsi
+index 316349e1c4d4..f2b60ae79b83 100644
+--- a/arch/arm64/boot/dts/renesas/salvator-xs_cr7_rproc.dtsi
++++ b/arch/arm64/boot/dts/renesas/salvator-xs_cr7_rproc.dtsi
+@@ -71,8 +71,6 @@
+ 		};
+ 	};
+ 
+-	/delete-node/ cvbs-in;
+-	/delete-node/ hdmi-in;
+ 	/delete-node/ hdmi0-out;
+ 	/delete-node/ lvds;
+ 	/delete-node/ vga;
+@@ -92,7 +90,6 @@
+ 	};
+ };
+ 
+-/delete-node/ &i2c4;
+ /delete-node/ &fcpvd0;
+ /delete-node/ &fcpvd1;
+ /delete-node/ &vspd0;
+@@ -100,14 +97,3 @@
+ /delete-node/ &du;
+ /delete-node/ &lvds0;
+ /delete-node/ &hdmi0;
+-
+-/delete-node/ &vin0;
+-/delete-node/ &vin1;
+-/delete-node/ &vin2;
+-/delete-node/ &vin3;
+-/delete-node/ &vin4;
+-/delete-node/ &vin5;
+-/delete-node/ &vin6;
+-/delete-node/ &vin7;
+-/delete-node/ &csi20;
+-/delete-node/ &csi40;
+-- 
+2.25.1
+

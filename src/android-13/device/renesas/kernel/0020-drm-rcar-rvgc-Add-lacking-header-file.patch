@@ -1,0 +1,31 @@
+From 17f49b6d2847b803b7c0c5e39810bf88b2424880 Mon Sep 17 00:00:00 2001
+From: Khiem Nguyen <khiem.nguyen.xt@renesas.com>
+Date: Wed, 10 Mar 2021 16:46:53 +0700
+Subject: [PATCH 20/40] drm: rcar-rvgc: Add lacking header file
+
+The drm_device struct has moved to another header file
+and caused compiler warning.
+Fixed it by adding the lacked header file.
+
+Signed-off-by: Khiem Nguyen <khiem.nguyen.xt@renesas.com>
+---
+ drivers/gpu/drm/rcar-rvgc/rcar_rvgc_drv.c | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/drivers/gpu/drm/rcar-rvgc/rcar_rvgc_drv.c b/drivers/gpu/drm/rcar-rvgc/rcar_rvgc_drv.c
+index 1bdbd256a19b..28d631692b4f 100644
+--- a/drivers/gpu/drm/rcar-rvgc/rcar_rvgc_drv.c
++++ b/drivers/gpu/drm/rcar-rvgc/rcar_rvgc_drv.c
+@@ -21,7 +21,9 @@
+ #include <drm/drm_crtc_helper.h>
+ #include <drm/drm_fb_cma_helper.h>
+ #include <drm/drm_gem_cma_helper.h>
++#include <drm/drm_probe_helper.h>
+ #include <drm/drm_fb_helper.h>
++#include <drm/drm_drv.h>
+ 
+ #include "rcar_rvgc_drv.h"
+ #include "rcar_rvgc_kms.h"
+-- 
+2.25.1
+

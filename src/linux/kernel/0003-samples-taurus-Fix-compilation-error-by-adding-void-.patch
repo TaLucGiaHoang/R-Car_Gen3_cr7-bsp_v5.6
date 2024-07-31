@@ -1,0 +1,33 @@
+From 9edcab3a6f0bdb9c4804c32912251c0818016573 Mon Sep 17 00:00:00 2001
+From: Vladyslav Andrishko <vladyslav.andrishko@globallogic.com>
+Date: Thu, 17 Aug 2023 21:19:20 +0300
+Subject: [PATCH 3/3] samples/taurus: Fix compilation error by adding void to
+ get_unique_id()
+
+The compiler was throwing an error when trying to compile
+get_unique_id() without void in the function signature.
+
+Added void to explicitly specify that get_unique_id()
+takes no parameters. This fixes the compilation error.
+
+Signed-off-by: Vladyslav Andrishko <vladyslav.andrishko@globallogic.com>
+---
+ samples/renesas_taurus_client/taurus_client_sample.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/samples/renesas_taurus_client/taurus_client_sample.c b/samples/renesas_taurus_client/taurus_client_sample.c
+index 3cd3529b8f5a..0e46bb3a9c64 100644
+--- a/samples/renesas_taurus_client/taurus_client_sample.c
++++ b/samples/renesas_taurus_client/taurus_client_sample.c
+@@ -46,7 +46,7 @@ struct taurus_sample_instance_data {
+ };
+ 
+ 
+-static uint32_t get_unique_id()
++static uint32_t get_unique_id(void)
+ {
+ 	static uint32_t unique_id = INIT_ID_VALUE;
+ 	return unique_id++;
+-- 
+2.17.1
+

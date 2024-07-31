@@ -1,0 +1,329 @@
+From 417806e1843f3585aad808dd1189b2baa3140c4d Mon Sep 17 00:00:00 2001
+From: Baoan Du <baoan.du.xj@renesas.com>
+Date: Thu, 25 Mar 2021 14:13:36 +0800
+Subject: [PATCH 19/34] dts: renesas: Add device configuration for CR7 PoC
+
+Support CR7 remote processor, virtual VIN and graphics devices.
+Remove native physical devices that are now handled by CR7.
+---
+ .../renesas/r8a7795-salvator-xs-android.dts   |  21 ++
+ .../r8a7796-salvator-xs-2x4g-android.dts      |  11 +
+ .../renesas/r8a7796-salvator-xs-android.dts   |  11 +
+ .../renesas/r8a77965-salvator-xs-android.dts  |   9 +
+ arch/arm64/boot/dts/renesas/r8a77965.dtsi     |   2 +-
+ .../dts/renesas/salvator-xs_cr7_rproc.dtsi    | 206 ++++++++++++++++++
+ 6 files changed, 259 insertions(+), 1 deletion(-)
+ create mode 100644 arch/arm64/boot/dts/renesas/salvator-xs_cr7_rproc.dtsi
+
+diff --git a/arch/arm64/boot/dts/renesas/r8a7795-salvator-xs-android.dts b/arch/arm64/boot/dts/renesas/r8a7795-salvator-xs-android.dts
+index 52f4451785a6..004d038b4266 100644
+--- a/arch/arm64/boot/dts/renesas/r8a7795-salvator-xs-android.dts
++++ b/arch/arm64/boot/dts/renesas/r8a7795-salvator-xs-android.dts
+@@ -14,3 +14,24 @@
+ #endif // __H3_SALVATOR_XS_OVERRIDE__
+ #include "android/r8a7795.dtsi"
+ #include "android/salvator.dtsi"
++
++/************************ CR7 PoC Salvator XS H3 Specific ************************/
++#include "salvator-xs_cr7_rproc.dtsi"
++
++/delete-node/ &hdmi1;
++/delete-node/ &fcpvd2;
++/delete-node/ &vspd2;
++/delete-node/ &csi41;
++
++&soc {
++	/delete-node/ imr-lx4@fe860000;
++	/delete-node/ imr-lx4@fe870000;
++	/delete-node/ imr-lx4@fe880000;
++	/delete-node/ imr-lx4@fe890000;
++};
++
++&rcar_sound {
++	ports {
++		/delete-node/ port@2;
++	};
++};
+diff --git a/arch/arm64/boot/dts/renesas/r8a7796-salvator-xs-2x4g-android.dts b/arch/arm64/boot/dts/renesas/r8a7796-salvator-xs-2x4g-android.dts
+index 6754b3ffa586..01cce1e2a3f8 100644
+--- a/arch/arm64/boot/dts/renesas/r8a7796-salvator-xs-2x4g-android.dts
++++ b/arch/arm64/boot/dts/renesas/r8a7796-salvator-xs-2x4g-android.dts
+@@ -13,3 +13,14 @@
+ #include "r8a7796-salvator-xs-2x4g.dts"
+ #include "android/r8a7796.dtsi"
+ #include "android/salvator.dtsi"
++
++/************************ CR7 PoC Salvator XS M3 Specific ************************/
++#include "salvator-xs_cr7_rproc.dtsi"
++
++/delete-node/ &fcpvd2;
++/delete-node/ &vspd2;
++
++&soc {
++	/delete-node/ imr-lx4@fe860000;
++	/delete-node/ imr-lx4@fe870000;
++};
+diff --git a/arch/arm64/boot/dts/renesas/r8a7796-salvator-xs-android.dts b/arch/arm64/boot/dts/renesas/r8a7796-salvator-xs-android.dts
+index 83c238905bbb..e7e445a8259a 100644
+--- a/arch/arm64/boot/dts/renesas/r8a7796-salvator-xs-android.dts
++++ b/arch/arm64/boot/dts/renesas/r8a7796-salvator-xs-android.dts
+@@ -13,3 +13,14 @@
+ #include "r8a7796-salvator-xs.dts"
+ #include "android/r8a7796.dtsi"
+ #include "android/salvator.dtsi"
++
++/************************ CR7 PoC Salvator XS M3 Specific ************************/
++#include "salvator-xs_cr7_rproc.dtsi"
++
++/delete-node/ &fcpvd2;
++/delete-node/ &vspd2;
++
++&soc {
++	/delete-node/ imr-lx4@fe860000;
++	/delete-node/ imr-lx4@fe870000;
++};
+diff --git a/arch/arm64/boot/dts/renesas/r8a77965-salvator-xs-android.dts b/arch/arm64/boot/dts/renesas/r8a77965-salvator-xs-android.dts
+index 792dd55c5680..efe5e1fa3266 100644
+--- a/arch/arm64/boot/dts/renesas/r8a77965-salvator-xs-android.dts
++++ b/arch/arm64/boot/dts/renesas/r8a77965-salvator-xs-android.dts
+@@ -13,3 +13,12 @@
+ #include "r8a77965-salvator-xs.dts"
+ #include "android/salvator.dtsi"
+ #include "android/r8a77965.dtsi"
++
++/************************ CR7 PoC Salvator XS M3N Specific ************************/
++#include "salvator-xs_cr7_rproc.dtsi"
++
++&rcar_sound {
++	ports {
++		/delete-node/ port@2;
++	};
++};
+diff --git a/arch/arm64/boot/dts/renesas/r8a77965.dtsi b/arch/arm64/boot/dts/renesas/r8a77965.dtsi
+index 5f7e6f4edb87..8bd0df58f5dc 100644
+--- a/arch/arm64/boot/dts/renesas/r8a77965.dtsi
++++ b/arch/arm64/boot/dts/renesas/r8a77965.dtsi
+@@ -239,7 +239,7 @@
+ 		clock-frequency = <0>;
+ 	};
+ 
+-	soc {
++	soc: soc {
+ 		compatible = "simple-bus";
+ 		interrupt-parent = <&gic>;
+ 		#address-cells = <2>;
+diff --git a/arch/arm64/boot/dts/renesas/salvator-xs_cr7_rproc.dtsi b/arch/arm64/boot/dts/renesas/salvator-xs_cr7_rproc.dtsi
+new file mode 100644
+index 000000000000..07aee1f45cd3
+--- /dev/null
++++ b/arch/arm64/boot/dts/renesas/salvator-xs_cr7_rproc.dtsi
+@@ -0,0 +1,206 @@
++/* SPDX-License-Identifier: GPL-2.0 */
++/*
++ * Device Tree Source for the Salvator-X 2nd version board
++ * Cortex-R7 (CR7) as remote processor specific extensions
++ *
++ * Copyright (C) 2020 Renesas Electronics Corp.
++ *
++ * This file is licensed under the terms of the GNU General Public License
++ * version 2.  This program is licensed "as is" without any warranty of any
++ * kind, whether express or implied.
++ */
++
++/ {
++	aliases {
++		/* The CR7 will control video input so exclusively uses i2c4
++		 * as it needs to access the adv7482, i.e. Linux can no longer
++		 * use i2c4 for anything */
++		/delete-property/ i2c4;
++	};
++
++	cpus {
++		/delete-property/ idle-states;
++	};
++
++	reserved-memory {
++		/delete-node/ linux,ion@70000000;
++
++		/* Memory used by the CR7 */
++		cr7_reserved: linux,cr7@70000000 {
++			no-map;
++			reg = <0x0 0x70000000 0x0 0x10000000>;
++		};
++
++		ion_reserved: linux,ion@80000000 {
++			compatible = "ion-region";
++			reg = <0x00000000 0x80000000 0x0 0x10000000>; /* 256Mb */
++		};
++	};
++
++	cr7 {
++		compatible = "renesas,rcar-cr7";
++		memory-region = <&cr7_reserved>;
++	};
++
++	rvgc {
++		#address-cells = <2>;
++		#size-cells = <2>;
++
++		/* actual display mapping will be overridden by cr7 settings */
++		nr-displays = <0x2>;
++		display-mappings = <0x0 0x1>;
++		display-layer = <0x4 0x4>;
++
++		/* 1:1 mapping for the ion address space */
++		dma-ranges = <0x0 0x80000000 0x0 0x80000000 0x0 0x10000000>;
++
++		rvgc-memory {
++			memory-region = <&cma_reserved>;
++		};
++	};
++
++	rcar-vivid {
++		#address-cells = <0x2>;
++		#size-cells = <0x2>;
++
++		dma-ranges = <0x0 0x80000000 0x0 0x80000000 0x0 0x10000000>;
++
++		rvivid-memory {
++			memory-region = <&cma_reserved>;
++		};
++	};
++
++	/delete-node/ cvbs-in;
++	/delete-node/ hdmi-in;
++	/delete-node/ hdmi0-out;
++	/delete-node/ hdmi1-out;
++	/delete-node/ lvds;
++	/delete-node/ vga;
++	/delete-node/ vga-encoder;
++};
++
++&soc {
++	mfis: mfis@e6260000 {
++		compatible = "renesas,mfis";
++		reg = <0x0 0xe6260000 0x0 0x200>;
++		interrupts = <0x00 0xe0 0x04 0x00 0xe1 0x04 0x00 0xe2 0x04 0x00 0xe3 0x04 0x00 0xe4 0x04 0x00 0xe5 0x04 0x00 0xe6 0x04 0x00 0xe7 0x04>;
++		interrupt-names = "eicr0", "eicr1", "eicr2", "eicr3", "eicr4", "eicr5", "eicr6", "eicr7";
++		renesas,mfis-channels = <0 1 2 3>;
++		status = "okay";
++
++		/delete-node/ mfis-as;
++	};
++};
++
++/delete-node/ &fcpvd0;
++/delete-node/ &fcpvd1;
++/delete-node/ &vspd0;
++/delete-node/ &vspd1;
++/delete-node/ &du;
++/delete-node/ &lvds0;
++/delete-node/ &hdmi0;
++
++/delete-node/ &i2c4;
++/delete-node/ &vin0;
++/delete-node/ &vin1;
++/delete-node/ &vin2;
++/delete-node/ &vin3;
++/delete-node/ &vin4;
++/delete-node/ &vin5;
++/delete-node/ &vin6;
++/delete-node/ &vin7;
++/delete-node/ &csi20;
++/delete-node/ &csi40;
++
++&ak4613 {
++	reg = <0x13>;
++};
++
++&sound_pins {
++	groups = "ssi349_ctrl", "ssi3_data", "ssi4_data";
++};
++
++&rsnd_endpoint0 {
++	playback = <&ssi3 &src3 &dvc0>;
++	capture  = <&ssi4 &src4 &dvc1>;
++};
++
++&ssi0 {
++	dmas = <&audma1 0x01>, <&audma1 0x02>, <&audma1 0x15>, <&audma1 0x16>;
++};
++&ssi1 {
++	/delete-property/ shared-pin;
++	dmas = <&audma1 0x03>, <&audma1 0x04>, <&audma1 0x49>, <&audma1 0x4a>;
++};
++&ssi2 {
++	dmas = <&audma1 0x05>, <&audma1 0x06>, <&audma1 0x63>, <&audma1 0x64>;
++};
++&ssi3 {
++	dmas = <&audma1 0x07>, <&audma1 0x08>, <&audma1 0x6f>, <&audma1 0x70>;
++};
++&ssi4 {
++	shared-pin;
++	dmas = <&audma1 0x09>, <&audma1 0x0a>, <&audma1 0x71>, <&audma1 0x72>;
++};
++&ssi5 {
++	dmas = <&audma1 0x0b>, <&audma1 0x0c>, <&audma1 0x73>, <&audma1 0x74>;
++};
++&ssi6 {
++	dmas = <&audma1 0x0d>, <&audma1 0x0e>, <&audma1 0x75>, <&audma1 0x76>;
++};
++&ssi7 {
++	dmas = <&audma1 0x0f>, <&audma1 0x10>, <&audma1 0x79>, <&audma1 0x7a>;
++};
++&ssi8 {
++	dmas = <&audma1 0x11>, <&audma1 0x12>, <&audma1 0x7b>, <&audma1 0x7c>;
++};
++&ssi9 {
++	dmas = <&audma1 0x13>, <&audma1 0x14>, <&audma1 0x7d>, <&audma1 0x7e>;
++};
++
++&src0 {
++	dmas = <&audma1 0x85>, <&audma1 0x9a>;
++};
++&src1 {
++	dmas = <&audma1 0x87>, <&audma1 0x9c>;
++};
++&src2 {
++	dmas = <&audma1 0x89>, <&audma1 0x9e>;
++};
++&src3 {
++	dmas = <&audma1 0x8b>, <&audma1 0xa0>;
++};
++&src4 {
++	dmas = <&audma1 0x8d>, <&audma1 0xb0>;
++};
++&src5 {
++	dmas = <&audma1 0x8f>, <&audma1 0xb2>;
++};
++&src6 {
++	dmas = <&audma1 0x91>, <&audma1 0xb4>;
++};
++&src7 {
++	dmas = <&audma1 0x93>, <&audma1 0xb6>;
++};
++&src8 {
++	dmas = <&audma1 0x95>, <&audma1 0xb8>;
++};
++&src9 {
++	dmas = <&audma1 0x97>, <&audma1 0xba>;
++};
++
++&rcar_sound {
++	ports {
++		/delete-node/ port@1;
++	};
++};
++/delete-node/ &audma0;
++
++&backlight {
++	/* Known issues: SSI3's pin conflicts with the original lvds
++	* backlight's gpio. So the lvds backlight's pin had to be
++	* changed from GP6_07/LVDS_BLEN to other pins. According to the
++	* ext-board design, it can use the GP4_14/SD3_DAT5_V.
++	*/
++	/delete-property/ enable-gpios;
++};
+-- 
+2.17.1
+

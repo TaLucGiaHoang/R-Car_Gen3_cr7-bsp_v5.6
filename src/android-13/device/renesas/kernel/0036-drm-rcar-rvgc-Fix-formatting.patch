@@ -1,0 +1,615 @@
+From d06e107199d04ecdcc7021f95180628567068f0b Mon Sep 17 00:00:00 2001
+From: Serhii Bielov <serhii.bielov@globallogic.com>
+Date: Wed, 24 Jan 2024 10:19:41 +0200
+Subject: [PATCH 36/40] drm: rcar-rvgc: Fix formatting
+
+Mixing tabs and spaces fixed.
+Extra spaces removed.
+Commented code removed.
+
+Signed-off-by: Serhii Bielov <serhii.bielov@globallogic.com>
+---
+ drivers/gpu/drm/rcar-rvgc/rcar_rvgc_drv.c    | 36 +++++----
+ drivers/gpu/drm/rcar-rvgc/rcar_rvgc_kms.c    | 17 ++---
+ drivers/gpu/drm/rcar-rvgc/rcar_rvgc_pipe.c   | 79 +++++++++-----------
+ drivers/gpu/drm/rcar-rvgc/rcar_rvgc_taurus.c | 64 ++++++++--------
+ drivers/gpu/drm/rcar-rvgc/rcar_rvgc_taurus.h | 54 ++++++-------
+ 5 files changed, 118 insertions(+), 132 deletions(-)
+
+diff --git a/drivers/gpu/drm/rcar-rvgc/rcar_rvgc_drv.c b/drivers/gpu/drm/rcar-rvgc/rcar_rvgc_drv.c
+index 1619f033b971..00a069ddb90b 100644
+--- a/drivers/gpu/drm/rcar-rvgc/rcar_rvgc_drv.c
++++ b/drivers/gpu/drm/rcar-rvgc/rcar_rvgc_drv.c
+@@ -29,7 +29,6 @@
+ #include "r_taurus_rvgc_protocol.h"
+ 
+ 
+-//#define RCAR_RVGC_DRM_NAME     "rcar-rvgc"
+ #define RCAR_RVGC_DRM_NAME     "rcar-du"
+ static bool update_primary_plane = 1;
+ module_param(update_primary_plane, bool, 0);
+@@ -56,21 +55,21 @@ static int rcar_rvgc_cb(struct rpmsg_device* rpdev, void* data, int len,
+ 		dev_dbg(&rpdev->dev, "Signal received! Aux = %llx\n", res->hdr.Aux);
+ 
+ 		switch (res->hdr.Aux) {
+-		  case RVGC_PROTOCOL_EVENT_VBLANK_DISPLAY0:
+-			  set_bit(0, (long unsigned int*)&rcrvgc->vblank_pending);
+-			  break;
+-		  case RVGC_PROTOCOL_EVENT_VBLANK_DISPLAY1:
+-			  set_bit(1, (long unsigned int*)&rcrvgc->vblank_pending);
+-			  break;
+-		  case RVGC_PROTOCOL_EVENT_VBLANK_DISPLAY2:
+-			  set_bit(2, (long unsigned int*)&rcrvgc->vblank_pending);
+-			  break;
+-		  case RVGC_PROTOCOL_EVENT_VBLANK_DISPLAY3:
+-			  set_bit(3, (long unsigned int*)&rcrvgc->vblank_pending);
+-			  break;
+-		  default:
+-			  /* event not recognized */
+-			  return 0;
++		case RVGC_PROTOCOL_EVENT_VBLANK_DISPLAY0:
++			set_bit(0, (long unsigned int*)&rcrvgc->vblank_pending);
++			break;
++		case RVGC_PROTOCOL_EVENT_VBLANK_DISPLAY1:
++			set_bit(1, (long unsigned int*)&rcrvgc->vblank_pending);
++			break;
++		case RVGC_PROTOCOL_EVENT_VBLANK_DISPLAY2:
++			set_bit(2, (long unsigned int*)&rcrvgc->vblank_pending);
++			break;
++		case RVGC_PROTOCOL_EVENT_VBLANK_DISPLAY3:
++			set_bit(3, (long unsigned int*)&rcrvgc->vblank_pending);
++			break;
++		default:
++			/* event not recognized */
++			return 0;
+ 		}
+ 
+ 		wake_up_interruptible(&rcrvgc->vblank_pending_wait_queue);
+@@ -93,7 +92,6 @@ static int rcar_rvgc_cb(struct rpmsg_device* rpdev, void* data, int len,
+ 				event->ack_received = 1;
+ 				complete(&event->ack);
+ 			}
+-			//break;
+ 		}
+ 	}
+ 	read_unlock(&rcrvgc->event_list_lock);
+@@ -107,7 +105,7 @@ static int rcar_rvgc_cb(struct rpmsg_device* rpdev, void* data, int len,
+  */
+ 
+ static int rcar_rvgc_dumb_create(struct drm_file* file, struct drm_device* dev,
+-				 struct drm_mode_create_dumb* args) {
++				struct drm_mode_create_dumb* args) {
+ 	unsigned int min_pitch = DIV_ROUND_UP(args->width * args->bpp, 8);
+ 	unsigned int align;
+ 
+@@ -254,7 +252,7 @@ static int rcar_rvgc_probe(struct rpmsg_device* rpdev) {
+ 
+ 	return 0;
+ 
+- error:
++error:
+ 	rcar_rvgc_remove(rpdev);
+ 
+ 	return ret;
+diff --git a/drivers/gpu/drm/rcar-rvgc/rcar_rvgc_kms.c b/drivers/gpu/drm/rcar-rvgc/rcar_rvgc_kms.c
+index cd3c80e52c43..271c983ef82e 100644
+--- a/drivers/gpu/drm/rcar-rvgc/rcar_rvgc_kms.c
++++ b/drivers/gpu/drm/rcar-rvgc/rcar_rvgc_kms.c
+@@ -51,7 +51,7 @@ const struct rcar_rvgc_format_info* rcar_rvgc_format_info(u32 fourcc) {
+ 
+ /********** DRM Framebuffer **********/
+ static struct drm_framebuffer* rcar_rvgc_fb_create(struct drm_device* dev, struct drm_file* file_priv,
+-						   const struct drm_mode_fb_cmd2* mode_cmd) {
++				const struct drm_mode_fb_cmd2* mode_cmd) {
+ 	const struct rcar_rvgc_format_info* format;
+ 
+ 	format = rcar_rvgc_format_info(mode_cmd->pixel_format);
+@@ -106,9 +106,6 @@ static int vsync_thread_fn(void* data) {
+ 				spin_lock_irqsave(&crtc->dev->event_lock, flags);
+ 				drm_crtc_send_vblank_event(crtc, event);
+ 				spin_unlock_irqrestore(&crtc->dev->event_lock, flags);
+-
+-				/* JMB: Where is corresponding "get" ? */
+-				// drm_crtc_vblank_put(crtc);
+ 			}
+ 		}
+ 	}
+@@ -244,8 +241,8 @@ int rcar_rvgc_modeset_init(struct rcar_rvgc_device* rcrvgc) {
+ 		dev_warn(rcrvgc->dev, "vsync_thread is already running\n");
+ 	else
+ 		rcrvgc->vsync_thread = kthread_run(vsync_thread_fn,
+-						   rcrvgc,
+-						   "rvgc_vsync kthread");
++							rcrvgc,
++							"rvgc_vsync kthread");
+ 
+ 
+ 	/*
+@@ -257,7 +254,7 @@ int rcar_rvgc_modeset_init(struct rcar_rvgc_device* rcrvgc) {
+ 		dev_err(rcrvgc->dev, "drm_vblank_init failed: %d\n", ret);
+ 		goto exit;
+ 	}
+-	for  (layer = 0; layer < rcrvgc->nr_rvgc_pipes; layer++) {
++	for (layer = 0; layer < rcrvgc->nr_rvgc_pipes; layer++) {
+ 		struct rcar_rvgc_pipe* rvgc_pipe = &rcrvgc->rvgc_pipes[layer];
+ 		drm_crtc_vblank_off(&rvgc_pipe->crtc);
+ 	}
+@@ -269,14 +266,12 @@ int rcar_rvgc_modeset_init(struct rcar_rvgc_device* rcrvgc) {
+ 	   having tough time finding place where normalized zpos correctly init */
+ 	for (display = 0; display < rcrvgc->nr_rvgc_pipes; display++) {
+ 		struct rcar_rvgc_pipe* rvgc_pipe = &rcrvgc->rvgc_pipes[display];
+-		for (layer = 0;
+-		     layer < rvgc_pipe->plane_nr;
+-		     layer++) {
++		for (layer = 0; layer < rvgc_pipe->plane_nr; layer++) {
+ 			struct rcar_rvgc_plane* cur_plane = &rvgc_pipe->planes[layer];
+ 			drm_plane_create_zpos_immutable_property(&cur_plane->plane, cur_plane->hw_plane);
+ 		}
+ 	}
+ 
+- exit:
++exit:
+ 	return ret;
+ }
+diff --git a/drivers/gpu/drm/rcar-rvgc/rcar_rvgc_pipe.c b/drivers/gpu/drm/rcar-rvgc/rcar_rvgc_pipe.c
+index 83432aadf6d5..7303d135697a 100644
+--- a/drivers/gpu/drm/rcar-rvgc/rcar_rvgc_pipe.c
++++ b/drivers/gpu/drm/rcar-rvgc/rcar_rvgc_pipe.c
+@@ -176,7 +176,7 @@ static struct drm_connector
+ 
+ 	drm_connector_helper_add(connector, &rvgc_connector_hfuncs);
+ 	ret = drm_connector_init(drm, connector, &rvgc_connector_funcs,
+-				 connector_type);
++				connector_type);
+ 	if (ret) {
+ 		kfree(rconn);
+ 		return ERR_PTR(ret);
+@@ -200,7 +200,7 @@ static const struct drm_encoder_funcs drm_simple_kms_encoder_funcs = {
+ };
+ 
+ static int rvgc_crtc_check(struct drm_crtc* crtc,
+-			   struct drm_crtc_state* state) {
++				struct drm_crtc_state* state) {
+ 	bool has_primary = state->plane_mask &
+ 		BIT(drm_plane_index(crtc->primary));
+ 
+@@ -211,13 +211,11 @@ static int rvgc_crtc_check(struct drm_crtc* crtc,
+ 	return drm_atomic_add_affected_planes(state->state, crtc);
+ }
+ 
+-static int rvgc_crtc_enable_vblank(struct drm_crtc* crtc) {  /* TODO: Check that new vblank will be enabled and old remove */
++static int rvgc_crtc_enable_vblank(struct drm_crtc* crtc) { /* TODO: Check that new vblank will be enabled and old remove */
+ 	int ret = 0;
+ 	struct rcar_rvgc_pipe* rvgc_pipe = container_of(crtc, struct rcar_rvgc_pipe, crtc);
+ 	struct rcar_rvgc_device* rcrvgc = rvgc_pipe->rcar_rvgc_dev;
+ 
+-	//printk(KERN_ERR "%s():%d", __FUNCTION__, __LINE__);
+-
+ 	rvgc_pipe->vblank_enabled = 1;
+ 	atomic_inc(&rcrvgc->global_vblank_enable);
+ 	wake_up_interruptible(&rcrvgc->vblank_enable_wait_queue);
+@@ -229,8 +227,6 @@ static void rvgc_crtc_disable_vblank(struct drm_crtc* crtc) { /* TODO: Check tha
+ 	struct rcar_rvgc_pipe* rvgc_pipe = container_of(crtc, struct rcar_rvgc_pipe, crtc);
+ 	struct rcar_rvgc_device* rcrvgc = rvgc_pipe->rcar_rvgc_dev;
+ 
+-	//printk(KERN_ERR "%s():%d", __FUNCTION__, __LINE__);
+-
+ 	rvgc_pipe->vblank_enabled = 0;
+ 	atomic_dec(&rcrvgc->global_vblank_enable);
+ 	WARN_ON(atomic_read(&rcrvgc->global_vblank_enable) < 0);
+@@ -239,26 +235,24 @@ static void rvgc_crtc_disable_vblank(struct drm_crtc* crtc) { /* TODO: Check tha
+ 
+ 
+ static void rvgc_crtc_enable(struct drm_crtc* crtc,
+-			     struct drm_crtc_state* old_state) {
+-	//printk(KERN_ERR "%s():%d", __FUNCTION__, __LINE__);
++				struct drm_crtc_state* old_state) {
+ 	drm_crtc_vblank_on(crtc);
+ 	drm_crtc_vblank_get(crtc);
+ }
+ 
+ static void rvgc_crtc_disable(struct drm_crtc *crtc,
+-			      struct drm_crtc_state *old_state)
++				struct drm_crtc_state *old_state)
+ {
+-	//printk(KERN_ERR "%s():%d", __FUNCTION__, __LINE__);
+ 	drm_crtc_vblank_off(crtc);
+ 	drm_crtc_vblank_put(crtc);
+ }
+ 
+ static void rvgc_crtc_atomic_flush(struct drm_crtc *crtc,
+-				   struct drm_crtc_state *old_crtc_state)
++				struct drm_crtc_state *old_crtc_state)
+ {
+ 	int ret;
+ 	struct rcar_rvgc_pipe* rvgc_pipe = container_of(crtc, struct rcar_rvgc_pipe, crtc);
+-	struct rcar_rvgc_device* rcrvgc    = rvgc_pipe->rcar_rvgc_dev;
++	struct rcar_rvgc_device* rcrvgc = rvgc_pipe->rcar_rvgc_dev;
+ 	unsigned long flags;
+ 	struct taurus_rvgc_res_msg res_msg;
+ 
+@@ -301,13 +295,13 @@ static const struct drm_crtc_funcs rvgc_crtc_funcs = {
+ };
+ 
+ static int rvgc_plane_atomic_check(struct drm_plane* plane,
+-				   struct drm_plane_state* plane_state) {
++				struct drm_plane_state* plane_state) {
+ 	struct rcar_rvgc_plane* rvgc_plane = container_of(plane, struct rcar_rvgc_plane, plane);
+ 	struct rcar_rvgc_pipe* rvgc_pipe = rvgc_plane->pipe;
+ 	struct drm_crtc_state* crtc_state;
+ 
+ 	crtc_state = drm_atomic_get_new_crtc_state(plane_state->state,
+-						   &rvgc_pipe->crtc);
++							&rvgc_pipe->crtc);
+ 	if (!crtc_state || !crtc_state->enable)
+ 		return 0; /* nothing to check when disabling or disabled */
+ 
+@@ -321,15 +315,15 @@ static int rvgc_plane_atomic_check(struct drm_plane* plane,
+ 
+ #if 0
+ static int plane_not_changed_drm_send_event(struct drm_plane* plane,
+-					    struct drm_plane_state* old_state) {
++				struct drm_plane_state* old_state) {
+ 	struct drm_plane_state* new_plane_state = plane->state;
+ 	struct rcar_rvgc_plane* rvgc_plane      = container_of(plane, struct rcar_rvgc_plane,
+-							       plane);
++									plane);
+ 	struct rcar_rvgc_pipe* rvgc_pipe       = rvgc_plane->pipe;
+ 	struct drm_crtc* crtc            = &rvgc_pipe->crtc;
+ 	unsigned long flags = 0;
+ 	/* No need to notify the Taurus server. Just send the vblank
+-	     * event to notify the DRM that the commit is completed. */
++	 * event to notify the DRM that the commit is completed. */
+ 	if (crtc->state->active_changed || (new_plane_state->fb == old_state->fb)) {
+ 		spin_lock_irqsave(&crtc->dev->event_lock, flags);
+ 		if (NULL == crtc->state->event) {
+@@ -353,14 +347,14 @@ static int check_refresh_primary(struct drm_plane* plane) {
+ #endif
+ 
+ static void rvgc_plane_atomic_update(struct drm_plane* plane,
+-				     struct drm_plane_state* old_state) {
++				struct drm_plane_state* old_state) {
+ 	struct drm_gem_cma_object* gem_obj;
+ 	struct taurus_rvgc_res_msg res_msg;
+ 
+ 	struct drm_framebuffer* fb              = plane->state->fb;
+ 	struct rcar_rvgc_plane* rvgc_plane      = container_of(plane, struct rcar_rvgc_plane,
+-							       plane);
+-	struct rcar_rvgc_pipe* rvgc_pipe       = rvgc_plane->pipe;
++									plane);
++	struct rcar_rvgc_pipe*   rvgc_pipe       = rvgc_plane->pipe;
+ 	struct rcar_rvgc_device* rcrvgc          = rvgc_pipe->rcar_rvgc_dev;
+ 	unsigned int             display_idx     = rvgc_pipe->display_mapping;
+ 	int hw_plane;
+@@ -394,9 +388,9 @@ static void rvgc_plane_atomic_update(struct drm_plane* plane,
+ 		/* determine why we're here...*/
+ 		if (!old_state->fb && plane->state->fb) {
+ 			dev_info(rcrvgc->dev, "Reserve id=%d, layer=%d (via %s):%sx=%d, y=%d, %sw=%d, h=%d\n",
+-				 plane->base.id, hw_plane, (pos_z_via_pvr) ? "PVR":"FDT",
+-				 (rvgc_plane->pos_override) ? "Force Pos,":"", pos_x, pos_y,
+-				 (rvgc_plane->size_override) ? "Force Size,":"", size_w, size_h);
++				plane->base.id, hw_plane, (pos_z_via_pvr) ? "PVR":"FDT",
++				(rvgc_plane->pos_override) ? "Force Pos,":"", pos_x, pos_y,
++				(rvgc_plane->size_override) ? "Force Size,":"", size_w, size_h);
+ 			/* enabling */
+ 			ret = rvgc_taurus_plane_reserve(rcrvgc,
+ 							display_idx,
+@@ -411,11 +405,11 @@ static void rvgc_plane_atomic_update(struct drm_plane* plane,
+ 			rvgc_plane->plane_reserved = true;
+ 
+ 			ret = rvgc_taurus_layer_set_size(rcrvgc,
+-							 display_idx,
+-							 hw_plane,
+-							 size_w,
+-							 size_h,
+-							 &res_msg);
++							display_idx,
++							hw_plane,
++							size_w,
++							size_h,
++							&res_msg);
+ 			if (ret) {
+ 				dev_err(rcrvgc->dev, "%s(): rvgc_taurus_layer_set_size(display=%d, id=%d, layer=%d) failed\n",
+ 					__FUNCTION__, display_idx, plane->base.id, hw_plane);
+@@ -466,12 +460,12 @@ static void rvgc_plane_atomic_update(struct drm_plane* plane,
+ }
+ 
+ static int rvgc_plane_prepare_fb(struct drm_plane* plane,
+-				 struct drm_plane_state* state) {
++				struct drm_plane_state* state) {
+ 	return drm_gem_fb_prepare_fb(plane, state);
+ }
+ 
+ static void rvgc_plane_cleanup_fb(struct drm_plane* plane,
+-				  struct drm_plane_state* state) {
++				struct drm_plane_state* state) {
+ 
+ }
+ 
+@@ -492,7 +486,7 @@ static const struct drm_plane_funcs rvgc_plane_funcs = {
+ };
+ 
+ static int overlay_pipe_init(struct rcar_rvgc_device* rvgc_dev,
+-			     struct rcar_rvgc_pipe* rvgc_pipe) {
++				struct rcar_rvgc_pipe* rvgc_pipe) {
+ 
+ 	int ret = 0, i;
+ 	struct drm_device* ddev = rvgc_dev->ddev;
+@@ -512,10 +506,10 @@ static int overlay_pipe_init(struct rcar_rvgc_device* rvgc_dev,
+ 
+ 		drm_plane_helper_add(&plane->plane, &rvgc_plane_helper_funcs);
+ 		ret = drm_universal_plane_init(ddev, &plane->plane,
+-					       (1 << rvgc_pipe->idx),
+-					       &rvgc_plane_funcs,
+-					       rvgc_formats, ARRAY_SIZE(rvgc_formats), NULL,
+-					       type, NULL);
++							(1 << rvgc_pipe->idx),
++							&rvgc_plane_funcs,
++							rvgc_formats, ARRAY_SIZE(rvgc_formats), NULL,
++							type, NULL);
+ 		if (ret)
+ 			return ret;
+ 
+@@ -529,17 +523,16 @@ static int overlay_pipe_init(struct rcar_rvgc_device* rvgc_dev,
+ 
+ 	encoder->possible_crtcs = 1 << drm_crtc_index(crtc);
+ 	ret = drm_encoder_init(ddev, encoder, &drm_simple_kms_encoder_funcs,
+-			       DRM_MODE_ENCODER_NONE, NULL);
++					DRM_MODE_ENCODER_NONE, NULL);
+ 	if (ret)
+ 		return ret;
+ 	connector = rvgc_connector_create(rvgc_pipe);
+ 
+ 	return drm_connector_attach_encoder(connector, encoder);
+-
+ }
+ 
+ static int taurus_init(struct rcar_rvgc_device* rvgc_dev,
+-		       struct rcar_rvgc_pipe* rvgc_pipe) {
++				struct rcar_rvgc_pipe* rvgc_pipe) {
+ #if 0
+ 	struct rcar_rvgc_device* rcrvgc = rvgc_pipe->rcar_rvgc_dev;
+ #endif
+@@ -547,8 +540,8 @@ static int taurus_init(struct rcar_rvgc_device* rvgc_dev,
+ 	struct taurus_rvgc_res_msg res_msg;
+ 
+ 	ret = rvgc_taurus_display_init(rvgc_dev,
+-				       rvgc_pipe->display_mapping,
+-				       &res_msg);
++						rvgc_pipe->display_mapping,
++						&res_msg);
+ 	if (ret) {
+ 		dev_err(rvgc_dev->dev, "%s(): rvgc_taurus_display_init(%d) failed\n",
+ 			__FUNCTION__,
+@@ -557,8 +550,8 @@ static int taurus_init(struct rcar_rvgc_device* rvgc_dev,
+ 	}
+ 
+ 	ret = rvgc_taurus_display_get_info(rvgc_dev,
+-					   rvgc_pipe->display_mapping,
+-					   &res_msg);
++						rvgc_pipe->display_mapping,
++						&res_msg);
+ 	if (ret) {
+ 		dev_err(rvgc_dev->dev, "%s(): rvgc_taurus_display_get_info(%d) failed\n",
+ 			__FUNCTION__,
+diff --git a/drivers/gpu/drm/rcar-rvgc/rcar_rvgc_taurus.c b/drivers/gpu/drm/rcar-rvgc/rcar_rvgc_taurus.c
+index e44a4e6563f5..f43e9fc89be9 100644
+--- a/drivers/gpu/drm/rcar-rvgc/rcar_rvgc_taurus.c
++++ b/drivers/gpu/drm/rcar-rvgc/rcar_rvgc_taurus.c
+@@ -22,8 +22,8 @@ static int rvgc_taurus_get_uniq_id(void) {
+ }
+ 
+ static int rvgc_taurus_send_command(struct rcar_rvgc_device* rcrvgc,
+-				    struct taurus_rvgc_cmd_msg* cmd_msg,
+-				    struct taurus_rvgc_res_msg* res_msg) {
++				struct taurus_rvgc_cmd_msg* cmd_msg,
++				struct taurus_rvgc_res_msg* res_msg) {
+ 	struct taurus_event_list* event;
+ 	struct rpmsg_device* rpdev = rcrvgc->rpdev;
+ 	struct device* dev = rcrvgc->dev;
+@@ -80,21 +80,21 @@ static int rvgc_taurus_send_command(struct rcar_rvgc_device* rcrvgc,
+ 
+ 	memcpy(res_msg, event->result, sizeof(struct taurus_rvgc_res_msg));
+ 
+- cleanup_3:
++cleanup_3:
+ 	write_lock(&rcrvgc->event_list_lock);
+ 	list_del(&event->list);
+ 	write_unlock(&rcrvgc->event_list_lock);
+ 	devm_kfree(&rpdev->dev, event->result);
+- cleanup_2:
++cleanup_2:
+ 	devm_kfree(&rpdev->dev, event);
+- cleanup_1:
++cleanup_1:
+ 	return ret;
+ }
+ 
+ int rvgc_taurus_plane_reserve(struct rcar_rvgc_device* rcrvgc,
+-			      uint32_t display,
+-			      uint32_t layer,
+-			      struct taurus_rvgc_res_msg* res_msg) {
++				uint32_t display,
++				uint32_t layer,
++				struct taurus_rvgc_res_msg* res_msg) {
+ 	struct taurus_rvgc_cmd_msg cmd_msg;
+ 	int ret;
+ 
+@@ -124,8 +124,8 @@ int rvgc_taurus_plane_reserve(struct rcar_rvgc_device* rcrvgc,
+ 
+ 
+ int rvgc_taurus_display_init(struct rcar_rvgc_device* rcrvgc,
+-			     uint32_t display,
+-			     struct taurus_rvgc_res_msg* res_msg) {
++				uint32_t display,
++				struct taurus_rvgc_res_msg* res_msg) {
+ 	struct taurus_rvgc_cmd_msg cmd_msg;
+ 	int ret = 0;
+ 
+@@ -152,8 +152,8 @@ int rvgc_taurus_display_init(struct rcar_rvgc_device* rcrvgc,
+ }
+ 
+ int rvgc_taurus_display_get_info(struct rcar_rvgc_device* rcrvgc,
+-				 uint32_t display,
+-				 struct taurus_rvgc_res_msg* res_msg) {
++				uint32_t display,
++				struct taurus_rvgc_res_msg* res_msg) {
+ 	struct taurus_rvgc_cmd_msg cmd_msg;
+ 	int ret;
+ 
+@@ -181,9 +181,9 @@ int rvgc_taurus_display_get_info(struct rcar_rvgc_device* rcrvgc,
+ }
+ 
+ int rvgc_taurus_display_flush(struct rcar_rvgc_device* rcrvgc,
+-			      uint32_t display,
+-			      uint32_t blocking,
+-			      struct taurus_rvgc_res_msg* res_msg) {
++				uint32_t display,
++				uint32_t blocking,
++				struct taurus_rvgc_res_msg* res_msg) {
+ 	struct taurus_rvgc_cmd_msg cmd_msg;
+ 	int ret;
+ 
+@@ -212,11 +212,11 @@ int rvgc_taurus_display_flush(struct rcar_rvgc_device* rcrvgc,
+ }
+ 
+ int rvgc_taurus_layer_set_size(struct rcar_rvgc_device* rcrvgc,
+-			       uint32_t display,
+-			       uint32_t layer,
+-			       uint32_t width,
+-			       uint32_t height,
+-			       struct taurus_rvgc_res_msg* res_msg) {
++				uint32_t display,
++				uint32_t layer,
++				uint32_t width,
++				uint32_t height,
++				struct taurus_rvgc_res_msg* res_msg) {
+ 	struct taurus_rvgc_cmd_msg cmd_msg;
+ 	int ret;
+ 
+@@ -247,11 +247,11 @@ int rvgc_taurus_layer_set_size(struct rcar_rvgc_device* rcrvgc,
+ }
+ 
+ int rvgc_taurus_layer_set_pos(struct rcar_rvgc_device* rcrvgc,
+-			      uint32_t display,
+-			      uint32_t layer,
+-			      uint32_t pos_x,
+-			      uint32_t pos_y,
+-			      struct taurus_rvgc_res_msg* res_msg) {
++				uint32_t display,
++				uint32_t layer,
++				uint32_t pos_x,
++				uint32_t pos_y,
++				struct taurus_rvgc_res_msg* res_msg) {
+ 	struct taurus_rvgc_cmd_msg cmd_msg;
+ 	int ret;
+ 
+@@ -282,10 +282,10 @@ int rvgc_taurus_layer_set_pos(struct rcar_rvgc_device* rcrvgc,
+ }
+ 
+ int rvgc_taurus_layer_set_addr(struct rcar_rvgc_device* rcrvgc,
+-			       uint32_t display,
+-			       uint32_t layer,
+-			       uint32_t paddr,
+-			       struct taurus_rvgc_res_msg* res_msg) {
++				uint32_t display,
++				uint32_t layer,
++				uint32_t paddr,
++				struct taurus_rvgc_res_msg* res_msg) {
+ 	struct taurus_rvgc_cmd_msg cmd_msg;
+ 	int ret;
+ 
+@@ -315,9 +315,9 @@ int rvgc_taurus_layer_set_addr(struct rcar_rvgc_device* rcrvgc,
+ }
+ 
+ int rvgc_taurus_layer_release(struct rcar_rvgc_device* rcrvgc,
+-			      uint32_t display,
+-			      uint32_t layer,
+-			      struct taurus_rvgc_res_msg* res_msg) {
++				uint32_t display,
++				uint32_t layer,
++				struct taurus_rvgc_res_msg* res_msg) {
+ 	struct taurus_rvgc_cmd_msg cmd_msg;
+ 	int ret;
+ 
+diff --git a/drivers/gpu/drm/rcar-rvgc/rcar_rvgc_taurus.h b/drivers/gpu/drm/rcar-rvgc/rcar_rvgc_taurus.h
+index a3ce9cc2ca63..e1e775d05eb7 100644
+--- a/drivers/gpu/drm/rcar-rvgc/rcar_rvgc_taurus.h
++++ b/drivers/gpu/drm/rcar-rvgc/rcar_rvgc_taurus.h
+@@ -14,46 +14,46 @@ struct rcar_rvgc_device;
+ struct taurus_rvgc_res_msg;
+ 
+ int rvgc_taurus_display_init(struct rcar_rvgc_device* rcrvgc,
+-			     uint32_t display,
+-			     struct taurus_rvgc_res_msg* res_msg);
++				uint32_t display,
++				struct taurus_rvgc_res_msg* res_msg);
+ 
+ int rvgc_taurus_plane_reserve(struct rcar_rvgc_device* rcrvgc,
+-			      uint32_t display,
+-			      uint32_t layer,
+-			      struct taurus_rvgc_res_msg* res_msg);
++				uint32_t display,
++				uint32_t layer,
++				struct taurus_rvgc_res_msg* res_msg);
+ 
+ int rvgc_taurus_display_get_info(struct rcar_rvgc_device* rcrvgc,
+-				 uint32_t display,
+-				 struct taurus_rvgc_res_msg* res_msg);
++				uint32_t display,
++				struct taurus_rvgc_res_msg* res_msg);
+ 
+ int rvgc_taurus_display_flush(struct rcar_rvgc_device* rcrvgc,
+-			      uint32_t display,
+-			      uint32_t blocking,
+-			      struct taurus_rvgc_res_msg* res_msg);
++				uint32_t display,
++				uint32_t blocking,
++				struct taurus_rvgc_res_msg* res_msg);
+ 
+ int rvgc_taurus_layer_set_addr(struct rcar_rvgc_device* rcrvgc,
+-			       uint32_t display,
+-			       uint32_t layer,
+-			       uint32_t paddr,
+-			       struct taurus_rvgc_res_msg* res_msg);
++				uint32_t display,
++				uint32_t layer,
++				uint32_t paddr,
++				struct taurus_rvgc_res_msg* res_msg);
+ 
+ int rvgc_taurus_layer_release(struct rcar_rvgc_device* rcrvgc,
+-			      uint32_t display,
+-			      uint32_t layer,
+-			      struct taurus_rvgc_res_msg* res_msg);
++				uint32_t display,
++				uint32_t layer,
++				struct taurus_rvgc_res_msg* res_msg);
+ 
+ int rvgc_taurus_layer_set_size(struct rcar_rvgc_device* rcrvgc,
+-			       uint32_t display,
+-			       uint32_t layer,
+-			       uint32_t width,
+-			       uint32_t height,
+-			       struct taurus_rvgc_res_msg* res_msg);
++				uint32_t display,
++				uint32_t layer,
++				uint32_t width,
++				uint32_t height,
++				struct taurus_rvgc_res_msg* res_msg);
+ 
+ int rvgc_taurus_layer_set_pos(struct rcar_rvgc_device* rcrvgc,
+-			      uint32_t display,
+-			      uint32_t layer,
+-			      uint32_t pos_x,
+-			      uint32_t pos_y,
+-			      struct taurus_rvgc_res_msg* res_msg);
++				uint32_t display,
++				uint32_t layer,
++				uint32_t pos_x,
++				uint32_t pos_y,
++				struct taurus_rvgc_res_msg* res_msg);
+ 
+ #endif /* __RCAR_RVGC_TAURUS_H__ */
+-- 
+2.25.1
+

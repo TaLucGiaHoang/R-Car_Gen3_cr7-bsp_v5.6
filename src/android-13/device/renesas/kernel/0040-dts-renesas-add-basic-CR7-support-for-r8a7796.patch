@@ -1,0 +1,63 @@
+From 1da81af306d6af4367ab23940b9ee8a9ffbcf3f9 Mon Sep 17 00:00:00 2001
+From: Sergii Piatakov <sergii.piatakov@globallogic.com>
+Date: Tue, 28 May 2024 22:13:18 +0000
+Subject: [PATCH 40/40] dts: renesas: add basic CR7 support for r8a7796
+
+This is a hotfix for adding basic support of CR7 for r8a7796.
+After deeper testing some additional changes may be required.
+
+Signed-off-by: Sergii Piatakov <sergii.piatakov@globallogic.com>
+---
+ .../boot/dts/renesas/r8a77961-salvator-xs-android.dts | 11 +++++++++++
+ arch/arm64/boot/dts/renesas/r8a77961.dtsi             |  2 +-
+ drivers/soc/renesas/r8a7796-sysc.c                    |  2 +-
+ 3 files changed, 13 insertions(+), 2 deletions(-)
+
+diff --git a/arch/arm64/boot/dts/renesas/r8a77961-salvator-xs-android.dts b/arch/arm64/boot/dts/renesas/r8a77961-salvator-xs-android.dts
+index 4dc3be65f6c0..c6a841662702 100644
+--- a/arch/arm64/boot/dts/renesas/r8a77961-salvator-xs-android.dts
++++ b/arch/arm64/boot/dts/renesas/r8a77961-salvator-xs-android.dts
+@@ -13,3 +13,14 @@
+ #include "r8a77961-salvator-xs.dts"
+ #include "android/r8a7796.dtsi"
+ #include "android/salvator.dtsi"
++
++/************************ CR7 PoC Salvator XS M3 Specific ************************/
++#include "salvator-xs_cr7_rproc.dtsi"
++
++/delete-node/ &fcpvd2;
++/delete-node/ &vspd2;
++
++&soc {
++	/delete-node/ imr-lx4@fe860000;
++	/delete-node/ imr-lx4@fe870000;
++};
+diff --git a/arch/arm64/boot/dts/renesas/r8a77961.dtsi b/arch/arm64/boot/dts/renesas/r8a77961.dtsi
+index 7c3bcc556954..d235a65e430d 100644
+--- a/arch/arm64/boot/dts/renesas/r8a77961.dtsi
++++ b/arch/arm64/boot/dts/renesas/r8a77961.dtsi
+@@ -805,7 +805,7 @@
+ 		clock-frequency = <0>;
+ 	};
+ 
+-	soc {
++	soc: soc {
+ 		compatible = "simple-bus";
+ 		interrupt-parent = <&gic>;
+ 		#address-cells = <2>;
+diff --git a/drivers/soc/renesas/r8a7796-sysc.c b/drivers/soc/renesas/r8a7796-sysc.c
+index 471bd5b3b6ad..3f37e5732fed 100644
+--- a/drivers/soc/renesas/r8a7796-sysc.c
++++ b/drivers/soc/renesas/r8a7796-sysc.c
+@@ -31,7 +31,7 @@ static struct rcar_sysc_area r8a7796_areas[] __initdata = {
+ 	  PD_CPU_NOCR },
+ 	{ "ca53-cpu3",	0x200, 3, R8A7796_PD_CA53_CPU3,	R8A7796_PD_CA53_SCU,
+ 	  PD_CPU_NOCR },
+-	{ "cr7",	0x240, 0, R8A7796_PD_CR7,	R8A7796_PD_ALWAYS_ON },
++	{ "cr7",	0x240, 0, R8A7796_PD_CR7,	R8A7796_PD_ALWAYS_ON, PD_CPU_NOCR },
+ 	{ "a3vc",	0x380, 0, R8A7796_PD_A3VC,	R8A7796_PD_ALWAYS_ON },
+ 	{ "a2vc0",	0x3c0, 0, R8A7796_PD_A2VC0,	R8A7796_PD_A3VC },
+ 	{ "a2vc1",	0x3c0, 1, R8A7796_PD_A2VC1,	R8A7796_PD_A3VC },
+-- 
+2.25.1
+

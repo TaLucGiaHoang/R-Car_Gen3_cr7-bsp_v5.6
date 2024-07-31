@@ -1,0 +1,35 @@
+From bc100833b1a4ddfcf7916b6da4a2787f4b49acb7 Mon Sep 17 00:00:00 2001
+From: Sergii Piatakov <sergii.piatakov@globallogic.com>
+Date: Wed, 4 Oct 2023 12:44:55 +0000
+Subject: [PATCH 2/5] init: load RPC and RVGC modules for CR7
+
+Load modules for Remote Processor Communication and Renesas Virtual
+Graphics Card.
+
+Note: a pause between modules loading is necessary to give some time
+for the correct initialization.
+
+Test: boot and check that the modules are loaded and work well.
+Signed-off-by: Sergii Piatakov <sergii.piatakov@globallogic.com>
+---
+ init/init.common.rc | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+diff --git a/init/init.common.rc b/init/init.common.rc
+index f092581..2538785 100644
+--- a/init/init.common.rc
++++ b/init/init.common.rc
+@@ -44,6 +44,10 @@ service irqbalance /vendor/bin/irqbalance -f -n pvrsrvkm
+ 
+ on early-init
+     mount debugfs debugfs /sys/kernel/debug
++    insmod /vendor/lib/modules/rcar_cr7_remoteproc.ko
++    insmod /vendor/lib/modules/virtio_rpmsg_bus.ko
++    exec -- /system/bin/sleep 0.5s
++    insmod /vendor/lib/modules/rcar-rvgc-drm.ko
+     start pvrsrvctl
+     write /proc/sys/kernel/sched_energy_aware 0
+     write /sys/devices/system/cpu/cpufreq/boost 1
+-- 
+2.25.1
+

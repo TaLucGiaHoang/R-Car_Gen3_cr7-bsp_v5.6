@@ -1,0 +1,33 @@
+From 960da7d1fb5e0e8092ce54174557a375a971930f Mon Sep 17 00:00:00 2001
+From: Sergii Piatakov <sergii.piatakov@globallogic.com>
+Date: Fri, 25 Aug 2023 09:20:39 +0000
+Subject: [PATCH 3/5] include remoteproc subproject
+
+This commit adds the `remoteproc` subproject which is in charge of
+copying the CR7 firmware file to the vendor partition. The firmware file
+is not a part of Android BSP and must be prepared separately. This file
+is used by Linux Kernel to read the `resource_table` with actual
+resource configuration for communication channels.
+
+Test: buind, flash and run a DUT, ensure that firmware file is
+      successfully loaded by rpmsg module.
+Signed-off-by: Sergii Piatakov <sergii.piatakov@globallogic.com>
+---
+ DeviceCommon.mk | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/DeviceCommon.mk b/DeviceCommon.mk
+index 5fa5bbb..de018c5 100644
+--- a/DeviceCommon.mk
++++ b/DeviceCommon.mk
+@@ -478,6 +478,7 @@ endif
+ 
+ # ----------------------------------------------------------------------
+ $(call inherit-product, frameworks/base/data/sounds/AudioPackage5.mk)
++$(call inherit-product, vendor/renesas/firmware/remoteproc/remoteproc.mk)
+ 
+ ifneq (,$(wildcard vendor/google/products/gms.mk))
+     $(call inherit-product, vendor/google/products/gms.mk)
+-- 
+2.25.1
+

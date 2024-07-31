@@ -1,0 +1,103 @@
+From beef9cf5903ee3ecaafa654747e2b7907c6a1a2c Mon Sep 17 00:00:00 2001
+From: Sergii Piatakov <sergii.piatakov@globallogic.com>
+Date: Mon, 17 Oct 2022 12:52:49 +0000
+Subject: [PATCH 24/27] mfis: change communication for RCAR CR7 and CA5X
+
+In the current implementation before triggering an event, a sender must
+ensure that the recipient is ready for the event. For this purpose both
+sides (CR7 and CA5X) use an additional register: LCKR. When a recipient
+is ready for notification it must mark the register. On another side,
+the sender before triggering must check the register and ensure that the
+recipient is ready.
+Also, this version may potentially use 8 channels, and the recipient may
+select an arbitrary channel by writing a marker into a corresponding
+register.
+
+But after an update of the CR7 part, the logic is changed and now should
+be used only one dedicated channel (number 0) without any arbitration.
+
+Test: try to boot with CR7 SDK v4.0.
+Signed-off-by: Sergii Piatakov <sergii.piatakov@globallogic.com>
+---
+ .../dts/renesas/salvator-xs_cr7_rproc.dtsi    |  8 -------
+ drivers/misc/rcar-mfis/rcar_mfis_drv.c        | 24 +++----------------
+ 2 files changed, 3 insertions(+), 29 deletions(-)
+
+diff --git a/arch/arm64/boot/dts/renesas/salvator-xs_cr7_rproc.dtsi b/arch/arm64/boot/dts/renesas/salvator-xs_cr7_rproc.dtsi
+index 5897f0a3b89b..87a5cc5f6ab0 100644
+--- a/arch/arm64/boot/dts/renesas/salvator-xs_cr7_rproc.dtsi
++++ b/arch/arm64/boot/dts/renesas/salvator-xs_cr7_rproc.dtsi
+@@ -106,14 +106,6 @@
+ 
+ 		/delete-node/ mfis-as;
+ 	};
+-
+-    mfis_lock: mfis-lock@e6200000{
+-            compatible = "renesas,mfis-lock-r8a7796",
+-				     "renesas,mfis-lock";
+-			    reg = <0 0xe6260000 0 0x1000>;
+-			#hwlock-cells = <1>;
+-            status = "okay";
+-        };
+ };
+ 
+ /delete-node/ &fcpvd0;
+diff --git a/drivers/misc/rcar-mfis/rcar_mfis_drv.c b/drivers/misc/rcar-mfis/rcar_mfis_drv.c
+index 959cf199ff23..f8efeca6e1c7 100644
+--- a/drivers/misc/rcar-mfis/rcar_mfis_drv.c
++++ b/drivers/misc/rcar-mfis/rcar_mfis_drv.c
+@@ -26,7 +26,8 @@
+ 
+ #include "rcar_mfis_drv.h"
+ 
+-#define LCKR(n) (0x00C0 + n * 0x4)
++#define MFIS_CHANNEL 0
++
+ #define IICR(n) (0x0400 + n * 0x8)
+ #define EICR(n) (0x0404 + n * 0x8)
+ #define IMBR(n) (0x0440 + n * 0x4)
+@@ -36,16 +37,6 @@ static u32 num_mfis_channels;
+ 
+ static struct rcar_mfis_dev *rcmfis_dev = NULL;
+ 
+-static int mfis_hw_trylock(uint32_t ch)
+-{
+-	return !ioread32(rcmfis_dev->mmio_base + LCKR(ch));
+-}
+-
+-static void mfis_hw_unlock(uint32_t ch)
+-{
+-	iowrite32(0, rcmfis_dev->mmio_base + LCKR(ch));
+-}
+-
+ static irqreturn_t mfis_irq_handler(int irq, void *data)
+ {
+ 	u32 value = 0;
+@@ -63,8 +54,6 @@ static irqreturn_t mfis_irq_handler(int irq, void *data)
+ 		rcar_mfis_ch->msg.mbr = rcar_mfis_reg_read(rcmfis_dev, EMBR(ch));
+ 		rcar_mfis_ch->msg.icr = value >> 1; //get rid of EIR bit
+ 
+-		mfis_hw_unlock(ch);
+-
+ 		queue_work(rcmfis_dev->work_queue, &rcar_mfis_ch->work);
+ 
+ 		/* clear interrupt flag */
+@@ -102,14 +91,7 @@ static struct rcar_mfis_ch* rcar_mfis_channel_get(unsigned int channel)
+ 
+ static uint32_t request_mfis_channel(void)
+ {
+-	uint32_t i;
+-
+-	for (i = 0; i < num_mfis_channels; i++) {
+-		if (mfis_hw_trylock(i))
+-			return i;
+-	}
+-
+-	return -EINVAL;
++	return MFIS_CHANNEL;
+ }
+ 
+ /****** Exported functions ******/
+-- 
+2.25.1
+

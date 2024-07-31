@@ -1,0 +1,53 @@
+From 143ea3042f59cace38c3b1fe67b7f5cf38060de9 Mon Sep 17 00:00:00 2001
+From: Sergii Piatakov <sergii.piatakov@globallogic.com>
+Date: Wed, 7 Feb 2024 19:35:52 +0200
+Subject: [PATCH 38/40] drm: rcar-rvgc: remove XR24 from the supported list
+
+The current version of CR7 SDK supports the drawing of buffers only in
+ARGB8888 (AR24) format with an alpha layer.
+
+Sending frames with XRBG8888 (XR24) format is implementation defined and
+depends on the actual value of the 'X' (which is interpreted by the CR7
+side as 'A'):
+ - if the value is 0xff, then the picture will be displayed normally;
+ - if the value is 0x00, then the image will be completely transparent.
+
+It is proposed to remove the XRGB8888 from the list of supported formats
+to avoid unreliable behavior and confusion.
+
+Signed-off-by: Sergii Piatakov <sergii.piatakov@globallogic.com>
+---
+ drivers/gpu/drm/rcar-rvgc/rcar_rvgc_kms.c  | 4 ----
+ drivers/gpu/drm/rcar-rvgc/rcar_rvgc_pipe.c | 1 -
+ 2 files changed, 5 deletions(-)
+
+diff --git a/drivers/gpu/drm/rcar-rvgc/rcar_rvgc_kms.c b/drivers/gpu/drm/rcar-rvgc/rcar_rvgc_kms.c
+index 271c983ef82e..bb3654a4ca64 100644
+--- a/drivers/gpu/drm/rcar-rvgc/rcar_rvgc_kms.c
++++ b/drivers/gpu/drm/rcar-rvgc/rcar_rvgc_kms.c
+@@ -28,10 +28,6 @@
+ /********** Fromat Info **********/
+ static const struct rcar_rvgc_format_info rcar_rvgc_format_infos[] = {
+ 	{
+-		.fourcc = DRM_FORMAT_XRGB8888,
+-		.bpp = 32,
+-		.planes = 1,
+-	}, {
+ 		.fourcc = DRM_FORMAT_ARGB8888,
+ 		.bpp = 32,
+ 		.planes = 1,
+diff --git a/drivers/gpu/drm/rcar-rvgc/rcar_rvgc_pipe.c b/drivers/gpu/drm/rcar-rvgc/rcar_rvgc_pipe.c
+index 7303d135697a..00a7b86e3d1d 100644
+--- a/drivers/gpu/drm/rcar-rvgc/rcar_rvgc_pipe.c
++++ b/drivers/gpu/drm/rcar-rvgc/rcar_rvgc_pipe.c
+@@ -191,7 +191,6 @@ static struct drm_connector
+ }
+ 
+ static const u32 rvgc_formats[] = {
+-	DRM_FORMAT_XRGB8888,
+ 	DRM_FORMAT_ARGB8888,
+ };
+ 
+-- 
+2.25.1
+

@@ -1,0 +1,27 @@
+From 9b2166fe007fa30e5c7aa11e024b13b9c269f3e3 Mon Sep 17 00:00:00 2001
+From: Sergii Piatakov <sergii.piatakov@globallogic.com>
+Date: Fri, 25 Aug 2023 09:22:20 +0000
+Subject: [PATCH 1/1] ueventd: remove v4l subdevice
+
+Signed-off-by: Sergii Piatakov <sergii.piatakov@globallogic.com>
+---
+ init/ueventd.salvator.rc | 3 ---
+ 1 file changed, 3 deletions(-)
+
+diff --git a/init/ueventd.salvator.rc b/init/ueventd.salvator.rc
+index 9c3d6ad..664e0bd 100644
+--- a/init/ueventd.salvator.rc
++++ b/init/ueventd.salvator.rc
+@@ -11,9 +11,6 @@
+ /dev/video0                                         0666    media           media
+ /dev/video1                                         0666    media           media
+ /dev/media0                                         0666    media           media
+-/dev/v4l-subdev0                                    0666    media           media
+-/dev/v4l-subdev2                                    0666    media           media
+-/dev/v4l-subdev3                                    0666    media           media
+ /dev/graphics/fb0                                   0666    system          graphics
+ /dev/tee0                                           0660    system          keystore
+ /dev/teepriv0                                       0660    system          keystore
+-- 
+2.17.1
+

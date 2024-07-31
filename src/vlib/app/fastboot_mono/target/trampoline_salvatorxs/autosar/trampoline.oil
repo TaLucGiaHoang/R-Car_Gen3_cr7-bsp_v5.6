@@ -1,0 +1,952 @@
+OIL_VERSION = "2.5";
+
+IMPLEMENTATION trampoline {
+
+    /* This fix the default STACKSIZE of tasks to 24KB */
+    TASK {
+        UINT32 STACKSIZE = 0x6000 ;
+    } ;
+
+    /* This fix the default STACKSIZE of ISRs */
+    ISR {
+        UINT32 STACKSIZE = 4096 ;
+    } ;
+
+};
+
+CPU app {
+  OS config {
+    /* WITHORTI = TRUE { FILE = "app.orti"; }; */
+    PAINT_STACK = TRUE;
+    STATUS = EXTENDED;
+    PRETASKHOOK = TRUE;
+    POSTTASKHOOK = TRUE;
+
+    BUILD = TRUE {
+      TRAMPOLINE_BASE_PATH = "../../../../../os/trampoline";
+      APP_SRC = "../autosar_threads.c";
+
+      APP_NAME = "trampoline_lib.a";
+      CFLAGS  = "-O0 -DR_SCIF_CHAN=2";
+      LDFLAGS = "-nostartfiles -nodefaultlibs -nostdlib -r";
+      COMPILER = "arm-none-eabi-gcc";
+      ASSEMBLER = "arm-none-eabi-as";
+      LINKER = "arm-none-eabi-gcc";
+      COPIER = "arm-none-eabi-objcopy";
+      SYSTEM = PYTHON;
+    };
+    SYSTEM_CALL = TRUE;
+    MEMMAP = TRUE {
+      COMPILER = gcc;
+      ASSEMBLER = gnu_as;
+      MEMORY_PROTECTION = FALSE;
+    };
+  };
+
+  APPMODE std {};
+
+  /* Initial task used to run everything */
+  TASK maintask {
+    PRIORITY = 255;
+    AUTOSTART = TRUE {
+      APPMODE = std;
+    };
+    ACTIVATION = 1;
+    SCHEDULE = FULL;
+    EVENT = maintask_sleep_event;
+    EVENT = osal_event;
+    RESOURCE = osal_mutex;
+  };
+
+  EVENT maintask_sleep_event {
+    MASK = 1;
+  };
+
+  ALARM maintask_sleep_alarm {
+    COUNTER = SystemCounter;
+    ACTION = SETEVENT {
+      TASK = maintask;
+      EVENT = maintask_sleep_event;
+    };
+    AUTOSTART = FALSE;
+  };
+
+
+  /* Low priority tasks */
+  TASK low1 {
+    PRIORITY = 1;
+    AUTOSTART = FALSE;
+    ACTIVATION = 1;
+    SCHEDULE = FULL;
+    EVENT = task_low1_sleep_event;
+    EVENT = osal_event;
+    RESOURCE = osal_mutex;
+  };
+
+  EVENT task_low1_sleep_event {
+    MASK = 1;
+  };
+
+  ALARM task_low1_sleep_alarm {
+    COUNTER = SystemCounter;
+    ACTION = SETEVENT {
+      TASK = low1;
+      EVENT = task_low1_sleep_event;
+    };
+    AUTOSTART = FALSE;
+  };
+
+  TASK low2 {
+    PRIORITY = 1;
+    AUTOSTART = FALSE;
+    ACTIVATION = 1;
+    SCHEDULE = FULL;
+    EVENT = task_low2_sleep_event;
+    EVENT = osal_event;
+    RESOURCE = osal_mutex;
+  };
+
+  EVENT task_low2_sleep_event {
+    MASK = 1;
+  };
+
+  ALARM task_low2_sleep_alarm {
+    COUNTER = SystemCounter;
+    ACTION = SETEVENT {
+      TASK = low2;
+      EVENT = task_low2_sleep_event;
+    };
+    AUTOSTART = FALSE;
+  };
+
+  TASK low3 {
+    PRIORITY = 1;
+    AUTOSTART = FALSE;
+    ACTIVATION = 1;
+    SCHEDULE = FULL;
+    EVENT = task_low3_sleep_event;
+    EVENT = osal_event;
+    RESOURCE = osal_mutex;
+  };
+
+  EVENT task_low3_sleep_event {
+    MASK = 1;
+  };
+
+  ALARM task_low3_sleep_alarm {
+    COUNTER = SystemCounter;
+    ACTION = SETEVENT {
+      TASK = low3;
+      EVENT = task_low3_sleep_event;
+    };
+    AUTOSTART = FALSE;
+  };
+
+  TASK low4 {
+    PRIORITY = 1;
+    AUTOSTART = FALSE;
+    ACTIVATION = 1;
+    SCHEDULE = FULL;
+    EVENT = task_low4_sleep_event;
+    EVENT = osal_event;
+    RESOURCE = osal_mutex;
+  };
+
+  EVENT task_low4_sleep_event {
+    MASK = 1;
+  };
+
+  ALARM task_low4_sleep_alarm {
+    COUNTER = SystemCounter;
+    ACTION = SETEVENT {
+      TASK = low4;
+      EVENT = task_low4_sleep_event;
+    };
+    AUTOSTART = FALSE;
+  };
+
+  TASK low5 {
+    PRIORITY = 1;
+    AUTOSTART = FALSE;
+    ACTIVATION = 1;
+    SCHEDULE = FULL;
+    EVENT = task_low5_sleep_event;
+    EVENT = osal_event;
+    RESOURCE = osal_mutex;
+  };
+
+  EVENT task_low5_sleep_event {
+    MASK = 1;
+  };
+
+  ALARM task_low5_sleep_alarm {
+    COUNTER = SystemCounter;
+    ACTION = SETEVENT {
+      TASK = low5;
+      EVENT = task_low5_sleep_event;
+    };
+    AUTOSTART = FALSE;
+  };
+
+  TASK low6 {
+    PRIORITY = 1;
+    AUTOSTART = FALSE;
+    ACTIVATION = 1;
+    SCHEDULE = FULL;
+    EVENT = task_low6_sleep_event;
+    EVENT = osal_event;
+    RESOURCE = osal_mutex;
+  };
+
+  EVENT task_low6_sleep_event {
+    MASK = 1;
+  };
+
+  ALARM task_low6_sleep_alarm {
+    COUNTER = SystemCounter;
+    ACTION = SETEVENT {
+      TASK = low6;
+      EVENT = task_low6_sleep_event;
+    };
+    AUTOSTART = FALSE;
+  };
+
+  TASK low7 {
+    PRIORITY = 1;
+    AUTOSTART = FALSE;
+    ACTIVATION = 1;
+    SCHEDULE = FULL;
+    EVENT = task_low7_sleep_event;
+    EVENT = osal_event;
+    RESOURCE = osal_mutex;
+  };
+
+  EVENT task_low7_sleep_event {
+    MASK = 1;
+  };
+
+  ALARM task_low7_sleep_alarm {
+    COUNTER = SystemCounter;
+    ACTION = SETEVENT {
+      TASK = low7;
+      EVENT = task_low7_sleep_event;
+    };
+    AUTOSTART = FALSE;
+  };
+
+  TASK low8 {
+    PRIORITY = 1;
+    AUTOSTART = FALSE;
+    ACTIVATION = 1;
+    SCHEDULE = FULL;
+    EVENT = task_low8_sleep_event;
+    EVENT = osal_event;
+    RESOURCE = osal_mutex;
+  };
+
+  EVENT task_low8_sleep_event {
+    MASK = 1;
+  };
+
+  ALARM task_low8_sleep_alarm {
+    COUNTER = SystemCounter;
+    ACTION = SETEVENT {
+      TASK = low8;
+      EVENT = task_low8_sleep_event;
+    };
+    AUTOSTART = FALSE;
+  };
+
+  TASK low9 {
+    PRIORITY = 1;
+    AUTOSTART = FALSE;
+    ACTIVATION = 1;
+    SCHEDULE = FULL;
+    EVENT = task_low9_sleep_event;
+    EVENT = osal_event;
+    RESOURCE = osal_mutex;
+  };
+
+  EVENT task_low9_sleep_event {
+    MASK = 1;
+  };
+
+  ALARM task_low9_sleep_alarm {
+    COUNTER = SystemCounter;
+    ACTION = SETEVENT {
+      TASK = low9;
+      EVENT = task_low9_sleep_event;
+    };
+    AUTOSTART = FALSE;
+  };
+
+  TASK low10 {
+    PRIORITY = 1;
+    AUTOSTART = FALSE;
+    ACTIVATION = 1;
+    SCHEDULE = FULL;
+    EVENT = task_low10_sleep_event;
+    EVENT = osal_event;
+    RESOURCE = osal_mutex;
+  };
+
+  EVENT task_low10_sleep_event {
+    MASK = 1;
+  };
+
+  ALARM task_low10_sleep_alarm {
+    COUNTER = SystemCounter;
+    ACTION = SETEVENT {
+      TASK = low10;
+      EVENT = task_low10_sleep_event;
+    };
+    AUTOSTART = FALSE;
+  };
+
+  TASK low11 {
+    PRIORITY = 1;
+    AUTOSTART = FALSE;
+    ACTIVATION = 1;
+    SCHEDULE = FULL;
+    EVENT = task_low11_sleep_event;
+    EVENT = osal_event;
+    RESOURCE = osal_mutex;
+  };
+
+  EVENT task_low11_sleep_event {
+    MASK = 1;
+  };
+
+  ALARM task_low11_sleep_alarm {
+    COUNTER = SystemCounter;
+    ACTION = SETEVENT {
+      TASK = low11;
+      EVENT = task_low11_sleep_event;
+    };
+    AUTOSTART = FALSE;
+  };
+
+  TASK low12 {
+    PRIORITY = 1;
+    AUTOSTART = FALSE;
+    ACTIVATION = 1;
+    SCHEDULE = FULL;
+    EVENT = task_low12_sleep_event;
+    EVENT = osal_event;
+    RESOURCE = osal_mutex;
+  };
+
+  EVENT task_low12_sleep_event {
+    MASK = 1;
+  };
+
+  ALARM task_low12_sleep_alarm {
+    COUNTER = SystemCounter;
+    ACTION = SETEVENT {
+      TASK = low12;
+      EVENT = task_low12_sleep_event;
+    };
+    AUTOSTART = FALSE;
+  };
+
+  TASK low13 {
+    PRIORITY = 1;
+    AUTOSTART = FALSE;
+    ACTIVATION = 1;
+    SCHEDULE = FULL;
+    EVENT = task_low13_sleep_event;
+    EVENT = osal_event;
+    RESOURCE = osal_mutex;
+  };
+
+  EVENT task_low13_sleep_event {
+    MASK = 1;
+  };
+
+  ALARM task_low13_sleep_alarm {
+    COUNTER = SystemCounter;
+    ACTION = SETEVENT {
+      TASK = low13;
+      EVENT = task_low13_sleep_event;
+    };
+    AUTOSTART = FALSE;
+  };
+
+  TASK low14 {
+    PRIORITY = 1;
+    AUTOSTART = FALSE;
+    ACTIVATION = 1;
+    SCHEDULE = FULL;
+    EVENT = task_low14_sleep_event;
+    EVENT = osal_event;
+    RESOURCE = osal_mutex;
+  };
+
+  EVENT task_low14_sleep_event {
+    MASK = 1;
+  };
+
+  ALARM task_low14_sleep_alarm {
+    COUNTER = SystemCounter;
+    ACTION = SETEVENT {
+      TASK = low14;
+      EVENT = task_low14_sleep_event;
+    };
+    AUTOSTART = FALSE;
+  };
+
+  TASK low15 {
+    PRIORITY = 1;
+    AUTOSTART = FALSE;
+    ACTIVATION = 1;
+    SCHEDULE = FULL;
+    EVENT = task_low15_sleep_event;
+    EVENT = osal_event;
+    RESOURCE = osal_mutex;
+  };
+
+  EVENT task_low15_sleep_event {
+    MASK = 1;
+  };
+
+  ALARM task_low15_sleep_alarm {
+    COUNTER = SystemCounter;
+    ACTION = SETEVENT {
+      TASK = low15;
+      EVENT = task_low15_sleep_event;
+    };
+    AUTOSTART = FALSE;
+  };
+
+
+  /* Medium priority tasks */
+  TASK medium1 {
+    PRIORITY = 2;
+    AUTOSTART = FALSE;
+    ACTIVATION = 1;
+    SCHEDULE = FULL;
+    EVENT = task_medium1_sleep_event;
+    EVENT = osal_event;
+    RESOURCE = osal_mutex;
+  };
+
+  EVENT task_medium1_sleep_event {
+    MASK = 1;
+  };
+
+  ALARM task_medium1_sleep_alarm {
+    COUNTER = SystemCounter;
+    ACTION = SETEVENT {
+      TASK = medium1;
+      EVENT = task_medium1_sleep_event;
+    };
+    AUTOSTART = FALSE;
+  };
+
+
+  TASK medium2 {
+    PRIORITY = 2;
+    AUTOSTART = FALSE;
+    ACTIVATION = 1;
+    SCHEDULE = FULL;
+    EVENT = task_medium2_sleep_event;
+    EVENT = osal_event;
+    RESOURCE = osal_mutex;
+  };
+
+  EVENT task_medium2_sleep_event {
+    MASK = 1;
+  };
+
+  ALARM task_medium2_sleep_alarm {
+    COUNTER = SystemCounter;
+    ACTION = SETEVENT {
+      TASK = medium2;
+      EVENT = task_medium2_sleep_event;
+    };
+    AUTOSTART = FALSE;
+  };
+
+  TASK medium3 {
+    PRIORITY = 2;
+    AUTOSTART = FALSE;
+    ACTIVATION = 1;
+    SCHEDULE = FULL;
+    EVENT = task_medium3_sleep_event;
+    EVENT = osal_event;
+    RESOURCE = osal_mutex;
+  };
+
+  EVENT task_medium3_sleep_event {
+    MASK = 1;
+  };
+
+  ALARM task_medium3_sleep_alarm {
+    COUNTER = SystemCounter;
+    ACTION = SETEVENT {
+      TASK = medium3;
+      EVENT = task_medium3_sleep_event;
+    };
+    AUTOSTART = FALSE;
+  };
+
+  TASK medium4 {
+    PRIORITY = 2;
+    AUTOSTART = FALSE;
+    ACTIVATION = 1;
+    SCHEDULE = FULL;
+    EVENT = task_medium4_sleep_event;
+    EVENT = osal_event;
+    RESOURCE = osal_mutex;
+  };
+
+  EVENT task_medium4_sleep_event {
+    MASK = 1;
+  };
+
+  ALARM task_medium4_sleep_alarm {
+    COUNTER = SystemCounter;
+    ACTION = SETEVENT {
+      TASK = medium4;
+      EVENT = task_medium4_sleep_event;
+    };
+    AUTOSTART = FALSE;
+  };
+
+  TASK medium5 {
+    PRIORITY = 2;
+    AUTOSTART = FALSE;
+    ACTIVATION = 1;
+    SCHEDULE = FULL;
+    EVENT = task_medium5_sleep_event;
+    EVENT = osal_event;
+    RESOURCE = osal_mutex;
+  };
+
+  EVENT task_medium5_sleep_event {
+    MASK = 1;
+  };
+
+  ALARM task_medium5_sleep_alarm {
+    COUNTER = SystemCounter;
+    ACTION = SETEVENT {
+      TASK = medium5;
+      EVENT = task_medium5_sleep_event;
+    };
+    AUTOSTART = FALSE;
+  };
+
+  TASK medium6 {
+    PRIORITY = 2;
+    AUTOSTART = FALSE;
+    ACTIVATION = 1;
+    SCHEDULE = FULL;
+    EVENT = task_medium6_sleep_event;
+    EVENT = osal_event;
+    RESOURCE = osal_mutex;
+  };
+
+  EVENT task_medium6_sleep_event {
+    MASK = 1;
+  };
+
+  ALARM task_medium6_sleep_alarm {
+    COUNTER = SystemCounter;
+    ACTION = SETEVENT {
+      TASK = medium6;
+      EVENT = task_medium6_sleep_event;
+    };
+    AUTOSTART = FALSE;
+  };
+
+  TASK medium7 {
+    PRIORITY = 2;
+    AUTOSTART = FALSE;
+    ACTIVATION = 1;
+    SCHEDULE = FULL;
+    EVENT = task_medium7_sleep_event;
+    EVENT = osal_event;
+    RESOURCE = osal_mutex;
+  };
+
+  EVENT task_medium7_sleep_event {
+    MASK = 1;
+  };
+
+  ALARM task_medium7_sleep_alarm {
+    COUNTER = SystemCounter;
+    ACTION = SETEVENT {
+      TASK = medium7;
+      EVENT = task_medium7_sleep_event;
+    };
+    AUTOSTART = FALSE;
+  };
+
+  TASK medium8 {
+    PRIORITY = 2;
+    AUTOSTART = FALSE;
+    ACTIVATION = 1;
+    SCHEDULE = FULL;
+    EVENT = task_medium8_sleep_event;
+    EVENT = osal_event;
+    RESOURCE = osal_mutex;
+  };
+
+  EVENT task_medium8_sleep_event {
+    MASK = 1;
+  };
+
+  ALARM task_medium8_sleep_alarm {
+    COUNTER = SystemCounter;
+    ACTION = SETEVENT {
+      TASK = medium8;
+      EVENT = task_medium8_sleep_event;
+    };
+    AUTOSTART = FALSE;
+  };
+
+
+  /* High priority tasks */
+  TASK high1 {
+    PRIORITY = 3;
+    AUTOSTART = FALSE;
+    ACTIVATION = 1;
+    SCHEDULE = FULL;
+    EVENT = task_high1_sleep_event;
+    EVENT = osal_event;
+    RESOURCE = osal_mutex;
+  };
+
+  EVENT task_high1_sleep_event {
+    MASK = 1;
+  };
+
+  ALARM task_high1_sleep_alarm {
+    COUNTER = SystemCounter;
+    ACTION = SETEVENT {
+      TASK = high1;
+      EVENT = task_high1_sleep_event;
+    };
+    AUTOSTART = FALSE;
+  };
+
+  TASK high2 {
+    PRIORITY = 3;
+    AUTOSTART = FALSE;
+    ACTIVATION = 1;
+    SCHEDULE = FULL;
+    EVENT = task_high2_sleep_event;
+    EVENT = osal_event;
+    RESOURCE = osal_mutex;
+  };
+
+  EVENT task_high2_sleep_event {
+    MASK = 1;
+  };
+
+  ALARM task_high2_sleep_alarm {
+    COUNTER = SystemCounter;
+    ACTION = SETEVENT {
+      TASK = high2;
+      EVENT = task_high2_sleep_event;
+    };
+    AUTOSTART = FALSE;
+  };
+
+  TASK high3 {
+    PRIORITY = 3;
+    AUTOSTART = FALSE;
+    ACTIVATION = 1;
+    SCHEDULE = FULL;
+    EVENT = task_high3_sleep_event;
+    EVENT = osal_event;
+    RESOURCE = osal_mutex;
+  };
+
+  EVENT task_high3_sleep_event {
+    MASK = 1;
+  };
+
+  ALARM task_high3_sleep_alarm {
+    COUNTER = SystemCounter;
+    ACTION = SETEVENT {
+      TASK = high3;
+      EVENT = task_high3_sleep_event;
+    };
+    AUTOSTART = FALSE;
+  };
+
+  TASK high4 {
+    PRIORITY = 3;
+    AUTOSTART = FALSE;
+    ACTIVATION = 1;
+    SCHEDULE = FULL;
+    EVENT = task_high4_sleep_event;
+    EVENT = osal_event;
+    RESOURCE = osal_mutex;
+  };
+
+  EVENT task_high4_sleep_event {
+    MASK = 1;
+  };
+
+  ALARM task_high4_sleep_alarm {
+    COUNTER = SystemCounter;
+    ACTION = SETEVENT {
+      TASK = high4;
+      EVENT = task_high4_sleep_event;
+    };
+    AUTOSTART = FALSE;
+  };
+
+  TASK high5 {
+    PRIORITY = 3;
+    AUTOSTART = FALSE;
+    ACTIVATION = 1;
+    SCHEDULE = FULL;
+    EVENT = task_high5_sleep_event;
+    EVENT = osal_event;
+    RESOURCE = osal_mutex;
+  };
+
+  EVENT task_high5_sleep_event {
+    MASK = 1;
+  };
+
+  ALARM task_high5_sleep_alarm {
+    COUNTER = SystemCounter;
+    ACTION = SETEVENT {
+      TASK = high5;
+      EVENT = task_high5_sleep_event;
+    };
+    AUTOSTART = FALSE;
+  };
+
+  TASK high6 {
+    PRIORITY = 3;
+    AUTOSTART = FALSE;
+    ACTIVATION = 1;
+    SCHEDULE = FULL;
+    EVENT = task_high6_sleep_event;
+    EVENT = osal_event;
+    RESOURCE = osal_mutex;
+  };
+
+  EVENT task_high6_sleep_event {
+    MASK = 1;
+  };
+
+  ALARM task_high6_sleep_alarm {
+    COUNTER = SystemCounter;
+    ACTION = SETEVENT {
+      TASK = high6;
+      EVENT = task_high6_sleep_event;
+    };
+    AUTOSTART = FALSE;
+  };
+
+  TASK high7 {
+    PRIORITY = 3;
+    AUTOSTART = FALSE;
+    ACTIVATION = 1;
+    SCHEDULE = FULL;
+    EVENT = task_high7_sleep_event;
+    EVENT = osal_event;
+    RESOURCE = osal_mutex;
+  };
+
+  EVENT task_high7_sleep_event {
+    MASK = 1;
+  };
+
+  ALARM task_high7_sleep_alarm {
+    COUNTER = SystemCounter;
+    ACTION = SETEVENT {
+      TASK = high7;
+      EVENT = task_high7_sleep_event;
+    };
+    AUTOSTART = FALSE;
+  };
+
+  TASK high8 {
+    PRIORITY = 3;
+    AUTOSTART = FALSE;
+    ACTIVATION = 1;
+    SCHEDULE = FULL;
+    EVENT = task_high8_sleep_event;
+    EVENT = osal_event;
+    RESOURCE = osal_mutex;
+  };
+
+  EVENT task_high8_sleep_event {
+    MASK = 1;
+  };
+
+  ALARM task_high8_sleep_alarm {
+    COUNTER = SystemCounter;
+    ACTION = SETEVENT {
+      TASK = high8;
+      EVENT = task_high8_sleep_event;
+    };
+    AUTOSTART = FALSE;
+  };
+
+  TASK high9 {
+    PRIORITY = 3;
+    AUTOSTART = FALSE;
+    ACTIVATION = 1;
+    SCHEDULE = FULL;
+    EVENT = task_high9_sleep_event;
+    EVENT = osal_event;
+    RESOURCE = osal_mutex;
+  };
+
+  EVENT task_high9_sleep_event {
+    MASK = 1;
+  };
+
+  ALARM task_high9_sleep_alarm {
+    COUNTER = SystemCounter;
+    ACTION = SETEVENT {
+      TASK = high9;
+      EVENT = task_high9_sleep_event;
+    };
+    AUTOSTART = FALSE;
+  };
+
+  TASK high10 {
+    PRIORITY = 3;
+    AUTOSTART = FALSE;
+    ACTIVATION = 1;
+    SCHEDULE = FULL;
+    EVENT = task_high10_sleep_event;
+    EVENT = osal_event;
+    RESOURCE = osal_mutex;
+  };
+
+  EVENT task_high10_sleep_event {
+    MASK = 1;
+  };
+
+  ALARM task_high10_sleep_alarm {
+    COUNTER = SystemCounter;
+    ACTION = SETEVENT {
+      TASK = high10;
+      EVENT = task_high10_sleep_event;
+    };
+    AUTOSTART = FALSE;
+  };
+
+  TASK high11 {
+    PRIORITY = 3;
+    AUTOSTART = FALSE;
+    ACTIVATION = 1;
+    SCHEDULE = FULL;
+    EVENT = task_high11_sleep_event;
+    EVENT = osal_event;
+    RESOURCE = osal_mutex;
+  };
+
+  EVENT task_high11_sleep_event {
+    MASK = 1;
+  };
+
+  ALARM task_high11_sleep_alarm {
+    COUNTER = SystemCounter;
+    ACTION = SETEVENT {
+      TASK = high11;
+      EVENT = task_high11_sleep_event;
+    };
+    AUTOSTART = FALSE;
+  };
+
+  TASK high12 {
+    PRIORITY = 3;
+    AUTOSTART = FALSE;
+    ACTIVATION = 1;
+    SCHEDULE = FULL;
+    EVENT = task_high12_sleep_event;
+    EVENT = osal_event;
+    RESOURCE = osal_mutex;
+  };
+
+  EVENT task_high12_sleep_event {
+    MASK = 1;
+  };
+
+  ALARM task_high12_sleep_alarm {
+    COUNTER = SystemCounter;
+    ACTION = SETEVENT {
+      TASK = high12;
+      EVENT = task_high12_sleep_event;
+    };
+    AUTOSTART = FALSE;
+  };
+
+
+  RESOURCE osal_mutex {
+    RESOURCEPROPERTY = STANDARD;
+  };
+
+  EVENT osal_event {
+    MASK = 2;
+  };
+
+
+  /* Interrupts */
+  ISR dave_hd_sync {
+    CATEGORY = 2;
+    PRIORITY = 1;
+    SOURCE = DAVE_HD_SYNC;
+    RESOURCE = osal_mutex;
+  };
+
+  ISR vin_ch4 {
+    CATEGORY = 2;
+    PRIORITY = 1;
+    SOURCE = VIN_CH4;
+    RESOURCE = osal_mutex;
+  };
+
+  ISR vin_ch5 {
+    CATEGORY = 2;
+    PRIORITY = 1;
+    SOURCE = VIN_CH5;
+    RESOURCE = osal_mutex;
+  };
+
+  ISR vin_ch0 {
+    CATEGORY = 2;
+    PRIORITY = 1;
+    SOURCE = VIN_CH0;
+    RESOURCE = osal_mutex;
+  };
+
+  ISR mfis_ariicr_ch0 {
+    CATEGORY = 2;
+    PRIORITY = 1;
+    SOURCE = MFIS_ARIICR_CH0;
+    RESOURCE = osal_mutex;
+  };
+
+  ISR vsp2_vspd_ch0 {
+    CATEGORY = 2;
+    PRIORITY = 1;
+    SOURCE = VSP2_VSPD_CH0;
+    RESOURCE = osal_mutex;
+  };
+
+  ISR vsp2_vspd_ch1 {
+    CATEGORY = 2;
+    PRIORITY = 1;
+    SOURCE = VSP2_VSPD_CH1;
+    RESOURCE = osal_mutex;
+  };
+
+  ISR vsp2_vspd_ch2 {
+    CATEGORY = 2;
+    PRIORITY = 1;
+    SOURCE = VSP2_VSPD_CH2;
+    RESOURCE = osal_mutex;
+  };
+};

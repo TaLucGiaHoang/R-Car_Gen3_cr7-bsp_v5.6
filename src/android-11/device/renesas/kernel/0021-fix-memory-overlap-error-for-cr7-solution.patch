@@ -1,0 +1,23 @@
+From 87a3e07b2a300020389c846c2e239645e71fc571 Mon Sep 17 00:00:00 2001
+From: tiezhuangdong <tiezhuang.dong.yh@renesas.com>
+Date: Tue, 21 Jun 2022 17:20:56 +0800
+Subject: [PATCH 21/27] fix memory overlap error for cr7 solution
+
+---
+ .../renesas/android/overlays/r8a7795-salvator-4x2g-overlay.dts  | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/arch/arm64/boot/dts/renesas/android/overlays/r8a7795-salvator-4x2g-overlay.dts b/arch/arm64/boot/dts/renesas/android/overlays/r8a7795-salvator-4x2g-overlay.dts
+index 0e6eabe3cb9f..f77e035901d8 100644
+--- a/arch/arm64/boot/dts/renesas/android/overlays/r8a7795-salvator-4x2g-overlay.dts
++++ b/arch/arm64/boot/dts/renesas/android/overlays/r8a7795-salvator-4x2g-overlay.dts
+@@ -51,5 +51,5 @@
+ 
+ &ion_reserved {
+ 	compatible = "shared-dma-pool";
+-	reg = <0x00000000 0x68000000 0x0 0x20000000>; /* 512Mb */
++	reg = <0x00000000 0x80000000 0x0 0x18000000>; /* 384Mb */
+ };
+-- 
+2.25.1
+

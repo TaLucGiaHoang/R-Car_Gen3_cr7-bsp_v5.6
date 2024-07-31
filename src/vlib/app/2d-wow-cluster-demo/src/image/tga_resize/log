@@ -1,0 +1,443 @@
+Generating resources for  
+ TGA input filename is '-s'
+ERROR: Colormode -o is not supported. Programm execution aborted.
+Generating resources for  IconCluster
+ TGA input filename is 'icon_cluster.tga'
+ Image structure name for C file is 'IconCluster'
+ Colourmode of output data is 'RGB565'
+ Filename for C file output is './src/icon_cluster.c'
+ Filename of binary output is './data/icon_cluster.bin'
+ Use the CPU to decompress RLE image. (And not the drawing engine)
+  -> Don't set IMG_MODE_RLE Image colourmode flag.
+ 
+Image Size is 4416 byte
+Generating resources for  ClusterBackGround
+ TGA input filename is '800x480_Dashboard_BG.tga'
+ Image structure name for C file is 'ClusterBackGround'
+ Colourmode of output data is 'ARGB8888'
+ Filename for C file output is './src/cluster_background.c'
+ Filename of binary output is './data/cluster_background.bin'
+ Use the CPU to decompress RLE image. (And not the drawing engine)
+  -> Don't set IMG_MODE_RLE Image colourmode flag.
+ 
+Image Size is 5529600 byte
+Generating resources for  ClusterNeedle
+ TGA input filename is 'Needle_red.tga'
+ Image structure name for C file is 'ClusterNeedle'
+ Colourmode of output data is 'ARGB8888'
+ Filename for C file output is './src/cluster_needle.c'
+ Filename of binary output is './data/cluster_needle.bin'
+ Use the CPU to decompress RLE image. (And not the drawing engine)
+  -> Don't set IMG_MODE_RLE Image colourmode flag.
+ 
+Image Size is 22568 byte
+Generating resources for  ClusterNeedle
+ TGA input filename is 'MetalNeedle.tga'
+ Image structure name for C file is 'ClusterNeedle'
+ Colourmode of output data is 'ARGB8888'
+ Filename for C file output is './src/cluster_needle.c'
+ Filename of binary output is './data/cluster_needle.bin'
+ Use the CPU to decompress RLE image. (And not the drawing engine)
+  -> Don't set IMG_MODE_RLE Image colourmode flag.
+ 
+Image Size is 22568 byte
+Generating resources for  TurnLeft
+ TGA input filename is 'Blinker_left.tga'
+ Image structure name for C file is 'TurnLeft'
+ Colourmode of output data is 'ARGB8888'
+ Filename for C file output is './src/cluster_turn_left.c'
+ Filename of binary output is './data/cluster_turn_left.bin'
+ Use the CPU to decompress RLE image. (And not the drawing engine)
+  -> Don't set IMG_MODE_RLE Image colourmode flag.
+ 
+Image Size is 11816 byte
+Generating resources for  TurnLeftOff
+ TGA input filename is 'Blinker_left_off.tga'
+ Image structure name for C file is 'TurnLeftOff'
+ Colourmode of output data is 'ARGB8888'
+ Filename for C file output is './src/cluster_turn_left_off.c'
+ Filename of binary output is './data/cluster_turn_left_off.bin'
+ Use the CPU to decompress RLE image. (And not the drawing engine)
+  -> Don't set IMG_MODE_RLE Image colourmode flag.
+ 
+Image Size is 10621 byte
+Generating resources for  TurnRight
+ TGA input filename is 'Blinker_right.tga'
+ Image structure name for C file is 'TurnRight'
+ Colourmode of output data is 'ARGB8888'
+ Filename for C file output is './src/cluster_turn_right.c'
+ Filename of binary output is './data/cluster_turn_right.bin'
+ Use the CPU to decompress RLE image. (And not the drawing engine)
+  -> Don't set IMG_MODE_RLE Image colourmode flag.
+ 
+Image Size is 11818 byte
+Generating resources for  TurnRightOff
+ TGA input filename is 'Blinker_right_off.tga'
+ Image structure name for C file is 'TurnRightOff'
+ Colourmode of output data is 'ARGB8888'
+ Filename for C file output is './src/cluster_turn_right_off.c'
+ Filename of binary output is './data/cluster_turn_right_off.bin'
+ Use the CPU to decompress RLE image. (And not the drawing engine)
+  -> Don't set IMG_MODE_RLE Image colourmode flag.
+ 
+Image Size is 10636 byte
+Generating resources for  HazardNormal
+ TGA input filename is 'Hazard_Icon_Normal.tga'
+ Image structure name for C file is 'HazardNormal'
+ Colourmode of output data is 'ARGB8888'
+ Filename for C file output is './src/cluster_hazard_normal.c'
+ Filename of binary output is './data/cluster_hazard_normal.bin'
+ Use the CPU to decompress RLE image. (And not the drawing engine)
+  -> Don't set IMG_MODE_RLE Image colourmode flag.
+ 
+Image Size is 6668 byte
+Generating resources for  HazardSelected
+ TGA input filename is 'Hazard_Icon_Selected.tga'
+ Image structure name for C file is 'HazardSelected'
+ Colourmode of output data is 'ARGB8888'
+ Filename for C file output is './src/cluster_hazard_selected.c'
+ Filename of binary output is './data/cluster_hazard_selected.bin'
+ Use the CPU to decompress RLE image. (And not the drawing engine)
+  -> Don't set IMG_MODE_RLE Image colourmode flag.
+ 
+Image Size is 7265 byte
+Generating resources for  BatteryOff
+ TGA input filename is 'BatteryOff.tga'
+ Image structure name for C file is 'BatteryOff'
+ Colourmode of output data is 'ARGB8888'
+ Filename for C file output is './src/cluster_BatteryOff.c'
+ Filename of binary output is './data/cluster_BatteryOff.bin'
+ Use the CPU to decompress RLE image. (And not the drawing engine)
+  -> Don't set IMG_MODE_RLE Image colourmode flag.
+ 
+Image Size is 10918 byte
+Generating resources for  BatteryOn
+ TGA input filename is 'BatteryOn.tga'
+ Image structure name for C file is 'BatteryOn'
+ Colourmode of output data is 'ARGB8888'
+ Filename for C file output is './src/cluster_BatteryOn.c'
+ Filename of binary output is './data/cluster_BatteryOn.bin'
+ Use the CPU to decompress RLE image. (And not the drawing engine)
+  -> Don't set IMG_MODE_RLE Image colourmode flag.
+ 
+Image Size is 11457 byte
+Generating resources for  FanOff
+ TGA input filename is 'FanOff.tga'
+ Image structure name for C file is 'FanOff'
+ Colourmode of output data is 'ARGB8888'
+ Filename for C file output is './src/cluster_FanOff.c'
+ Filename of binary output is './data/cluster_FanOff.bin'
+ Use the CPU to decompress RLE image. (And not the drawing engine)
+  -> Don't set IMG_MODE_RLE Image colourmode flag.
+ 
+Image Size is 11671 byte
+Generating resources for  FanOn
+ TGA input filename is 'FanOn.tga'
+ Image structure name for C file is 'FanOn'
+ Colourmode of output data is 'ARGB8888'
+ Filename for C file output is './src/cluster_FanOn.c'
+ Filename of binary output is './data/cluster_FanOn.bin'
+ Use the CPU to decompress RLE image. (And not the drawing engine)
+  -> Don't set IMG_MODE_RLE Image colourmode flag.
+ 
+Image Size is 12163 byte
+Generating resources for  HighLightOff
+ TGA input filename is 'HighLightOff.tga'
+ Image structure name for C file is 'HighLightOff'
+ Colourmode of output data is 'ARGB8888'
+ Filename for C file output is './src/cluster_HighLightOff.c'
+ Filename of binary output is './data/cluster_HighLightOff.bin'
+ Use the CPU to decompress RLE image. (And not the drawing engine)
+  -> Don't set IMG_MODE_RLE Image colourmode flag.
+ 
+Image Size is 12185 byte
+Generating resources for  HighLightOn
+ TGA input filename is 'HighLightOn.tga'
+ Image structure name for C file is 'HighLightOn'
+ Colourmode of output data is 'ARGB8888'
+ Filename for C file output is './src/cluster_HighLightOn.c'
+ Filename of binary output is './data/cluster_HighLightOn.bin'
+ Use the CPU to decompress RLE image. (And not the drawing engine)
+  -> Don't set IMG_MODE_RLE Image colourmode flag.
+ 
+Image Size is 12410 byte
+Generating resources for  LowLightOff
+ TGA input filename is 'LowLightOff.tga'
+ Image structure name for C file is 'LowLightOff'
+ Colourmode of output data is 'ARGB8888'
+ Filename for C file output is './src/cluster_LowLightOff.c'
+ Filename of binary output is './data/cluster_LowLightOff.bin'
+ Use the CPU to decompress RLE image. (And not the drawing engine)
+  -> Don't set IMG_MODE_RLE Image colourmode flag.
+ 
+Image Size is 12602 byte
+Generating resources for  LowLightOn
+ TGA input filename is 'LowLightOn.tga'
+ Image structure name for C file is 'LowLightOn'
+ Colourmode of output data is 'ARGB8888'
+ Filename for C file output is './src/cluster_LowLightOn.c'
+ Filename of binary output is './data/cluster_LowLightOn.bin'
+ Use the CPU to decompress RLE image. (And not the drawing engine)
+  -> Don't set IMG_MODE_RLE Image colourmode flag.
+ 
+Image Size is 13744 byte
+Generating resources for  OilOff
+ TGA input filename is 'OilOff.tga'
+ Image structure name for C file is 'OilOff'
+ Colourmode of output data is 'ARGB8888'
+ Filename for C file output is './src/cluster_OilOff.c'
+ Filename of binary output is './data/cluster_OilOff.bin'
+ Use the CPU to decompress RLE image. (And not the drawing engine)
+  -> Don't set IMG_MODE_RLE Image colourmode flag.
+ 
+Image Size is 9149 byte
+Generating resources for  OilOn
+ TGA input filename is 'OilOn.tga'
+ Image structure name for C file is 'OilOn'
+ Colourmode of output data is 'ARGB8888'
+ Filename for C file output is './src/cluster_OilOn.c'
+ Filename of binary output is './data/cluster_OilOn.bin'
+ Use the CPU to decompress RLE image. (And not the drawing engine)
+  -> Don't set IMG_MODE_RLE Image colourmode flag.
+ 
+Image Size is 9650 byte
+Generating resources for  AirbagOff
+ TGA input filename is 'AirbagOff.tga'
+ Image structure name for C file is 'AirbagOff'
+ Colourmode of output data is 'ARGB8888'
+ Filename for C file output is './src/cluster_AirbagOff.c'
+ Filename of binary output is './data/cluster_AirbagOff.bin'
+ Use the CPU to decompress RLE image. (And not the drawing engine)
+  -> Don't set IMG_MODE_RLE Image colourmode flag.
+ 
+Image Size is 12340 byte
+Generating resources for  AirbagOn
+ TGA input filename is 'AirbagOn.tga'
+ Image structure name for C file is 'AirbagOn'
+ Colourmode of output data is 'ARGB8888'
+ Filename for C file output is './src/cluster_AirbagOn.c'
+ Filename of binary output is './data/cluster_AirbagOn.bin'
+ Use the CPU to decompress RLE image. (And not the drawing engine)
+  -> Don't set IMG_MODE_RLE Image colourmode flag.
+ 
+Image Size is 13028 byte
+Generating resources for  BeltOff
+ TGA input filename is 'BeltOff.tga'
+ Image structure name for C file is 'BeltOff'
+ Colourmode of output data is 'ARGB8888'
+ Filename for C file output is './src/cluster_BeltOff.c'
+ Filename of binary output is './data/cluster_BeltOff.bin'
+ Use the CPU to decompress RLE image. (And not the drawing engine)
+  -> Don't set IMG_MODE_RLE Image colourmode flag.
+ 
+Image Size is 11646 byte
+Generating resources for  BeltOn
+ TGA input filename is 'BeltOn.tga'
+ Image structure name for C file is 'BeltOn'
+ Colourmode of output data is 'ARGB8888'
+ Filename for C file output is './src/cluster_BeltOn.c'
+ Filename of binary output is './data/cluster_BeltOn.bin'
+ Use the CPU to decompress RLE image. (And not the drawing engine)
+  -> Don't set IMG_MODE_RLE Image colourmode flag.
+ 
+Image Size is 12061 byte
+Generating resources for  BrakeOff
+ TGA input filename is 'BrakeOff.tga'
+ Image structure name for C file is 'BrakeOff'
+ Colourmode of output data is 'ARGB8888'
+ Filename for C file output is './src/cluster_BrakeOff.c'
+ Filename of binary output is './data/cluster_BrakeOff.bin'
+ Use the CPU to decompress RLE image. (And not the drawing engine)
+  -> Don't set IMG_MODE_RLE Image colourmode flag.
+ 
+Image Size is 13659 byte
+Generating resources for  BrakeOn
+ TGA input filename is 'BrakeOn.tga'
+ Image structure name for C file is 'BrakeOn'
+ Colourmode of output data is 'ARGB8888'
+ Filename for C file output is './src/cluster_BrakeOn.c'
+ Filename of binary output is './data/cluster_BrakeOn.bin'
+ Use the CPU to decompress RLE image. (And not the drawing engine)
+  -> Don't set IMG_MODE_RLE Image colourmode flag.
+ 
+Image Size is 13865 byte
+Generating resources for  WindshieldOff
+ TGA input filename is 'WindshieldOff.tga'
+ Image structure name for C file is 'WindshieldOff'
+ Colourmode of output data is 'ARGB8888'
+ Filename for C file output is './src/cluster_WindshieldOff.c'
+ Filename of binary output is './data/cluster_WindshieldOff.bin'
+ Use the CPU to decompress RLE image. (And not the drawing engine)
+  -> Don't set IMG_MODE_RLE Image colourmode flag.
+ 
+Image Size is 11755 byte
+Generating resources for  WindshieldOn
+ TGA input filename is 'WindshieldOn.tga'
+ Image structure name for C file is 'WindshieldOn'
+ Colourmode of output data is 'ARGB8888'
+ Filename for C file output is './src/cluster_WindshieldOn.c'
+ Filename of binary output is './data/cluster_WindshieldOn.bin'
+ Use the CPU to decompress RLE image. (And not the drawing engine)
+  -> Don't set IMG_MODE_RLE Image colourmode flag.
+ 
+Image Size is 12391 byte
+Generating resources for  WipingOff
+ TGA input filename is 'WipingOff.tga'
+ Image structure name for C file is 'WipingOff'
+ Colourmode of output data is 'ARGB8888'
+ Filename for C file output is './src/cluster_WipingOff.c'
+ Filename of binary output is './data/cluster_WipingOff.bin'
+ Use the CPU to decompress RLE image. (And not the drawing engine)
+  -> Don't set IMG_MODE_RLE Image colourmode flag.
+ 
+Image Size is 12284 byte
+Generating resources for  WipingOn
+ TGA input filename is 'WipingOn.tga'
+ Image structure name for C file is 'WipingOn'
+ Colourmode of output data is 'ARGB8888'
+ Filename for C file output is './src/cluster_WipingOn.c'
+ Filename of binary output is './data/cluster_WipingOn.bin'
+ Use the CPU to decompress RLE image. (And not the drawing engine)
+  -> Don't set IMG_MODE_RLE Image colourmode flag.
+ 
+Image Size is 12932 byte
+Generating resources for  CoolingLiquidOn
+ TGA input filename is 'CoolingLiquidOn.tga'
+ Image structure name for C file is 'CoolingLiquidOn'
+ Colourmode of output data is 'ARGB8888'
+ Filename for C file output is './src/cluster_CoolingLiquidOn.c'
+ Filename of binary output is './data/cluster_CoolingLiquidOn.bin'
+ Use the CPU to decompress RLE image. (And not the drawing engine)
+  -> Don't set IMG_MODE_RLE Image colourmode flag.
+ 
+Image Size is 11684 byte
+Generating resources for  CoolingLiquidOff
+ TGA input filename is 'CoolingLiquidOff.tga'
+ Image structure name for C file is 'CoolingLiquidOff'
+ Colourmode of output data is 'ARGB8888'
+ Filename for C file output is './src/cluster_CoolingLiquidOff.c'
+ Filename of binary output is './data/cluster_CoolingLiquidOff.bin'
+ Use the CPU to decompress RLE image. (And not the drawing engine)
+  -> Don't set IMG_MODE_RLE Image colourmode flag.
+ 
+Image Size is 11092 byte
+Generating resources for  FuelEmptyOn
+ TGA input filename is 'FuelEmptyOn.tga'
+ Image structure name for C file is 'FuelEmptyOn'
+ Colourmode of output data is 'ARGB8888'
+ Filename for C file output is './src/cluster_FuelEmptyOn.c'
+ Filename of binary output is './data/cluster_FuelEmptyOn.bin'
+ Use the CPU to decompress RLE image. (And not the drawing engine)
+  -> Don't set IMG_MODE_RLE Image colourmode flag.
+ 
+Image Size is 11140 byte
+Generating resources for  FuelEmptyOff
+ TGA input filename is 'FuelEmptyOff.tga'
+ Image structure name for C file is 'FuelEmptyOff'
+ Colourmode of output data is 'ARGB8888'
+ Filename for C file output is './src/cluster_FuelEmptyOff.c'
+ Filename of binary output is './data/cluster_FuelEmptyOff.bin'
+ Use the CPU to decompress RLE image. (And not the drawing engine)
+  -> Don't set IMG_MODE_RLE Image colourmode flag.
+ 
+Image Size is 10370 byte
+Generating resources for  GearDOff
+ TGA input filename is 'gear_d_off.tga'
+ Image structure name for C file is 'GearDOff'
+ Colourmode of output data is 'ARGB8888'
+ Filename for C file output is './src/cluster_gear_d_off.c'
+ Filename of binary output is './data/cluster_gear_d_off.bin'
+ Use the CPU to decompress RLE image. (And not the drawing engine)
+  -> Don't set IMG_MODE_RLE Image colourmode flag.
+ 
+Image Size is 17961 byte
+Generating resources for  GearDOn
+ TGA input filename is 'gear_d_on.tga'
+ Image structure name for C file is 'GearDOn'
+ Colourmode of output data is 'ARGB8888'
+ Filename for C file output is './src/cluster_gear_d_on.c'
+ Filename of binary output is './data/cluster_gear_d_on.bin'
+ Use the CPU to decompress RLE image. (And not the drawing engine)
+  -> Don't set IMG_MODE_RLE Image colourmode flag.
+ 
+Image Size is 18878 byte
+Generating resources for  GearNOff
+ TGA input filename is 'gear_n_off.tga'
+ Image structure name for C file is 'GearNOff'
+ Colourmode of output data is 'ARGB8888'
+ Filename for C file output is './src/cluster_gear_n_off.c'
+ Filename of binary output is './data/cluster_gear_n_off.bin'
+ Use the CPU to decompress RLE image. (And not the drawing engine)
+  -> Don't set IMG_MODE_RLE Image colourmode flag.
+ 
+Image Size is 17735 byte
+Generating resources for  GearNOn
+ TGA input filename is 'gear_n_on.tga'
+ Image structure name for C file is 'GearNOn'
+ Colourmode of output data is 'ARGB8888'
+ Filename for C file output is './src/cluster_gear_n_on.c'
+ Filename of binary output is './data/cluster_gear_n_on.bin'
+ Use the CPU to decompress RLE image. (And not the drawing engine)
+  -> Don't set IMG_MODE_RLE Image colourmode flag.
+ 
+Image Size is 18933 byte
+Generating resources for  GearPOff
+ TGA input filename is 'gear_p_off.tga'
+ Image structure name for C file is 'GearPOff'
+ Colourmode of output data is 'ARGB8888'
+ Filename for C file output is './src/cluster_gear_p_off.c'
+ Filename of binary output is './data/cluster_gear_p_off.bin'
+ Use the CPU to decompress RLE image. (And not the drawing engine)
+  -> Don't set IMG_MODE_RLE Image colourmode flag.
+ 
+Image Size is 17703 byte
+Generating resources for  GearPOn
+ TGA input filename is 'gear_p_on.tga'
+ Image structure name for C file is 'GearPOn'
+ Colourmode of output data is 'ARGB8888'
+ Filename for C file output is './src/cluster_gear_p_on.c'
+ Filename of binary output is './data/cluster_gear_p_on.bin'
+ Use the CPU to decompress RLE image. (And not the drawing engine)
+  -> Don't set IMG_MODE_RLE Image colourmode flag.
+ 
+Image Size is 19022 byte
+Generating resources for  GearROff
+ TGA input filename is 'gear_r_off.tga'
+ Image structure name for C file is 'GearROff'
+ Colourmode of output data is 'ARGB8888'
+ Filename for C file output is './src/cluster_gear_r_off.c'
+ Filename of binary output is './data/cluster_gear_r_off.bin'
+ Use the CPU to decompress RLE image. (And not the drawing engine)
+  -> Don't set IMG_MODE_RLE Image colourmode flag.
+ 
+Image Size is 17929 byte
+Generating resources for  GearROn
+ TGA input filename is 'gear_r_on.tga'
+ Image structure name for C file is 'GearROn'
+ Colourmode of output data is 'ARGB8888'
+ Filename for C file output is './src/cluster_gear_r_on.c'
+ Filename of binary output is './data/cluster_gear_r_on.bin'
+ Use the CPU to decompress RLE image. (And not the drawing engine)
+  -> Don't set IMG_MODE_RLE Image colourmode flag.
+ 
+Image Size is 18630 byte
+Generating resources for  GearSOff
+ TGA input filename is 'gear_s_off.tga'
+ Image structure name for C file is 'GearSOff'
+ Colourmode of output data is 'ARGB8888'
+ Filename for C file output is './src/cluster_gear_s_off.c'
+ Filename of binary output is './data/cluster_gear_s_off.bin'
+ Use the CPU to decompress RLE image. (And not the drawing engine)
+  -> Don't set IMG_MODE_RLE Image colourmode flag.
+ 
+Image Size is 17755 byte
+Generating resources for  GearSOn
+ TGA input filename is 'gear_s_on.tga'
+ Image structure name for C file is 'GearSOn'
+ Colourmode of output data is 'ARGB8888'
+ Filename for C file output is './src/cluster_gear_s_on.c'
+ Filename of binary output is './data/cluster_gear_s_on.bin'
+ Use the CPU to decompress RLE image. (And not the drawing engine)
+  -> Don't set IMG_MODE_RLE Image colourmode flag.
+ 
+Image Size is 19005 byte

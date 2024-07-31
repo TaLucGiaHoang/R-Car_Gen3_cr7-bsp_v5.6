@@ -1,0 +1,35 @@
+From 2fcb17b3c4d27cc63a90add1f66758fbf6a2a7df Mon Sep 17 00:00:00 2001
+From: Baoan Du <baoan.du.xj@renesas.com>
+Date: Wed, 7 Apr 2021 10:45:50 +0800
+Subject: [PATCH 24/34] dts: renesas: Fix ion address for Android 10
+
+Renesas Android 10 has different ion memory range other than Android P.
+---
+ arch/arm64/boot/dts/renesas/salvator-xs_cr7_rproc.dtsi | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/arch/arm64/boot/dts/renesas/salvator-xs_cr7_rproc.dtsi b/arch/arm64/boot/dts/renesas/salvator-xs_cr7_rproc.dtsi
+index 07aee1f45cd3..d125596c2b49 100644
+--- a/arch/arm64/boot/dts/renesas/salvator-xs_cr7_rproc.dtsi
++++ b/arch/arm64/boot/dts/renesas/salvator-xs_cr7_rproc.dtsi
+@@ -23,7 +23,7 @@
+ 	};
+ 
+ 	reserved-memory {
+-		/delete-node/ linux,ion@70000000;
++		/delete-node/ linux,ion@68000000;
+ 
+ 		/* Memory used by the CR7 */
+ 		cr7_reserved: linux,cr7@70000000 {
+@@ -33,7 +33,7 @@
+ 
+ 		ion_reserved: linux,ion@80000000 {
+ 			compatible = "ion-region";
+-			reg = <0x00000000 0x80000000 0x0 0x10000000>; /* 256Mb */
++			reg = <0x00000000 0x80000000 0x0 0x18000000>; /* 384Mb */
+ 		};
+ 	};
+ 
+-- 
+2.17.1
+

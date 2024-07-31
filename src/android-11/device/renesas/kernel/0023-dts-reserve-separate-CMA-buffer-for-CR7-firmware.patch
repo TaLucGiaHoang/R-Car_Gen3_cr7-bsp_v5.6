@@ -1,0 +1,38 @@
+From 3ef5559ddf55a03b0c7ccb3d9dc90039493d3e3b Mon Sep 17 00:00:00 2001
+From: Sergii Piatakov <sergii.piatakov@globallogic.com>
+Date: Thu, 15 Sep 2022 12:48:50 +0000
+Subject: [PATCH 23/27] dts: reserve separate CMA buffer for CR7 firmware
+
+Starting from v3.0 the CR7 firmware requires 112Mb of DMA memory.
+The existing CMA buffers don't fit this request, so the Kernel can't
+load the firmware.
+
+Test: build, flash and run, check that the new region is mentined in
+      dmesg output and that the firmware can be loaded successfully.
+Signed-off-by: Sergii Piatakov <sergii.piatakov@globallogic.com>
+---
+ arch/arm64/boot/dts/renesas/salvator-xs_cr7_rproc.dtsi | 8 ++++++++
+ 1 file changed, 8 insertions(+)
+
+diff --git a/arch/arm64/boot/dts/renesas/salvator-xs_cr7_rproc.dtsi b/arch/arm64/boot/dts/renesas/salvator-xs_cr7_rproc.dtsi
+index 2d160d769b04..5897f0a3b89b 100644
+--- a/arch/arm64/boot/dts/renesas/salvator-xs_cr7_rproc.dtsi
++++ b/arch/arm64/boot/dts/renesas/salvator-xs_cr7_rproc.dtsi
+@@ -36,6 +36,14 @@
+ 			reusable;
+ 			reg = <0x00000000 0x80000000 0x0 0x18000000>; /* 384Mb */
+ 		};
++
++		/* Memory region for mapping CR7 firmware */
++		fw_reserved: linux,cma@68000000 {
++			compatible = "shared-dma-pool";
++			reusable;
++			reg = <0x00000000 0x68000000 0x0 0x08000000>; /* 128Mb */
++			linux,cma-default;
++		};
+ 	};
+ 
+ 	cr7 {
+-- 
+2.25.1
+

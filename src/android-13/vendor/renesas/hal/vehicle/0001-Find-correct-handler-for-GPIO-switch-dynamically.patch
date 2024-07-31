@@ -1,0 +1,150 @@
+From b267b9f14129141c2b6d5fa1a99ac841874e0d85 Mon Sep 17 00:00:00 2001
+From: Sergii Piatakov <sergii.piatakov@globallogic.com>
+Date: Thu, 25 Jan 2024 19:52:00 +0200
+Subject: [PATCH 1/1] Find correct handler for GPIO switch dynamically
+
+Instead of using the hardcoded path for the GPIO switch event handler,
+it is proposed to find the correct path dynamically in run time.
+
+Approach with the fixed path is not reliable, because name of the GPIO
+node in the `/dev` directory may vary depending on the board
+configuration.
+
+This patch is necessary for Android 13 with CR7 support, because after
+updating DTS the "dw_hdmi" disappears and the "gpio_keys" becomes
+`/dev/input/event0` instead of `/dev/input/event1`.
+
+Although the patch was prepared especially for configuration with CR7
+support it is expected that it should be compatible with the rest
+configurations as well.
+
+Note: this patch requires the corresponding changes for sepolicy
+      settings to allow the Vehicle HAL reading from the `procfs`.
+
+Test: run a DUT, change SW4 pins 1 and 2 on the Salvator-XS board and
+      check logcat output to ensure that signals are successfully
+      handled by the HAL
+Signed-off-by: Sergii Piatakov <sergii.piatakov@globallogic.com>
+---
+ VehicleHalImpl.cpp | 96 ++++++++++++++++++++++++++++++++++++++++++----
+ 1 file changed, 89 insertions(+), 7 deletions(-)
+
+diff --git a/VehicleHalImpl.cpp b/VehicleHalImpl.cpp
+index f774d2f..2dc23cf 100644
+--- a/VehicleHalImpl.cpp
++++ b/VehicleHalImpl.cpp
+@@ -510,6 +510,84 @@ void VehicleHalImpl::CanTxBytes(void* bytesPtr, size_t bytesCount)
+     }
+ }
+ 
++std::vector<std::string> GpioHandlers (const std::vector<std::string>& names)
++{
++    const std::string   tagName         {"Name"};
++    const std::string   tagHandlers     {"Handlers"};
++    constexpr size_t    tagPos          {3};
++
++    std::vector<std::string> result     {};
++
++    std::ifstream       file            ("/proc/bus/input/devices");
++    std::string         line            {};
++
++    enum class State
++    {
++        None        // Inital parser state, looking for the Name.
++      , Name        // The Name line has been found, looking for the Handlers.
++      , Handlers    // The Handlers line has been found, looking for the end of section.
++    }  state = State::None;
++
++
++    if (!file.is_open()) {
++        return result;
++    }
++
++
++    while (std::getline (file, line)) {
++        switch (state) {
++            case State::None:
++                if (line.length () > tagPos && tagName == line.substr(tagPos, tagName.length())) {
++                    const std::string::size_type b = line.find ('"', tagPos + tagName.length()) + 1;
++                    const std::string::size_type e = line.rfind('"');
++                    if (b != line.npos
++                     && e != line.npos
++                     && e  > b) {
++                        for (const auto & n : names) {
++                            if (n == line.substr(b, e - b)) {
++                                state = State::Name;
++                            }
++                        }
++                    }
++                }
++                break;
++
++            case State::Name:
++                if (line.length() > tagPos && tagHandlers == line.substr(tagPos, tagHandlers.length())) {
++                    std::string::size_type b = line.find('=', tagPos + tagHandlers.length()) + 1;
++                    std::string::size_type e = b;
++                    while (e < line.length()) {
++                        e = line.find(' ', e);
++                        if (e != line.npos) {
++                            result.push_back(line.substr(b, e - b));
++                            b = e + 1;
++                            e = e + 1;
++                        } else {
++                            result.push_back(line.substr(b));
++                            break;
++                        }
++                    }
++                    state = State::Handlers;
++                }
++
++            [[fallthrough]];    // Means, go to the next Name if the last section doesn't contain Handlers.
++            case State::Handlers:
++                if (line.empty()) {
++                    state = State::None;
++                }
++                break;
++
++            default:
++                ;
++        }
++    }
++
++
++    file.close();
++
++    return result;
++}
++
+ void VehicleHalImpl::GpioHandleThread(void)
+ {
+     if (mGpioThreadExit) {
+@@ -522,15 +600,19 @@ void VehicleHalImpl::GpioHandleThread(void)
+     std::chrono::milliseconds timeout {1};
+     int fd = -1;
+     for (size_t i = 0; i < maxRetry && fd < 0 && !mGpioThreadExit; ++i) {
+-		#if defined(TARGET_BOARD_PLATFORM_R8A7795)
+-			fd = open("/dev/input/event2", O_RDONLY);
+-		#else
+-			fd = open("/dev/input/event1", O_RDONLY);
+-		#endif
+-        if (fd < 0) {
+-            ALOGW("Could not open input event device, attempt %zu, error: %s.", i, strerror(errno));
++        const auto handlers = GpioHandlers({"gpio_keys"});
++        if (handlers.empty () ) {
++            ALOGW("Could not find any handler for event device, attempt %zu.", i);
+             std::this_thread::sleep_for(timeout);
+             timeout *= 2;
++        } else {
++            for (const auto & handler : handlers) {
++                fd = open(std::string ("/dev/input/" + handler).c_str(), O_RDONLY);
++                if (fd >= 0) {
++                    break;
++                }
++                ALOGW("Could not open event device %s, attempt %zu, error: %s.", handler.c_str(), i, strerror(errno));
++            }
+         }
+     }
+     if (fd < 0) {
+-- 
+2.25.1
+

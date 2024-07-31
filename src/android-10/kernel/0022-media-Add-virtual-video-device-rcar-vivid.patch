@@ -1,0 +1,1920 @@
+From 3e82b2f2aeb0e0f936bee4854fd9323f861f3e20 Mon Sep 17 00:00:00 2001
+From: haibohao <haibo.hao.jc@renesas.com>
+Date: Thu, 25 Mar 2021 14:30:05 +0800
+Subject: [PATCH 22/34] media: Add virtual video device rcar vivid
+
+---
+ drivers/media/platform/Kconfig                |   1 +
+ drivers/media/platform/Makefile               |   1 +
+ drivers/media/platform/rcar-vivid/Kconfig     |  12 +
+ drivers/media/platform/rcar-vivid/Makefile    |   4 +
+ .../rcar-vivid/r_taurus_camera_protocol.h     | 200 +++++
+ .../platform/rcar-vivid/rcar-vivid-drv.c      | 237 ++++++
+ .../platform/rcar-vivid/rcar-vivid-taurus.c   | 333 +++++++++
+ .../platform/rcar-vivid/rcar-vivid-taurus.h   |  39 +
+ .../platform/rcar-vivid/rcar-vivid-v4l2.c     | 689 ++++++++++++++++++
+ .../media/platform/rcar-vivid/rcar-vivid.h    | 139 ++++
+ include/taurus/r_taurus_bridge.h              | 138 ++++
+ include/taurus/r_taurus_protocol_ids.h        |  10 +
+ 12 files changed, 1803 insertions(+)
+ create mode 100644 drivers/media/platform/rcar-vivid/Kconfig
+ create mode 100644 drivers/media/platform/rcar-vivid/Makefile
+ create mode 100755 drivers/media/platform/rcar-vivid/r_taurus_camera_protocol.h
+ create mode 100755 drivers/media/platform/rcar-vivid/rcar-vivid-drv.c
+ create mode 100755 drivers/media/platform/rcar-vivid/rcar-vivid-taurus.c
+ create mode 100755 drivers/media/platform/rcar-vivid/rcar-vivid-taurus.h
+ create mode 100755 drivers/media/platform/rcar-vivid/rcar-vivid-v4l2.c
+ create mode 100644 drivers/media/platform/rcar-vivid/rcar-vivid.h
+ create mode 100644 include/taurus/r_taurus_bridge.h
+ create mode 100644 include/taurus/r_taurus_protocol_ids.h
+
+diff --git a/drivers/media/platform/Kconfig b/drivers/media/platform/Kconfig
+index 63f434ca571b..59af5b80ed32 100644
+--- a/drivers/media/platform/Kconfig
++++ b/drivers/media/platform/Kconfig
+@@ -159,6 +159,7 @@ source "drivers/media/platform/am437x/Kconfig"
+ source "drivers/media/platform/xilinx/Kconfig"
+ source "drivers/media/platform/rcar-vin/Kconfig"
+ source "drivers/media/platform/atmel/Kconfig"
++source "drivers/media/platform/rcar-vivid/Kconfig"
+ 
+ config VIDEO_TI_CAL
+ 	tristate "TI CAL (Camera Adaptation Layer) driver"
+diff --git a/drivers/media/platform/Makefile b/drivers/media/platform/Makefile
+index 76149a11fb76..99b190e0c209 100644
+--- a/drivers/media/platform/Makefile
++++ b/drivers/media/platform/Makefile
+@@ -71,6 +71,7 @@ obj-$(CONFIG_VIDEO_AM437X_VPFE)		+= am437x/
+ obj-$(CONFIG_VIDEO_XILINX)		+= xilinx/
+ 
+ obj-$(CONFIG_VIDEO_RCAR_VIN)		+= rcar-vin/
++obj-$(CONFIG_VIDEO_RCAR_VIVID)		+= rcar-vivid/
+ 
+ obj-$(CONFIG_VIDEO_ATMEL_ISC)		+= atmel/
+ obj-$(CONFIG_VIDEO_ATMEL_ISI)		+= atmel/
+diff --git a/drivers/media/platform/rcar-vivid/Kconfig b/drivers/media/platform/rcar-vivid/Kconfig
+new file mode 100644
+index 000000000000..0f7d33987f65
+--- /dev/null
++++ b/drivers/media/platform/rcar-vivid/Kconfig
+@@ -0,0 +1,12 @@
++config VIDEO_RCAR_VIVID
++	tristate "R-Car Video VIVID Driver"
++	depends on VIDEO_V4L2 && VIDEO_V4L2_SUBDEV_API && OF && HAS_DMA && MEDIA_CONTROLLER
++	depends on ARCH_RENESAS || COMPILE_TEST
++	select VIDEOBUF2_DMA_CONTIG
++	select V4L2_FWNODE
++	---help---
++	  Support for Renesas R-Car Video Input (VIN) driver.
++	  Supports R-Car Gen2 and Gen3 SoCs.
++
++	  To compile this driver as a module, choose M here: the
++	  module will be called rcar-vin.
+\ No newline at end of file
+diff --git a/drivers/media/platform/rcar-vivid/Makefile b/drivers/media/platform/rcar-vivid/Makefile
+new file mode 100644
+index 000000000000..114127257391
+--- /dev/null
++++ b/drivers/media/platform/rcar-vivid/Makefile
+@@ -0,0 +1,4 @@
++# SPDX-License-Identifier:GPL-2.0
++rcar-vivid-y := rcar-vivid-taurus.o rcar-vivid-drv.o rcar-vivid-v4l2.o
++
++obj-$(CONFIG_VIDEO_RCAR_VIVID)		+= rcar-vivid.o
+diff --git a/drivers/media/platform/rcar-vivid/r_taurus_camera_protocol.h b/drivers/media/platform/rcar-vivid/r_taurus_camera_protocol.h
+new file mode 100755
+index 000000000000..0b249f656a2f
+--- /dev/null
++++ b/drivers/media/platform/rcar-vivid/r_taurus_camera_protocol.h
+@@ -0,0 +1,200 @@
++#ifndef R_TAURUS_CAMERA_PROTOCOL_H
++#define R_TAURUS_CAMERA_PROTOCOL_H
++
++#include <taurus/r_taurus_bridge.h>
++#include <taurus/r_taurus_protocol_ids.h>
++
++
++#ifndef __packed
++# define __packed       __attribute__((__packed__))
++#endif
++
++/*********** Camera event identifiers ************/
++/* Field in R_TAURUS_ResultMsg_t.Aux (uint64_t)
++ * Service ID[31:24] - ID of taurus service (TAURUS_PROTOCOL_CAMERA_ID)
++ * Event ID  [23:20] - Event ID
++ * Channel   [19:16] - Camera channel index
++ */
++#define TAURUS_CAMERA_EVT_ID(aux)               (((uint64_t)aux >> 20) & 0xf)
++#define TAURUS_CAMERA_EVT_CHANNEL(aux)          (((uint64_t)aux >> 16) & 0xf)
++
++/*
++ * TAURUS_CAMERA_EVT_FRAME_READY
++ * Frame ID   [63:32] - ID of current ready frame buffer previously allocated by guest.
++ *                      (i.e. struct vb2_v4l2_buffer.vb2_buf.index)
++ * Empty Buf  [15: 8] - Number of available empty buffers to receive next frame.
++ * Vacant Cell[ 7: 0] - Number of vacant buffer cell that can feed.
++ */
++#define TAURUS_CAMERA_EVT_FRAME_READY                    (0)
++#define TAURUS_CAMERA_EVT_FRAME_READY_VAL(chn, emp_buf, vacant_cell, frame_id)        \
++                            ((uint64_t)frame_id << 32) |                              \
++                            ((uint64_t)(TAURUS_PROTOCOL_CAMERA_ID & 0xff) << 24) |    \
++                            ((uint64_t)(TAURUS_CAMERA_EVT_FRAME_READY & 0xf) << 20) | \
++                            ((uint64_t)(chn & 0xf) << 16) |                           \
++                            ((uint64_t)(emp_buf & 0xff) << 8) |                       \
++                            (uint64_t)(vacant_cell & 0xff)
++
++#define TAURUS_CAMERA_EVT_FRAME_READY_EMPTY_BUF(aux)     (((uint64_t)aux >> 8) & 0xff)
++#define TAURUS_CAMERA_EVT_FRAME_READY_VACANT_CELL(aux)   (((uint64_t)aux >> 0) & 0xff)
++#define TAURUS_CAMERA_EVT_FRAME_READY_FRAME_ID(aux)      (((uint64_t)aux >> 32) & 0xffffffff)
++
++/*
++ * TAURUS_CAMERA_EVT_FEED_ME
++ * Buf Num[7:0] - Number of vacant buffer cell that server can hold.
++ * Note that this event will be signalled when buffer cell is empty.
++ */
++#define TAURUS_CAMERA_EVT_FEED_ME                        (1)
++#define TAURUS_CAMERA_EVT_FEED_ME_VAL(chn, buf_num)                                \
++                            ((uint64_t)(TAURUS_PROTOCOL_CAMERA_ID & 0xff) << 24) | \
++                            ((uint64_t)(TAURUS_CAMERA_EVT_FEED_ME & 0xf) << 20)  | \
++                            ((uint64_t)(chn & 0xf) << 16) |                        \
++                            (uint64_t)(buf_num & 0xff)
++#define TAURUS_CAMERA_EVT_FEED_ME_BUF_NUM(aux)           (((uint64_t)aux >> 0) & 0xff)
++
++
++#define TAURUS_CAMERA_RES_OK                             (0)
++#define TAURUS_CAMERA_RES_ERR_PARA                       (1)
++#define TAURUS_CAMERA_RES_ERR_NOINIT                     (2)
++#define TAURUS_CAMERA_RES_ERR_CIO                        (3)
++#define TAURUS_CAMERA_RES_ERR_THREAD                     (4)
++#define TAURUS_CAMERA_RES_ERR_REINIT                     (5)
++
++
++struct taurus_camera_channel_info {
++    uint32_t    vacant_buf_cell_cnt;
++    uint32_t    width;
++    uint32_t    height;
++} __packed;
++typedef struct taurus_camera_channel_info taurus_camera_channel_info_t;
++
++struct taurus_camera_buffer{
++    uint32_t    index;   /* identification of buffer by guest */
++    uint32_t    address; /* 128-byte aligned */
++} __packed;
++typedef struct taurus_camera_buffer taurus_camera_buffer_t;
++
++/********************* IOCTLs **************************/
++
++#define CAMERA_PROTOCOL_IOC_GET_INFO    ((TAURUS_PROTOCOL_CAMERA_ID << 24) | 0xF00000)
++
++struct taurus_camera_ioc_get_info_in {
++    uint64_t    cookie;
++} __packed;
++
++struct taurus_camera_ioc_get_info_out {
++    uint64_t    cookie;
++    uint64_t    res;
++    uint32_t    channel_num;
++} __packed;
++
++#define CAMERA_PROTOCOL_IOC_CHANNEL_INIT    ((TAURUS_PROTOCOL_CAMERA_ID << 24) | 0xF00001)
++
++struct taurus_camera_ioc_channel_init_in {
++    uint64_t                cookie;
++    uint32_t                channel;
++    taurus_camera_buffer_t  buffer[3];
++} __packed;
++
++struct taurus_camera_ioc_channel_init_out {
++    uint64_t    cookie;
++    uint64_t    res;
++    taurus_camera_channel_info_t   channel_info;
++} __packed;
++
++#define CAMERA_PROTOCOL_IOC_CHANNEL_START     ((TAURUS_PROTOCOL_CAMERA_ID << 24) | 0xF00002)
++
++struct taurus_camera_ioc_channel_start_in {
++    uint64_t    cookie;
++    uint32_t    channel;
++} __packed;
++
++struct taurus_camera_ioc_channel_start_out {
++    uint64_t    cookie;
++    uint64_t    res;
++} __packed;
++
++#define CAMERA_PROTOCOL_IOC_CHANNEL_STOP     ((TAURUS_PROTOCOL_CAMERA_ID << 24) | 0xF00003)
++
++struct taurus_camera_ioc_channel_stop_in {
++    uint64_t    cookie;
++    uint32_t    channel;
++} __packed;
++
++struct taurus_camera_ioc_channel_stop_out {
++    uint64_t    cookie;
++    uint64_t    res;
++} __packed;
++
++#define CAMERA_PROTOCOL_IOC_CHANNEL_FEED_BUFFER    ((TAURUS_PROTOCOL_CAMERA_ID << 24) | 0xF00004)
++
++struct taurus_camera_ioc_channel_feed_buffer_in {
++    uint64_t                cookie;
++    uint32_t                channel;
++    uint32_t                buf_cnt;
++    taurus_camera_buffer_t  buffer[0];
++} __packed;
++
++struct taurus_camera_ioc_channel_feed_buffer_out {
++    uint64_t    cookie;
++    uint64_t    res;
++    uint32_t    accepted_buf_cnt;
++    uint32_t    vacant_buf_cell_cnt;
++    uint32_t    empty_buf_cnt;
++} __packed;
++
++#define CAMERA_PROTOCOL_IOC_CHANNEL_RELEASE     ((TAURUS_PROTOCOL_CAMERA_ID << 24) | 0xF00005)
++
++struct taurus_camera_ioc_channel_release_in {
++    uint64_t    cookie;
++    uint32_t    channel;
++} __packed;
++
++struct taurus_camera_ioc_channel_release_out {
++    uint64_t    cookie;
++    uint64_t    res;
++} __packed;
++
++#define CAMERA_PROTOCOL_IOC_GET_CHANNEL_INFO    ((TAURUS_PROTOCOL_CAMERA_ID << 24) | 0xF00006)
++
++struct taurus_camera_ioc_get_channel_info_in {
++    uint64_t                cookie;
++    uint32_t                channel;
++} __packed;
++
++struct taurus_camera_ioc_get_channel_info_out {
++    uint64_t    cookie;
++    uint64_t    res;
++    uint32_t    width;
++    uint32_t    height;
++} __packed;
++
++
++struct taurus_camera_cmd_msg {
++    R_TAURUS_CmdMsg_t   hdr;
++    uint32_t            type;
++    union {
++        struct taurus_camera_ioc_get_info_in ioc_get_info;
++        struct taurus_camera_ioc_channel_init_in ioc_channel_init;
++        struct taurus_camera_ioc_channel_start_in ioc_channel_start;
++        struct taurus_camera_ioc_channel_stop_in ioc_channel_stop;
++        struct taurus_camera_ioc_channel_feed_buffer_in ioc_channel_feed_buffer;
++        struct taurus_camera_ioc_channel_release_in ioc_channel_release;
++        struct taurus_camera_ioc_get_channel_info_in ioc_get_channel_info;
++    } params;
++};
++
++struct taurus_camera_res_msg {
++    R_TAURUS_ResultMsg_t    hdr;
++    uint32_t                type;
++    union {
++        struct taurus_camera_ioc_get_info_out ioc_get_info;
++        struct taurus_camera_ioc_channel_init_out ioc_channel_init;
++        struct taurus_camera_ioc_channel_start_out ioc_channel_start;
++        struct taurus_camera_ioc_channel_stop_out ioc_channel_stop;
++        struct taurus_camera_ioc_channel_feed_buffer_out ioc_channel_feed_buffer;
++        struct taurus_camera_ioc_channel_release_out ioc_channel_release;
++        struct taurus_camera_ioc_get_channel_info_out ioc_get_channel_info;
++    } params;
++};
++
++#endif /* R_TAURUS_CAMERA_PROTOCOL_H */
+diff --git a/drivers/media/platform/rcar-vivid/rcar-vivid-drv.c b/drivers/media/platform/rcar-vivid/rcar-vivid-drv.c
+new file mode 100755
+index 000000000000..13406b2e5702
+--- /dev/null
++++ b/drivers/media/platform/rcar-vivid/rcar-vivid-drv.c
+@@ -0,0 +1,237 @@
++#include <linux/clk-provider.h>
++#include <linux/delay.h>
++#include <linux/module.h>
++#include <linux/of.h>
++#include <linux/of_device.h>
++#include <linux/of_graph.h>
++#include <linux/platform_device.h>
++#include <linux/pm_runtime.h>
++#include <linux/slab.h>
++#include <linux/sys_soc.h>
++
++#include <linux/rpmsg.h>
++#include <linux/of_reserved_mem.h>
++
++#include "rcar-vivid.h"
++#include "rcar-vivid-taurus.h"
++#include "r_taurus_camera_protocol.h"
++
++
++/* -----------------------------------------------------------------------------
++ * RPMSG operations
++ */
++
++static int rcar_vivid_cb(struct rpmsg_device *rpdev, void *data, int len,
++            void *priv, u32 src)
++{
++
++    struct rcar_vivid_device *rvivid = dev_get_drvdata(&rpdev->dev);
++    struct taurus_event_list *event;
++    struct list_head *i;
++    struct taurus_camera_res_msg *res = (struct taurus_camera_res_msg*)data;
++    uint32_t res_id = res->hdr.Id;
++    int slot;
++    int channel;
++    int empty_buf_cnt;
++    dev_dbg(&rpdev->dev,"Result %x id %x channel %x Per %x Aux %llx\n ",
++        res->hdr.Result, res_id, res->hdr.Channel, res->hdr.Per, res->hdr.Aux);
++
++    if ((res->hdr.Result == R_TAURUS_CMD_NOP) && (res_id == 0)) {
++        /* This is an asynchronous signal sent from the
++         * peripheral, and not an answer of a previously sent
++         * command. Just process the signal and return.*/
++
++        dev_dbg(&rpdev->dev, "Signal received! Aux = %llx\n", res->hdr.Aux);
++        channel = TAURUS_CAMERA_EVT_CHANNEL(res->hdr.Aux);
++        slot = TAURUS_CAMERA_EVT_FRAME_READY_FRAME_ID(res->hdr.Aux);
++        empty_buf_cnt = TAURUS_CAMERA_EVT_FRAME_READY_EMPTY_BUF(res->hdr.Aux);
++        /* Nothing to do if capture status is 'STOPPED' */
++        if (rvivid->vivid[channel]->state == STOPPED) {
++            rvivid_dbg(rvivid, "IRQ while state stopped\n");
++            goto done;
++        }
++
++        /* Nothing to do if capture status is 'STOPPING' */
++        if (rvivid->vivid[channel]->state == STOPPING) {
++            rvivid_dbg(rvivid, "IRQ while state stopping\n");
++            goto done;
++        }
++
++        /* Capture frame */
++        if (rvivid->vivid[channel]->queue_buf[slot]) {
++            rvivid->vivid[channel]->queue_buf[slot]->field = rvivid->vivid[channel]->format.field;
++            rvivid->vivid[channel]->queue_buf[slot]->sequence = rvivid->vivid[channel]->sequence;
++            rvivid->vivid[channel]->queue_buf[slot]->vb2_buf.timestamp = ktime_get_ns();
++            vb2_buffer_done(&rvivid->vivid[channel]->queue_buf[slot]->vb2_buf,
++                    VB2_BUF_STATE_DONE);
++            rvivid->vivid[channel]->queue_buf[slot] = NULL;
++        } else {
++            /* Scratch buffer was used, dropping frame. */
++            rvivid_dbg(rvivid, "Dropping frame %u\n", rvivid->vivid[channel]->sequence);
++        }
++
++        rvivid->vivid[channel]->sequence++;
++
++        /* Prepare for next frame */
++        vivid_fill_hw_slot(rvivid->vivid[channel], slot);
++        set_bit(slot, (long unsigned int*) &rvivid->vivid[channel]->buffer_pending);
++        if(0 == empty_buf_cnt)
++            wake_up_interruptible(&rvivid->vivid[channel]->buffer_pending_wait_queue);
++done:
++        return 0;
++
++    }
++
++    /* Go through the list of pending events and check if this
++     * message matches any */
++    read_lock(&rvivid->event_list_lock);
++    list_for_each_prev(i, &rvivid->taurus_event_list_head) {
++        event = list_entry(i, struct taurus_event_list, list);
++        if (event->id == res_id) {
++
++            memcpy(event->result, res, sizeof(struct taurus_camera_res_msg));
++
++            if(event->ack_received) {
++                complete(&event->completed);
++            } else {
++                event->ack_received = 1;
++                complete(&event->ack);
++            }
++            //break;
++        }
++    }
++    read_unlock(&rvivid->event_list_lock);
++
++    return 0;
++}
++
++
++/* -----------------------------------------------------------------------------
++ * Platform driver
++ */
++
++static void rcar_vivid_remove(struct rpmsg_device *rpdev)
++{
++    int i = 0;
++    struct rcar_vivid_device *rvivid = dev_get_drvdata(&rpdev->dev);
++    struct vivid_v4l2_device *vivid;
++    struct video_device *vdev;
++    for (i = 0;i < rvivid->channel_num; i++) {
++        vivid = rvivid->vivid[i];
++        if(vivid->buffer_thread)
++            kthread_stop(vivid->buffer_thread);
++        vdev = &vivid->vdev;
++        if(vdev != NULL) {
++            video_unregister_device(vdev);
++        }
++    }
++    return;
++}
++
++static int rcar_vivid_probe(struct rpmsg_device *rpdev)
++{
++    struct rcar_vivid_device *rvivid;
++    struct device_node *rvivid_node;
++    int ret = 0;
++    struct taurus_camera_res_msg res_msg;
++    int i = 0;
++    struct vivid_v4l2_device *vivid[MAX_VIVID_DEVICE_NUM];
++
++    pr_info("%s():%d\n", __FUNCTION__, __LINE__);
++    /* Allocate and initialize the R-Car device structure. */
++    rvivid = devm_kzalloc(&rpdev->dev, sizeof(struct rcar_vivid_device), GFP_KERNEL);
++
++    if (rvivid == NULL)
++        return -ENOMEM;
++
++    dev_set_drvdata(&rpdev->dev, rvivid);
++
++    /* Save a link to struct device and struct rpmsg_device */
++    rvivid->dev = &rpdev->dev;
++    rvivid->rpdev = rpdev;
++
++    /* Initialize taurus event list and its lock */
++    INIT_LIST_HEAD(&rvivid->taurus_event_list_head);
++    rwlock_init(&rvivid->event_list_lock);
++
++    ret = vivid_taurus_get_info(rvivid,&res_msg);
++    if (ret || rvivid->channel_num > MAX_VIVID_DEVICE_NUM)
++        goto error;
++
++    rvivid_info(rvivid, "check vivid taurus cameras num %d\n", rvivid->channel_num);
++    rvivid_node = of_find_node_by_path("/rcar-vivid/rvivid-memory");
++    if (!rvivid_node) {
++        dev_err(&rpdev->dev, "Cannot find devicetree node \"/rcar-vivid/rvivid-memory\"\n");
++        ret = -ENOMEM;
++        goto error;
++    }
++
++    ret = of_reserved_mem_device_init_by_idx(rvivid->dev, rvivid_node, 0);
++    if (ret) {
++        dev_err(&rpdev->dev, "of_reserved_mem_device_init_by_idx() returned %d\n", ret);
++        goto error;
++    }
++
++/*
++    ret = of_reserved_mem_device_init_by_idx(&rpdev->dev, rvivid_node, 0);
++    if (ret) {
++        dev_err(&rpdev->dev, "of_reserved_mem_device_init_by_idx() returned %d\n", ret);
++        goto error;
++    }
++*/
++    for (i = 0;i < rvivid->channel_num; i++) {
++        vivid[i] = devm_kzalloc(rvivid->dev, sizeof(*vivid[i]), GFP_KERNEL);
++        if (vivid[i] == NULL) {
++            ret = -ENOMEM;
++            goto error;
++        }
++        vivid[i]->dev = rvivid->dev;
++    #if 0
++        memset(vivid_name, 0 ,sizeof(vivid_name));
++        sprintf(vivid_name, "rcar vivid%d", i);
++        strcpy(vivid[i]->dev->name, vivid_name);
++    #endif
++        vivid[i]->channel = i;
++        init_waitqueue_head(&vivid[i]->buffer_pending_wait_queue);
++        vivid[i]->buffer_pending = 0;
++        vivid[i]->rvivid = rvivid;
++
++        ret = rcar_vivid_queue_init(vivid[i]);
++        if (ret) {
++            rvivid_err(rvivid, "Failed init rcar vivid%d queue\n", i);
++            goto error;
++        }
++
++        ret = rcar_vivid_v4l2_register(vivid[i]);
++
++        if (ret) {
++            rvivid_err(rvivid, "Failed to register video device vivid%d\n", i);
++            goto error;
++        }
++
++        rvivid->vivid[i] = vivid[i];
++    }
++    return 0;
++error:
++    rcar_vivid_remove(rpdev);
++    return ret;
++}
++
++
++static struct rpmsg_device_id taurus_driver_vivid_id_table[] = {
++    { .name	= "taurus-vivid" },
++    { .name = "taurus-camera"},
++};
++MODULE_DEVICE_TABLE(rpmsg, taurus_driver_vivid_id_table);
++
++static struct rpmsg_driver taurus_vivid_client = {
++    .drv.name	= KBUILD_MODNAME,
++    .id_table	= taurus_driver_vivid_id_table,
++    .probe		= rcar_vivid_probe,
++    .callback	= rcar_vivid_cb,
++    .remove		= rcar_vivid_remove,
++};
++module_rpmsg_driver(taurus_vivid_client);
++
++MODULE_DESCRIPTION("Renesas Virtual Camera Driver");
++MODULE_LICENSE("GPL");
+diff --git a/drivers/media/platform/rcar-vivid/rcar-vivid-taurus.c b/drivers/media/platform/rcar-vivid/rcar-vivid-taurus.c
+new file mode 100755
+index 000000000000..de02460d8153
+--- /dev/null
++++ b/drivers/media/platform/rcar-vivid/rcar-vivid-taurus.c
+@@ -0,0 +1,333 @@
++#include <linux/atomic.h>
++#include <linux/rpmsg.h>
++
++#include "rcar-vivid-taurus.h"
++#include "r_taurus_camera_protocol.h"
++
++
++
++#define RVIVID_TAURUS_CHANNEL		0x0
++#define RVIVID_TAURUS_VIN_CHANNEL	0x0
++
++static atomic_t rpmsg_id_counter = ATOMIC_INIT(0);
++
++static int vivid_taurus_get_uniq_id(void)
++{
++    return atomic_inc_return(&rpmsg_id_counter);
++}
++
++
++static int vivid_taurus_send_command(struct rcar_vivid_device *rvivid,
++                struct taurus_camera_cmd_msg *cmd_msg,
++                struct taurus_camera_res_msg *res_msg, int cmd_extra_size)
++{
++    struct taurus_event_list *event;
++    struct rpmsg_device *rpdev = rvivid->rpdev;
++    struct device *dev = rvivid->dev;
++    int ret = 0;
++    if(!rvivid)
++        dev_err(dev, "no rvivid device to send \n");
++    event = devm_kzalloc(dev, sizeof(*event), GFP_KERNEL);
++    if (!event) {
++        dev_err(dev, "%s:%d Can't allocate memory for taurus event\n", __FUNCTION__, __LINE__);
++        ret = -ENOMEM;
++        goto cleanup_1;
++    }
++
++    event->result = devm_kzalloc(dev, sizeof(*event->result), GFP_KERNEL);
++    if (!event->result) {
++        dev_err(dev, "%s:%d Can't allocate memory for taurus event->result\n", __FUNCTION__, __LINE__);
++        ret = -ENOMEM;
++        goto cleanup_2;
++    }
++
++    event->id = cmd_msg->hdr.Id;
++    init_completion(&event->ack);
++    init_completion(&event->completed);
++
++    write_lock(&rvivid->event_list_lock);
++    list_add(&event->list, &rvivid->taurus_event_list_head);
++    write_unlock(&rvivid->event_list_lock);
++
++    /* send a message to our remote processor */
++    ret = rpmsg_send(rpdev->ept, cmd_msg, sizeof(struct taurus_camera_cmd_msg) + cmd_extra_size);
++    if (ret) {
++        dev_err(dev, "%s:%d Taurus command send failed (%d)\n", __FUNCTION__, __LINE__, ret);
++        goto cleanup_3;
++    }
++
++    ret = wait_for_completion_interruptible(&event->ack);
++    if (ret == -ERESTARTSYS) {
++        /* we were interrupted */
++        dev_err(dev, "%s:%d Interrupted while waiting taurus ACK (%d)\n", __FUNCTION__, __LINE__, ret);
++        goto cleanup_3;
++    };
++
++    if (event->result->hdr.Result == R_TAURUS_RES_NACK) {
++        dev_info(dev, "command not acknowledged (cmd id=%d)\n", cmd_msg->hdr.Id);
++        ret = -EINVAL;
++        goto cleanup_3;
++    }
++
++    ret = wait_for_completion_interruptible(&event->completed);
++    if (ret == -ERESTARTSYS) {
++        /* we were interrupted */
++        dev_err(dev, "%s:%d Interrupted while waiting taurus response (%d)\n", __FUNCTION__, __LINE__, ret);
++        goto cleanup_3;
++    }
++
++    memcpy(res_msg, event->result, sizeof(struct taurus_camera_res_msg));
++
++cleanup_3:
++    write_lock(&rvivid->event_list_lock);
++    list_del(&event->list);
++    write_unlock(&rvivid->event_list_lock);
++    devm_kfree(&rpdev->dev, event->result);
++cleanup_2:
++    devm_kfree(&rpdev->dev, event);
++cleanup_1:
++    return ret;
++}
++
++
++int vivid_taurus_channel_init(struct vivid_v4l2_device *vivid,
++            struct taurus_camera_res_msg *res_msg)
++{
++    struct taurus_camera_cmd_msg cmd_msg;
++    struct rcar_vivid_device *rvivid = vivid->rvivid;
++
++    int ret;
++    if (!res_msg)
++        return -EINVAL;
++
++    cmd_msg.hdr.Id = vivid_taurus_get_uniq_id();
++    cmd_msg.hdr.Channel = RVIVID_TAURUS_CHANNEL;
++    cmd_msg.hdr.Cmd = R_TAURUS_CMD_IOCTL;
++    cmd_msg.hdr.Par1 = CAMERA_PROTOCOL_IOC_CHANNEL_INIT;
++    cmd_msg.type = CAMERA_PROTOCOL_IOC_CHANNEL_INIT;
++    cmd_msg.params.ioc_channel_init.channel= vivid->channel;
++    cmd_msg.params.ioc_channel_init.cookie = cmd_msg.hdr.Id;
++    cmd_msg.params.ioc_channel_init.buffer[0].address = vivid->phys_addr[0];
++    cmd_msg.params.ioc_channel_init.buffer[0].index = 0;
++    cmd_msg.params.ioc_channel_init.buffer[1].address = vivid->phys_addr[1];
++    cmd_msg.params.ioc_channel_init.buffer[1].index = 1;
++    cmd_msg.params.ioc_channel_init.buffer[2].address = vivid->phys_addr[2];
++    cmd_msg.params.ioc_channel_init.buffer[2].index = 2;
++    ret = vivid_taurus_send_command(rvivid, &cmd_msg, res_msg, 0);
++    if (ret)
++        return -EPIPE;
++    if (TAURUS_CAMERA_RES_ERR_REINIT == res_msg->params.ioc_channel_init.res) {
++        rvivid_warn(rvivid, "%s channel reinit!\n", __func__);
++        return TAURUS_CAMERA_RES_ERR_REINIT;
++    }
++    if ((res_msg->hdr.Result != R_TAURUS_RES_COMPLETE) ||
++        (res_msg->params.ioc_channel_init.res!= 0)) {
++        return -EIO;
++    }
++
++    return 0;
++
++}
++
++int vivid_taurus_channel_start(struct vivid_v4l2_device *vivid,
++            struct taurus_camera_res_msg *res_msg)
++{
++    struct taurus_camera_cmd_msg cmd_msg;
++    int ret;
++    struct rcar_vivid_device *rvivid = vivid->rvivid;
++    if (!res_msg)
++        return -EINVAL;
++
++    cmd_msg.hdr.Id = vivid_taurus_get_uniq_id();
++    cmd_msg.hdr.Channel = RVIVID_TAURUS_CHANNEL;
++    cmd_msg.hdr.Cmd = R_TAURUS_CMD_IOCTL;
++    cmd_msg.hdr.Par1 = CAMERA_PROTOCOL_IOC_CHANNEL_START;
++    cmd_msg.type = CAMERA_PROTOCOL_IOC_CHANNEL_START;
++    cmd_msg.params.ioc_channel_start.cookie= cmd_msg.hdr.Id;
++    cmd_msg.params.ioc_channel_start.channel= vivid->channel;
++    ret = vivid_taurus_send_command(rvivid, &cmd_msg, res_msg, 0);
++    if (ret)
++            return -EPIPE;
++
++    if ((res_msg->hdr.Result != R_TAURUS_RES_COMPLETE) ||
++        (res_msg->params.ioc_channel_start.res != 0)) {
++        return -EIO;
++    }
++    return 0;
++
++}
++
++int vivid_taurus_channel_stop(struct vivid_v4l2_device *vivid,
++            struct taurus_camera_res_msg *res_msg)
++{
++    struct taurus_camera_cmd_msg cmd_msg;
++    int ret;
++    struct rcar_vivid_device *rvivid = vivid->rvivid;
++    if (!res_msg)
++        return -EINVAL;
++
++    cmd_msg.hdr.Id = vivid_taurus_get_uniq_id();
++    cmd_msg.hdr.Channel = RVIVID_TAURUS_CHANNEL;
++    cmd_msg.hdr.Cmd = R_TAURUS_CMD_IOCTL;
++    cmd_msg.hdr.Par1 = CAMERA_PROTOCOL_IOC_CHANNEL_STOP;
++    cmd_msg.type = CAMERA_PROTOCOL_IOC_CHANNEL_STOP;
++    cmd_msg.params.ioc_channel_stop.cookie= cmd_msg.hdr.Id;
++    cmd_msg.params.ioc_channel_stop.channel= vivid->channel;
++    ret = vivid_taurus_send_command(rvivid, &cmd_msg, res_msg, 0);
++    if (ret)
++            return -EPIPE;
++
++    if ((res_msg->hdr.Result != R_TAURUS_RES_COMPLETE) ||
++        (res_msg->params.ioc_channel_stop.res != 0)) {
++        return -EIO;
++    }
++    return 0;
++}
++
++int vivid_taurus_feed_buffer(struct vivid_v4l2_device *vivid,
++            uint32_t address,int slot,
++            struct taurus_camera_res_msg *res_msg)
++{
++    struct taurus_camera_cmd_msg cmd_msg;
++    int ret;
++    struct rcar_vivid_device *rvivid = vivid->rvivid;
++    if (!res_msg)
++        return -EINVAL;
++
++    cmd_msg.hdr.Id = vivid_taurus_get_uniq_id();
++    cmd_msg.hdr.Channel = RVIVID_TAURUS_CHANNEL;
++    cmd_msg.hdr.Cmd = R_TAURUS_CMD_IOCTL;
++    cmd_msg.hdr.Par1 = CAMERA_PROTOCOL_IOC_CHANNEL_FEED_BUFFER;
++    cmd_msg.type = CAMERA_PROTOCOL_IOC_CHANNEL_FEED_BUFFER;
++    cmd_msg.params.ioc_channel_feed_buffer.buf_cnt = HW_BUFFER_NUM;
++    cmd_msg.params.ioc_channel_feed_buffer.channel = vivid->channel;
++    cmd_msg.params.ioc_channel_feed_buffer.cookie = cmd_msg.hdr.Id;
++    cmd_msg.params.ioc_channel_feed_buffer.buf_cnt= 1;
++    cmd_msg.params.ioc_channel_feed_buffer.buffer[0].address = address;
++    cmd_msg.params.ioc_channel_feed_buffer.buffer[0].index= slot;
++    ret = vivid_taurus_send_command(rvivid, &cmd_msg, res_msg, 0);
++    if (ret)
++            return -EPIPE;
++
++    if ((res_msg->hdr.Result != R_TAURUS_RES_COMPLETE) ||
++        (res_msg->params.ioc_channel_feed_buffer.res != 0)) {
++        return -EIO;
++    }
++    return 0;
++}
++
++int vivid_taurus_feed_buffers(struct vivid_v4l2_device *vivid,
++            struct taurus_camera_buffer *buffer, int buf_cnt,
++            struct taurus_camera_res_msg *res_msg)
++{
++    struct taurus_camera_cmd_msg cmd_msg;
++    int ret;
++    int i = 0;
++    struct rcar_vivid_device *rvivid = vivid->rvivid;
++    if (!res_msg)
++        return -EINVAL;
++    cmd_msg.hdr.Id = vivid_taurus_get_uniq_id();
++    cmd_msg.hdr.Channel = RVIVID_TAURUS_CHANNEL;
++    cmd_msg.hdr.Cmd = R_TAURUS_CMD_IOCTL;
++    cmd_msg.hdr.Par1 = CAMERA_PROTOCOL_IOC_CHANNEL_FEED_BUFFER;
++    cmd_msg.type = CAMERA_PROTOCOL_IOC_CHANNEL_FEED_BUFFER;
++    cmd_msg.params.ioc_channel_feed_buffer.buf_cnt = HW_BUFFER_NUM;
++    cmd_msg.params.ioc_channel_feed_buffer.channel = vivid->channel;
++    cmd_msg.params.ioc_channel_feed_buffer.cookie = cmd_msg.hdr.Id;
++    cmd_msg.params.ioc_channel_feed_buffer.buf_cnt= buf_cnt;
++    for(i = 0; i < buf_cnt; i++) {
++        cmd_msg.params.ioc_channel_feed_buffer.buffer[i].address = buffer[i].address;
++        cmd_msg.params.ioc_channel_feed_buffer.buffer[i].index= buffer[i].index;
++    }
++    ret = vivid_taurus_send_command(rvivid, &cmd_msg, res_msg, buf_cnt * sizeof(struct taurus_camera_buffer));
++    if (ret)
++            return -EPIPE;
++    if ((res_msg->hdr.Result != R_TAURUS_RES_COMPLETE) ||
++        (res_msg->params.ioc_channel_feed_buffer.res != 0))
++        return -EIO;
++
++    return 0;
++
++}
++
++int vivid_taurus_channel_release(struct vivid_v4l2_device *vivid,
++            struct taurus_camera_res_msg *res_msg)
++{
++    struct taurus_camera_cmd_msg cmd_msg;
++    int ret;
++    struct rcar_vivid_device *rvivid = vivid->rvivid;
++    if (!res_msg)
++        return -EINVAL;
++
++    cmd_msg.hdr.Id = vivid_taurus_get_uniq_id();
++    cmd_msg.hdr.Channel = RVIVID_TAURUS_CHANNEL;
++    cmd_msg.hdr.Cmd = R_TAURUS_CMD_IOCTL;
++    cmd_msg.hdr.Par1 = CAMERA_PROTOCOL_IOC_CHANNEL_RELEASE;
++    cmd_msg.type = CAMERA_PROTOCOL_IOC_CHANNEL_RELEASE;
++    cmd_msg.params.ioc_channel_release.channel= vivid->channel;
++    cmd_msg.params.ioc_channel_release.cookie= cmd_msg.hdr.Id;
++    ret = vivid_taurus_send_command(rvivid, &cmd_msg, res_msg, 0);
++    if (ret)
++            return -EPIPE;
++
++    if ((res_msg->hdr.Result != R_TAURUS_RES_COMPLETE) ||
++        (res_msg->params.ioc_channel_release.res != 0)) {
++        return -EIO;
++    }
++    return 0;
++}
++
++int vivid_taurus_get_info(struct rcar_vivid_device *rvivid,
++            struct taurus_camera_res_msg *res_msg)
++{
++    struct taurus_camera_cmd_msg cmd_msg;
++    int ret;
++    if (!res_msg)
++        return -EINVAL;
++
++    cmd_msg.hdr.Id = vivid_taurus_get_uniq_id();
++    cmd_msg.hdr.Channel = RVIVID_TAURUS_CHANNEL;
++    cmd_msg.hdr.Cmd = R_TAURUS_CMD_IOCTL;
++    cmd_msg.hdr.Par1 = CAMERA_PROTOCOL_IOC_GET_INFO;
++    cmd_msg.type = CAMERA_PROTOCOL_IOC_GET_INFO;
++    cmd_msg.params.ioc_get_info.cookie = cmd_msg.hdr.Id;
++    ret = vivid_taurus_send_command(rvivid, &cmd_msg, res_msg, 0);
++    if (ret)
++            return -EPIPE;
++
++    if ((res_msg->hdr.Result != R_TAURUS_RES_COMPLETE) ||
++        (res_msg->params.ioc_get_info.res != 0)) {
++        return -EIO;
++    }
++    rvivid->channel_num = res_msg->params.ioc_get_info.channel_num;
++    return 0;
++}
++
++int vivid_taurus_get_channel_info(struct vivid_v4l2_device *vivid,
++            struct taurus_camera_res_msg *res_msg)
++{
++    struct taurus_camera_cmd_msg cmd_msg;
++    int ret;
++    struct rcar_vivid_device *rvivid = vivid->rvivid;
++    if (!res_msg)
++        return -EINVAL;
++
++    cmd_msg.hdr.Id = vivid_taurus_get_uniq_id();
++    cmd_msg.hdr.Channel = RVIVID_TAURUS_CHANNEL;
++    cmd_msg.hdr.Cmd = R_TAURUS_CMD_IOCTL;
++    cmd_msg.hdr.Par1 = CAMERA_PROTOCOL_IOC_GET_CHANNEL_INFO;
++    cmd_msg.type = CAMERA_PROTOCOL_IOC_GET_CHANNEL_INFO;
++    cmd_msg.params.ioc_get_channel_info.channel= vivid->channel;
++    cmd_msg.params.ioc_get_channel_info.cookie = cmd_msg.hdr.Id;
++    ret = vivid_taurus_send_command(rvivid, &cmd_msg, res_msg, 0);
++    if (ret)
++            return -EPIPE;
++
++    if ((res_msg->hdr.Result != R_TAURUS_RES_COMPLETE) ||
++        (res_msg->params.ioc_get_info.res != 0)) {
++        return -EIO;
++    }
++    vivid->format.width = res_msg->params.ioc_get_channel_info.width;
++    vivid->format.height = res_msg->params.ioc_get_channel_info.height;
++    return 0;
++}
+diff --git a/drivers/media/platform/rcar-vivid/rcar-vivid-taurus.h b/drivers/media/platform/rcar-vivid/rcar-vivid-taurus.h
+new file mode 100755
+index 000000000000..93a670546220
+--- /dev/null
++++ b/drivers/media/platform/rcar-vivid/rcar-vivid-taurus.h
+@@ -0,0 +1,39 @@
++#ifndef __RCAR_VIVID_TAURUS_H__
++#define __RCAR_VIVID_TAURUS_H__
++
++#include <linux/types.h>
++#include <taurus/r_taurus_bridge.h>
++#include <taurus/r_taurus_protocol_ids.h>
++#include "rcar-vivid.h"
++
++struct taurus_camera_res_msg;
++struct taurus_camera_buffer;
++
++int vivid_taurus_channel_init(struct vivid_v4l2_device *vivid,
++            struct taurus_camera_res_msg *res_msg);
++
++int vivid_taurus_channel_start(struct vivid_v4l2_device *vivid,
++            struct taurus_camera_res_msg *res_msg);
++
++
++int vivid_taurus_channel_stop(struct vivid_v4l2_device *vivid,
++            struct taurus_camera_res_msg *res_msg);
++
++int vivid_taurus_feed_buffer(struct vivid_v4l2_device *vivid,
++            uint32_t address,int slot,
++            struct taurus_camera_res_msg *res_msg);
++
++int vivid_taurus_feed_buffers(struct vivid_v4l2_device *vivid,
++            struct taurus_camera_buffer *buffer, int buf_cnt,
++            struct taurus_camera_res_msg *res_msg);
++
++int vivid_taurus_channel_release(struct vivid_v4l2_device *vivid,
++            struct taurus_camera_res_msg *res_msg);
++
++int vivid_taurus_get_channel_info(struct vivid_v4l2_device *vivid,
++            struct taurus_camera_res_msg *res_msg);
++
++int vivid_taurus_get_info(struct rcar_vivid_device *vivid,
++            struct taurus_camera_res_msg *res_msg);
++
++#endif
+diff --git a/drivers/media/platform/rcar-vivid/rcar-vivid-v4l2.c b/drivers/media/platform/rcar-vivid/rcar-vivid-v4l2.c
+new file mode 100755
+index 000000000000..1f440683c88b
+--- /dev/null
++++ b/drivers/media/platform/rcar-vivid/rcar-vivid-v4l2.c
+@@ -0,0 +1,689 @@
++#include <linux/pm_runtime.h>
++#include <linux/delay.h>
++#include <media/v4l2-event.h>
++#include <media/v4l2-ioctl.h>
++#include <media/v4l2-mc.h>
++#include <media/v4l2-rect.h>
++#include <media/videobuf2-dma-contig.h>
++
++#include "rcar-vivid-taurus.h"
++#include "rcar-vivid.h"
++#include "r_taurus_camera_protocol.h"
++
++#define VIVID_MAX_WIDTH				4096
++#define VIVID_MAX_HEIGHT			4096
++
++/* Address alignment mask for HW buffers */
++#define HW_BUFFER_MASK 0x7f
++
++#define VIVID_DEFAULT_FORMAT		V4L2_PIX_FMT_ABGR32
++#define VIVID_DEFAULT_WIDTH	    	800
++#define VIVID_DEFAULT_HEIGHT	    600
++#define VIVID_DEFAULT_FIELD	    	V4L2_FIELD_NONE
++#define VIVID_DEFAULT_COLORSPACE	V4L2_COLORSPACE_SRGB
++
++struct vivid_buffer {
++    struct vb2_v4l2_buffer vb;
++    struct list_head list;
++};
++
++#define to_buf_list(vb2_buffer) (&container_of(vb2_buffer, \
++                           struct vivid_buffer, \
++                           vb)->list)
++
++
++static const struct vivid_pix_format vivid_default_format[]= {
++    {
++        .width = VIVID_DEFAULT_WIDTH,
++        .height = VIVID_DEFAULT_HEIGHT,
++        .pixelformat = VIVID_DEFAULT_FORMAT,
++        .field = VIVID_DEFAULT_FIELD,
++        .colorspace = VIVID_DEFAULT_COLORSPACE,
++    },
++};
++
++static int get_bpp_from_format(u32 pixelformat)
++{
++    switch (pixelformat) {
++        case V4L2_PIX_FMT_NV12:
++        case V4L2_PIX_FMT_NV16:
++        return 1;
++        case V4L2_PIX_FMT_YUYV:
++        case V4L2_PIX_FMT_UYVY:
++        case V4L2_PIX_FMT_RGB565:
++        case V4L2_PIX_FMT_ARGB555:
++        return 2;
++        case V4L2_PIX_FMT_ABGR32:
++        case V4L2_PIX_FMT_XBGR32:
++        return 4;
++        default:
++        return -EINVAL;
++    }
++}
++#if 0
++static struct vivid_pix_format to_vivid_format(struct v4l2_pix_format pix)
++{
++     struct vivid_pix_format rpix;
++     rpix.colorspace = pix.colorspace;
++     rpix.field = pix.colorspace;
++     rpix.width = pix.width;
++     rpix.height = pix.height;
++     rpix.pixelformat = pix.pixelformat;
++     return rpix;
++}
++#endif
++
++static u32 vivid_format_bytesperline(struct v4l2_pix_format *pix)
++{
++    return pix->width * get_bpp_from_format(pix->pixelformat);
++}
++
++static u32 vivid_format_sizeimage(struct v4l2_pix_format *pix)
++{
++    if (pix->pixelformat == V4L2_PIX_FMT_NV16)
++        return pix->bytesperline * pix->height * 2;
++
++    if (pix->pixelformat == V4L2_PIX_FMT_NV12)
++        return pix->bytesperline * pix->height * 3 / 2;
++
++    return pix->bytesperline * pix->height;
++}
++
++static void __vivid_format_aling_update(struct vivid_v4l2_device *vivid,
++                       struct v4l2_pix_format *pix)
++{
++    u32 walign;
++
++    /* HW limit width to a multiple of 32 (2^5) for NV16/12 else 2 (2^1) */
++    if (pix->pixelformat == V4L2_PIX_FMT_NV12 ||
++        pix->pixelformat == V4L2_PIX_FMT_NV16)
++        walign = 5;
++    else if (pix->pixelformat == V4L2_PIX_FMT_YUYV ||
++         pix->pixelformat == V4L2_PIX_FMT_UYVY)
++        walign = 1;
++    else
++        walign = 0;
++
++    /* Limit to VIN capabilities */
++    v4l_bound_align_image(&pix->width, 5, VIVID_MAX_WIDTH, walign,
++                  &pix->height, 2, VIVID_MAX_HEIGHT, 0, 0);
++
++    pix->bytesperline = vivid_format_bytesperline(pix);
++    pix->sizeimage = vivid_format_sizeimage(pix);
++}
++
++
++static void vivid_format_align(struct vivid_v4l2_device *vivid, struct v4l2_pix_format *pix)
++{
++    int width;
++    switch (pix->field) {
++    case V4L2_FIELD_TOP:
++    case V4L2_FIELD_BOTTOM:
++    case V4L2_FIELD_NONE:
++    case V4L2_FIELD_INTERLACED_TB:
++    case V4L2_FIELD_INTERLACED_BT:
++    case V4L2_FIELD_INTERLACED:
++        break;
++    case V4L2_FIELD_SEQ_TB:
++    case V4L2_FIELD_SEQ_BT:
++        /*
++         * Due to extra hardware alignment restrictions on
++         * buffer addresses for multi plane formats they
++         * are not (yet) supported. This would be much simpler
++         * once support for the UDS scaler is added.
++         *
++         * Support for multi plane formats could be supported
++         * by having a different partitioning strategy when
++         * capturing the second field (start capturing one
++         * quarter in to the buffer instead of one half).
++         */
++
++        if (pix->pixelformat == V4L2_PIX_FMT_NV16)
++            pix->pixelformat = VIVID_DEFAULT_FORMAT;
++
++        /*
++         * For sequential formats it's needed to write to
++         * the same buffer two times to capture both the top
++         * and bottom field. The second time it is written
++         * an offset is needed as to not overwrite the
++         * previous captured field. Due to hardware limitations
++         * the offsets must be a multiple of 128. Try to
++         * increase the width of the image until a size is
++         * found which can satisfy this constraint.
++         */
++
++        width = pix->width;
++        while (width < VIVID_MAX_WIDTH) {
++            pix->width = width++;
++
++            __vivid_format_aling_update(vivid, pix);
++
++            if (((pix->sizeimage / 2) & HW_BUFFER_MASK) == 0)
++                break;
++        }
++        break;
++    case V4L2_FIELD_ALTERNATE:
++        /*
++         * Driver does not (yet) support outputting ALTERNATE to a
++         * userspace. It does support outputting INTERLACED so use
++         * the VIN hardware to combine the two fields.
++         */
++        pix->field = V4L2_FIELD_INTERLACED;
++        pix->height *= 2;
++        break;
++    default:
++        pix->field = VIVID_DEFAULT_FIELD;
++        break;
++    }
++
++    __vivid_format_aling_update(vivid, pix);
++}
++
++static void vivid_format_update(struct vivid_v4l2_device *vivid, struct v4l2_pix_format *pix)
++{
++    pix->colorspace = VIVID_DEFAULT_COLORSPACE;
++    pix->xfer_func = V4L2_MAP_XFER_FUNC_DEFAULT(pix->colorspace);
++    pix->ycbcr_enc = V4L2_MAP_YCBCR_ENC_DEFAULT(pix->colorspace);
++    pix->quantization = V4L2_MAP_QUANTIZATION_DEFAULT(true, pix->colorspace,
++                              pix->ycbcr_enc);
++    vivid_format_align(vivid, pix);
++
++}
++
++static int vivid_thread_fn(void *data)
++{
++    struct vivid_v4l2_device *vivid = (struct vivid_v4l2_device*)data;
++    struct taurus_camera_res_msg res_msg;
++    struct taurus_camera_buffer buffer[HW_BUFFER_NUM];
++    int i;
++    int index;
++    while (!kthread_should_stop()) {
++        wait_event_interruptible(vivid->buffer_pending_wait_queue, vivid->buffer_pending);
++        for(i = 0; i < HW_BUFFER_NUM; i++) {
++            index = ffs(vivid->buffer_pending) - 1;
++            if(index < 0) {
++                break;
++            } else {
++                clear_bit(index, (long unsigned int*) &vivid->buffer_pending);
++                buffer[i].index = index;
++                buffer[i].address = vivid->phys_addr[index];
++            }
++        }
++        if(vivid->state == RUNNING)
++            vivid_taurus_feed_buffers(vivid, buffer, i, &res_msg);
++        memset(&res_msg,0,sizeof(res_msg));
++    }
++    dev_dbg(vivid->dev, "vivid thread exiting\n");
++    return 0;
++}
++
++
++static int vivid_open(struct file *file)
++{
++    struct vivid_v4l2_device *vivid = video_drvdata(file);
++    int ret;
++    vivid_dbg(vivid,"%s\n", __func__);
++    file->private_data = vivid;
++    ret = v4l2_fh_open(file);
++    return ret;
++}
++
++static int vivid_release(struct file *file)
++{
++    struct vivid_v4l2_device *vivid = video_drvdata(file);
++    bool fh_singular;
++    int ret;
++    vivid_dbg(vivid,"%s\n", __func__);
++
++    fh_singular = v4l2_fh_is_singular_file(file);
++    /* Save the singular status before we call the clean-up helper */
++    fh_singular = v4l2_fh_is_singular_file(file);
++
++    /* the release helper will cleanup any on-going streaming */
++    ret = _vb2_fop_release(file, NULL);
++#if 0
++    /*
++     * If this was the last open file.
++     * Then de-initialize hw module.
++     */
++    struct taurus_camera_res_msg res_msg;
++    if (fh_singular)
++        ret = vivid_taurus_channel_release(vivid,&res_msg);
++#endif
++    return ret;
++}
++
++
++static const struct v4l2_file_operations vivid_fops = {
++    .owner		= THIS_MODULE,
++    .unlocked_ioctl	= video_ioctl2,
++    .open		= vivid_open,
++    .release	= vivid_release,
++    .poll		= vb2_fop_poll,
++    .mmap		= vb2_fop_mmap,
++    .read		= vb2_fop_read,
++};
++
++
++
++static int vivid_querycap(struct file *file, void *priv,
++             struct v4l2_capability *cap)
++{
++    struct vivid_v4l2_device *vivid = video_drvdata(file);
++    vivid_dbg(vivid, "%s \n", __func__);
++    strlcpy(cap->driver, KBUILD_MODNAME, sizeof(cap->driver));
++    strlcpy(cap->card, "R_Car_VIVID", sizeof(cap->card));
++    snprintf(cap->bus_info, sizeof(cap->bus_info), "platform:%s",
++         dev_name(vivid->dev));
++    cap->capabilities = V4L2_CAP_DEVICE_CAPS | V4L2_CAP_VBI_CAPTURE | V4L2_CAP_STREAMING;
++    return 0;
++}
++
++static int vivid_try_fmt_vid_cap(struct file *file, void *priv,
++                struct v4l2_format *f)
++{
++    struct vivid_v4l2_device *vivid = video_drvdata(file);
++    int ret;
++    vivid_dbg(vivid, "%s \n", __func__);
++    ret = (f->fmt.pix.width != vivid->format.width);
++    ret |= (f->fmt.pix.height != vivid->format.height);
++    ret |= (f->fmt.pix.pixelformat!= vivid->format.pixelformat);
++    ret |= (f->fmt.pix.field != vivid->format.field);
++
++    if(ret) {
++        return -EPIPE;
++    }
++    f->fmt.pix.colorspace = vivid->format.colorspace;
++    return 0;
++}
++
++static int vivid_g_fmt_vid_cap(struct file *file, void *priv,
++                  struct v4l2_format *f)
++{
++    struct vivid_v4l2_device *vivid = video_drvdata(file);
++    vivid_dbg(vivid, "%s \n", __func__);
++
++    f->fmt.pix = vivid->format;
++
++    return 0;
++}
++
++static int vivid_s_fmt_vid_cap(struct file *file, void *priv,
++                  struct v4l2_format *f)
++{
++    struct vivid_v4l2_device *vivid = video_drvdata(file);
++    int ret;
++    vivid_dbg(vivid, "%s \n", __func__);
++
++    if (vb2_is_busy(&vivid->queue))
++        return -EBUSY;
++
++    ret = vivid_try_fmt_vid_cap(file, NULL,f);
++    if (ret)
++        return ret;
++
++    vivid_format_update(vivid, &f->fmt.pix);
++
++    vivid->format = f->fmt.pix;
++
++    return 0;
++}
++
++static int vivid_enum_fmt_vid_cap(struct file *file, void *priv,
++                 struct v4l2_fmtdesc *f)
++{
++    struct vivid_v4l2_device *vivid = video_drvdata(file);
++    vivid_dbg(vivid, "%s \n", __func__);
++    if (f->index >= 1)
++        return -EINVAL;
++
++    f->pixelformat = VIVID_DEFAULT_FORMAT;
++
++    return 0;
++}
++
++
++static const struct v4l2_ioctl_ops vivid_ioctl_ops = {
++    .vidioc_querycap		= vivid_querycap,
++
++    .vidioc_try_fmt_vid_cap		= vivid_try_fmt_vid_cap,
++    .vidioc_g_fmt_vid_cap		= vivid_g_fmt_vid_cap,
++    .vidioc_s_fmt_vid_cap		= vivid_s_fmt_vid_cap,
++    .vidioc_enum_fmt_vid_cap	= vivid_enum_fmt_vid_cap,
++
++
++    .vidioc_reqbufs			= vb2_ioctl_reqbufs,
++    .vidioc_create_bufs		= vb2_ioctl_create_bufs,
++    .vidioc_querybuf		= vb2_ioctl_querybuf,
++    .vidioc_qbuf			= vb2_ioctl_qbuf,
++    .vidioc_dqbuf			= vb2_ioctl_dqbuf,
++    .vidioc_expbuf			= vb2_ioctl_expbuf,
++    .vidioc_prepare_buf		= vb2_ioctl_prepare_buf,
++    .vidioc_streamon		= vb2_ioctl_streamon,
++    .vidioc_streamoff		= vb2_ioctl_streamoff,
++};
++
++
++
++static void vivid_set_slot_addr(struct vivid_v4l2_device *vivid, int slot, dma_addr_t addr)
++{
++    if(slot < ARRAY_SIZE(vivid->phys_addr))
++        vivid->phys_addr[slot] = addr;
++    return;
++#if 0
++    const struct vivid_video_format *fmt;
++    dma_addr_t offset;
++
++    fmt = vivid_format_from_pixel(vivid->format.pixelformat);
++
++    /*
++     * There is no HW support for composition do the beast we can
++     * by modifying the buffer offset
++     */
++    offsetx = vivid->compose.left * fmt->bpp;
++    offsety = vivid->compose.top * vivid->format.bytesperline;
++    offset = addr + offsetx + offsety;
++
++    /*
++     * The address needs to be 128 bytes aligned. Driver should never accept
++     * settings that do not satisfy this in the first place...
++     */
++    if (WARN_ON((offsetx | offsety | offset) & HW_BUFFER_MASK))
++        return;
++
++    vivid_write(vivid, offset, VNMB_REG(slot));
++#endif
++}
++
++/*
++ * Moves a buffer from the queue to the HW slot. If no buffer is
++ * available use the scratch buffer. The scratch buffer is never
++ * returned to userspace, its only function is to enable the capture
++ * loop to keep running.
++ */
++void vivid_fill_hw_slot(struct vivid_v4l2_device *vivid, int slot)
++{
++    struct vivid_buffer *buf;
++    struct vb2_v4l2_buffer *vbuf;
++    dma_addr_t phys_addr;
++    /* A already populated slot shall never be overwritten. */
++    if (WARN_ON(vivid->queue_buf[slot] != NULL))
++        return;
++
++    vivid_dbg(vivid, "Filling HW slot: %d\n", slot);
++
++    if (list_empty(&vivid->buf_list)) {
++        vivid->queue_buf[slot] = NULL;
++        phys_addr = vivid->scratch_phys;
++    } else {
++        /* Keep track of buffer we give to HW */
++        buf = list_entry(vivid->buf_list.next, struct vivid_buffer, list);
++        vbuf = &buf->vb;
++        list_del_init(to_buf_list(vbuf));
++        vivid->queue_buf[slot] = vbuf;
++
++        /* Setup DMA */
++        phys_addr = vb2_dma_contig_plane_dma_addr(&vbuf->vb2_buf, 0);
++    }
++    vivid_set_slot_addr(vivid, slot, phys_addr);
++    return;
++}
++
++static int vivid_capture_on(struct vivid_v4l2_device *vivid)
++{
++    int ret;
++    struct taurus_camera_res_msg res_msg;
++    ret = vivid_taurus_channel_start(vivid, &res_msg);
++    return ret;
++}
++static void vivid_capture_stop(struct vivid_v4l2_device *vivid)
++{
++    struct taurus_camera_res_msg res_msg;
++    vivid_taurus_channel_stop(vivid, &res_msg);
++    return;
++}
++static int vivid_capture_start(struct vivid_v4l2_device *vivid)
++{
++    int slot, limit;
++    struct taurus_camera_res_msg res_msg;
++    limit = HW_BUFFER_NUM;
++    for (slot = 0; slot < limit; slot++)
++        vivid_fill_hw_slot(vivid, slot);
++
++    vivid_taurus_channel_init(vivid, &res_msg);
++    vivid_dbg(vivid, "height %d\n",
++        res_msg.params.ioc_channel_init.channel_info.height);
++    vivid_dbg(vivid, "width %d\n",
++        res_msg.params.ioc_channel_init.channel_info.width);
++    vivid_dbg(vivid, "vacant_buf_cell_cnt %d\n",
++        res_msg.params.ioc_channel_init.channel_info.vacant_buf_cell_cnt);
++    vivid_capture_on(vivid);
++    vivid->state = RUNNING;
++    return 0;
++}
++
++
++static int vivid_queue_setup(struct vb2_queue *vq, unsigned int *nbuffers,
++                unsigned int *nplanes, unsigned int sizes[],
++                struct device *alloc_devs[])
++
++{
++    struct  vivid_v4l2_device *vivid = vb2_get_drv_priv(vq);
++    vivid_dbg(vivid, "%s \n", __func__);
++
++    /* Make sure the image size is large enough. */
++    if (*nplanes)
++        return sizes[0] < vivid->format.sizeimage ? -EINVAL : 0;
++
++    *nplanes = 1;
++    sizes[0] = vivid->format.sizeimage;
++
++    return 0;
++};
++
++static int vivid_buffer_prepare(struct vb2_buffer *vb)
++{
++    struct  vivid_v4l2_device *vivid = vb2_get_drv_priv(vb->vb2_queue);
++    unsigned long size = vivid->format.sizeimage;
++    vivid_dbg(vivid, "%s \n", __func__);
++
++    if (vb2_plane_size(vb, 0) < size) {
++        vivid_err(vivid, "buffer too small (%lu < %lu)\n",
++            vb2_plane_size(vb, 0), size);
++        return -EINVAL;
++    }
++
++    vb2_set_plane_payload(vb, 0, size);
++
++    return 0;
++}
++
++static void vivid_buffer_queue(struct vb2_buffer *vb)
++{
++    struct vb2_v4l2_buffer *vbuf = to_vb2_v4l2_buffer(vb);
++    struct vivid_v4l2_device *vivid = vb2_get_drv_priv(vb->vb2_queue);
++    vivid_dbg(vivid, "%s \n", __func__);
++
++    list_add_tail(to_buf_list(vbuf), &vivid->buf_list);
++
++}
++
++/* Need to hold qlock before calling */
++static void return_all_buffers(struct vivid_v4l2_device *vivid,
++                   enum vb2_buffer_state state)
++{
++    struct vivid_buffer *buf, *node;
++    int i;
++
++    for (i = 0; i < HW_BUFFER_NUM; i++) {
++        if (vivid->queue_buf[i]) {
++            vb2_buffer_done(&vivid->queue_buf[i]->vb2_buf,
++                    state);
++            vivid->queue_buf[i] = NULL;
++        }
++    }
++
++    list_for_each_entry_safe(buf, node, &vivid->buf_list, list) {
++        vb2_buffer_done(&buf->vb.vb2_buf, state);
++        list_del(&buf->list);
++    }
++}
++
++static int vivid_start_streaming(struct vb2_queue *vq, unsigned int count)
++{
++    struct vivid_v4l2_device *vivid = vb2_get_drv_priv(vq);
++    int ret;
++    vivid_dbg(vivid, "%s \n", __func__);
++
++    /* Allocate scratch buffer. */
++    vivid->scratch = dma_alloc_coherent(vivid->dev, vivid->format.sizeimage,
++                      &vivid->scratch_phys, GFP_KERNEL);
++    if (!vivid->scratch) {
++        return_all_buffers(vivid, VB2_BUF_STATE_QUEUED);
++        vivid_err(vivid, "Failed to allocate scratch buffer\n");
++        return -ENOMEM;
++    }
++
++    vivid->sequence = 0;
++    ret = vivid_capture_start(vivid);
++    if (ret) {
++        return_all_buffers(vivid, VB2_BUF_STATE_QUEUED);
++        goto out;
++    }
++
++    return 0;
++out:
++    if (ret)
++        dma_free_coherent(vivid->dev, vivid->format.sizeimage, vivid->scratch,
++                  vivid->scratch_phys);
++
++    return ret;
++
++}
++
++static void vivid_stop_streaming(struct vb2_queue *vq)
++{
++    struct vivid_v4l2_device *vivid = vb2_get_drv_priv(vq);
++    vivid_dbg(vivid, "%s \n", __func__);
++
++    vivid->state = STOPPING;
++    vivid_capture_stop(vivid);
++    vivid->state = STOPPED;
++
++    if (vivid->state != STOPPED) {
++        /*
++         * If this happens something have gone horribly wrong.
++         * Set state to stopped to prevent the interrupt handler
++         * to make things worse...
++         */
++        vivid_err(vivid, "Failed stop HW, something is seriously broken\n");
++        vivid->state = STOPPED;
++    }
++
++    /* Release all active buffers */
++    return_all_buffers(vivid, VB2_BUF_STATE_ERROR);
++    dma_free_coherent(vivid->dev, vivid->format.sizeimage,
++                  vivid->scratch, vivid->scratch_phys);
++}
++
++
++
++static const struct vb2_ops vivid_qops = {
++    .queue_setup		= vivid_queue_setup,
++    .buf_prepare		= vivid_buffer_prepare,
++    .buf_queue		= vivid_buffer_queue,
++    .start_streaming	= vivid_start_streaming,
++    .stop_streaming		= vivid_stop_streaming,
++    .wait_prepare		= vb2_ops_wait_prepare,
++    .wait_finish		= vb2_ops_wait_finish,
++};
++
++int rcar_vivid_queue_init(struct vivid_v4l2_device *vivid)
++{
++    struct vb2_queue *q = &vivid->queue;
++    int i, ret;
++
++    ret = v4l2_device_register(vivid->dev, &vivid->v4l2_dev);
++    if (ret)
++        return ret;
++
++    mutex_init(&vivid->lock);
++    INIT_LIST_HEAD(&vivid->buf_list);
++    vivid->state = STOPPED;
++    init_waitqueue_head(&vivid->setup_wait);
++
++    for (i = 0; i < HW_BUFFER_NUM; i++)
++        vivid->queue_buf[i] = NULL;
++
++    /* buffer queue */
++    q->type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
++    q->io_modes = VB2_MMAP | VB2_READ | VB2_DMABUF | VB2_USERPTR;
++    q->lock = &vivid->lock;
++    q->drv_priv = vivid;
++    q->buf_struct_size = sizeof(struct vivid_buffer);
++    q->ops = &vivid_qops;
++    q->mem_ops = &vb2_dma_contig_memops;
++    q->timestamp_flags = V4L2_BUF_FLAG_TIMESTAMP_MONOTONIC;
++    q->min_buffers_needed = 1;
++    q->dev = vivid->dev;
++
++    ret = vb2_queue_init(q);
++    if (ret) {
++        vivid_err(vivid, "failed to initialize VB2 queue\n");
++        return ret;
++    }
++    return ret;
++}
++
++
++
++int rcar_vivid_v4l2_register(struct vivid_v4l2_device *vivid)
++{
++    struct video_device *vdev = &vivid->vdev;
++    int ret;
++    struct taurus_camera_res_msg res_msg;
++
++    snprintf(vdev->name, sizeof(vdev->name), "VIVID%u output", vivid->channel);
++    vdev->release = video_device_release_empty;
++    vdev->v4l2_dev = &vivid->v4l2_dev;
++    vdev->queue = &vivid->queue;
++    vdev->lock = &vivid->lock;
++    vdev->device_caps = V4L2_CAP_VIDEO_CAPTURE | V4L2_CAP_STREAMING |
++        V4L2_CAP_READWRITE;
++
++    vdev->fops = &vivid_fops;
++    vdev->ioctl_ops = &vivid_ioctl_ops;
++    vdev->dev_parent = vivid->dev;
++
++    memset(&res_msg, 0, sizeof(res_msg));
++    ret = vivid_taurus_get_channel_info(vivid, &res_msg);
++    if (ret) {
++        pr_info("get channel info failed \n");
++        vivid->format.width = vivid_default_format[0].width;
++        vivid->format.height = vivid_default_format[0].height;
++    }
++    vivid->format.pixelformat	= vivid_default_format[0].pixelformat;
++    vivid->format.field = vivid_default_format[0].field;
++    vivid->format.colorspace = vivid_default_format[0].colorspace;
++    vivid_format_align(vivid, &vivid->format);
++
++    ret = video_register_device(&vivid->vdev, VFL_TYPE_GRABBER, -1);
++    if (ret) {
++        vivid_err(vivid, "Failed to register video device\n");
++        return ret;
++    }
++    video_set_drvdata(&vivid->vdev, vivid);
++    v4l2_info(&vivid->v4l2_dev,"Device registered as %s\n",
++          video_device_node_name(&vivid->vdev));
++    v4l2_info(&vivid->v4l2_dev,"format W:%d H:%d \n", vivid->format.width, vivid->format.height);
++
++    if (vivid->buffer_thread)
++        dev_warn(vivid->dev, "buffer_thread is already running\n");
++    else
++        vivid->buffer_thread = kthread_run(vivid_thread_fn,
++                        vivid,
++                        "rcar vivid buffer kthread");
++
++    return ret;
++
++}
+diff --git a/drivers/media/platform/rcar-vivid/rcar-vivid.h b/drivers/media/platform/rcar-vivid/rcar-vivid.h
+new file mode 100644
+index 000000000000..ad4a1bdbfb39
+--- /dev/null
++++ b/drivers/media/platform/rcar-vivid/rcar-vivid.h
+@@ -0,0 +1,139 @@
++#ifndef __RCAR_VIVID__
++#define __RCAR_VIVID__
++
++#include <linux/device.h>
++#include <linux/mm.h>
++#include <linux/module.h>
++#include <linux/slab.h>
++#include <linux/wait.h>
++#include <linux/kthread.h>
++#include <linux/clk.h>
++#include <linux/kref.h>
++#include <linux/reset.h>
++
++#include <media/v4l2-ioctl.h>
++#include <media/v4l2-async.h>
++#include <media/v4l2-ctrls.h>
++#include <media/v4l2-dev.h>
++#include <media/v4l2-device.h>
++#include <media/videobuf2-v4l2.h>
++#include <media/videobuf2-core.h>
++
++#define MAX_VIVID_DEVICE_NUM 	8
++
++#define rvivid_dbg(d, fmt, arg...)		dev_dbg(d->dev, fmt, ##arg)
++#define rvivid_info(d, fmt, arg...)	    dev_info(d->dev, fmt, ##arg)
++#define rvivid_warn(d, fmt, arg...)	    dev_warn(d->dev, fmt, ##arg)
++#define rvivid_err(d, fmt, arg...)		dev_err(d->dev, fmt, ##arg)
++
++#define vivid_dbg(d, fmt, arg...)		dev_dbg(d->dev, fmt, ##arg)
++#define vivid_info(d, fmt, arg...)	    dev_info(d->dev, fmt, ##arg)
++#define vivid_warn(d, fmt, arg...)	    dev_warn(d->dev, fmt, ##arg)
++#define vivid_err(d, fmt, arg...)		dev_err(d->dev, fmt, ##arg)
++
++/* Number of HW buffers */
++#define HW_BUFFER_NUM 3
++
++struct rcar_vivid_device;
++
++struct vivid_pix_format {
++    u32         	width;
++    u32			height;
++    u32			pixelformat;
++    u32			field;		/* enum v4l2_field */
++    u32			colorspace;	/* enum v4l2_colorspace */
++};
++
++enum rvivid_dma_state {
++    STOPPED = 0,
++    RUNNING,
++    STALLED,
++    STOPPING,
++};
++
++struct taurus_camera_res_msg;
++
++struct taurus_event_list {
++    uint32_t id;
++    struct taurus_camera_res_msg *result;
++    struct list_head list;
++    struct completion ack;
++    bool ack_received;
++    struct completion completed;
++};
++
++#if 0
++struct rcar_vivid_device {
++    struct device *dev;
++    struct video_device vdev;
++    struct v4l2_device v4l2_dev;
++    struct rpmsg_device *rpdev;
++    struct v4l2_pix_format format;
++
++    uint8_t buffer_pending;
++    wait_queue_head_t buffer_pending_wait_queue;
++
++    struct mutex lock;
++    struct vb2_queue queue;
++    struct vb2_v4l2_buffer *queue_buf[HW_BUFFER_NUM];
++    struct list_head buf_list;
++    void *scratch;
++    unsigned int sequence;
++    enum rvivid_dma_state state;
++    dma_addr_t scratch_phys;
++    dma_addr_t phys_addr[HW_BUFFER_NUM];
++    uint8_t cur_slot;
++
++    int channel;
++    struct workqueue_struct *work_queue;
++    wait_queue_head_t setup_wait;
++
++    struct task_struct *buffer_thread;
++
++    struct list_head taurus_event_list_head;
++    rwlock_t event_list_lock;
++};
++#endif
++
++struct vivid_v4l2_device {
++
++    struct rcar_vivid_device *rvivid;
++    struct device *dev;
++    struct video_device vdev;
++    struct v4l2_device v4l2_dev;
++    struct list_head vivid_list;
++    struct v4l2_pix_format format;
++
++    struct mutex lock;
++    struct vb2_queue queue;
++    struct vb2_v4l2_buffer *queue_buf[HW_BUFFER_NUM];
++    struct list_head buf_list;
++    void *scratch;
++    unsigned int sequence;
++    enum rvivid_dma_state state;
++    dma_addr_t scratch_phys;
++    dma_addr_t phys_addr[HW_BUFFER_NUM];
++    uint8_t cur_slot;
++
++    int channel;
++    struct workqueue_struct *work_queue;
++    wait_queue_head_t setup_wait;
++
++    wait_queue_head_t buffer_pending_wait_queue;
++    unsigned char buffer_pending;
++    struct task_struct *buffer_thread;
++};
++
++struct rcar_vivid_device {
++    struct device *dev;
++    struct rpmsg_device *rpdev;
++    struct list_head taurus_event_list_head;
++    rwlock_t event_list_lock;
++    int channel_num;
++    struct vivid_v4l2_device *vivid[MAX_VIVID_DEVICE_NUM];
++};
++
++int rcar_vivid_v4l2_register(struct vivid_v4l2_device *rvivid);
++int rcar_vivid_queue_init(struct vivid_v4l2_device *rvivid);
++void vivid_fill_hw_slot(struct vivid_v4l2_device *rvivid, int slot);
++#endif
+\ No newline at end of file
+diff --git a/include/taurus/r_taurus_bridge.h b/include/taurus/r_taurus_bridge.h
+new file mode 100644
+index 000000000000..7de1f1847e95
+--- /dev/null
++++ b/include/taurus/r_taurus_bridge.h
+@@ -0,0 +1,138 @@
++
++#ifndef R_TAURUS_BRIDGE_H
++#define R_TAURUS_BRIDGE_H
++
++#ifdef __cplusplus
++extern "C" {
++#endif
++
++/* This is file defines the basic command protocol between TAURUS and its guest.
++
++   Protocol extensions for concrete peripherals are defines in sub folders of
++   this directory. Basically such extensions would be a description of concrete
++   IOCTL functionality. If the peripheral does not need such extensions, the
++   basic protocoll should be sufficient.
++
++   CAUTION:
++   A guest mighe have a complete different architecture, but the protocol needs
++   to be interpreted by host & guest in the same way (e.g. 64b vs 32b pointer &
++   endianess. Therefore only explicit types and no pointers shall be used in this
++   file. Endianess of the guest is assumed to be the same as for TAURUS itself.
++   Padding of structures is basically also assumed to be the same for TAURUS and
++   a guest. If there is any confluct, the guest will have to adapt to the
++   protocol interpretation of TAURUS.
++ */
++
++/*******************************************************************************
++  Section: Includes
++*/
++
++#ifndef __KERNEL__
++#include <stdint.h>
++#endif
++
++
++/*******************************************************************************
++  Section: Global Defines
++*/
++
++
++/* TAURUS command identifier */
++
++#define R_TAURUS_CMD_NOP           0
++#define R_TAURUS_CMD_OPEN          1
++#define R_TAURUS_CMD_CLOSE         2
++#define R_TAURUS_CMD_READ          3
++#define R_TAURUS_CMD_WRITE         4
++#define R_TAURUS_CMD_IOCTL         5
++#define R_TAURUS_CMD_STATUS        6
++#define R_TAURUS_CMD_EXIT          7
++
++/* TAURUS command result values */
++
++#define R_TAURUS_RES_ACK           0
++#define R_TAURUS_RES_NACK          1
++#define R_TAURUS_RES_COMPLETE      2
++#define R_TAURUS_RES_ERROR         3
++
++/* TAURUS signal identifier */
++
++#define R_TAURUS_SIG_IRQ           0x10     /* Peripheral interrupt has occured */
++#define R_TAURUS_SIG_ERROR         0x20     /* TAURUS detected an error */
++#define R_TAURUS_SIG_FATAL_ERROR   0x30     /* TAURUS detected a fatal problem and does not work reliable */
++#define R_TAURUS_SIG_REBOOTING     0x40     /* TAURUS will reboot */
++#define R_TAURUS_SIG_REBOOT        0x50     /* TAURUS asks the guest to reboot */
++#define R_TAURUS_SIG_RESET         0x60     /* TAURUS will reset the entire system including the guest */
++
++
++/*******************************************************************************
++  Section: Global Types
++*/
++
++/*******************************************************************************
++  Type: R_TAURUS_CmdMsg_t
++
++  TAURUS command message.
++
++  Members:
++  Id            - Transaction Id
++  Per           - Identifier for the peripheral
++  Channel       - Channel of the peripheral
++  Cmd           - Command (Open, Read, Write, Close, IoCtl)
++  Par1          - Auxiliary parameter, typically buffer
++  Par2          - Auxiliary parameter, typically size
++  Par3          - Auxiliary parameter
++*/
++
++typedef struct {
++    uint32_t          Id;
++    uint32_t          Per;
++    uint32_t          Channel;
++    uint32_t          Cmd;
++    uint64_t          Par1;
++    uint64_t          Par2;
++    uint64_t          Par3;
++} R_TAURUS_CmdMsg_t;
++
++
++/*******************************************************************************
++  Type: R_TAURUS_Result_t
++
++  TAURUS command message.
++
++  Members:
++  Id            - Transaction Id
++  Per           - Identifier for the peripheral
++  Result        - Result (ACK, NAK, COMP, ERR)
++  Aux           - Auxiliary result parameter (e.g. written data lentgh)
++*/
++
++typedef struct {
++    uint32_t        Id;
++    uint32_t        Per;
++    uint32_t        Channel;
++    uint32_t        Result;
++    uint64_t        Aux;
++} R_TAURUS_ResultMsg_t;
++
++
++/*******************************************************************************
++  Type: R_TAURUS_SignalId_t
++
++  Identifier of signal sent to the guest.
++
++  TAURUS can trigger an interrupt for the guest. This identifier specifies the
++  reason for the interrupt. Usually this shall be used to inform the guest
++  about peripheral interrupts, so that the guest can check all virtual drivers,
++  but it can also signal TAURUS conditions.
++
++  For details see: R_TAURUS_SIG_XXX definitions
++*/
++
++typedef uint32_t R_TAURUS_SignalId_t;
++
++#ifdef __cplusplus
++}
++#endif
++
++#endif /* R_TAURUS_BRIDGE_H */
+diff --git a/include/taurus/r_taurus_protocol_ids.h b/include/taurus/r_taurus_protocol_ids.h
+new file mode 100644
+index 000000000000..20260dbb3b05
+--- /dev/null
++++ b/include/taurus/r_taurus_protocol_ids.h
+@@ -0,0 +1,10 @@
++#ifndef _R_TAURUS_PROTOCOL_IDS_H_
++#define _R_TAURUS_PROTOCOL_IDS_H_
++
++#define TAURUS_PROTOCOL_VIRTDEV_ID      (0x10)
++#define TAURUS_PROTOCOL_RVGC_ID         (0x01)
++#define TAURUS_PROTOCOL_CAMERA_ID       (0x02)
++#define TAURUS_PROTOCOL_CAN_ID          (0x03)
++#define TAURUS_PROTOCOL_IPMMUWA_ID      (0x04)
++
++#endif
+-- 
+2.17.1
+
