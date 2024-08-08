@@ -274,68 +274,68 @@ void prvCanfdDeviceClose(void)
 
 void prvCanEnableTransceiver(void)
 {
-
+    
     /* Can FD channel 0 */
 #ifdef ENABLE_CANFD0
 /* TODO add proper board configuration */
-#if 1 /* ERGUOTOU BOARD */
-    /* For Can/Can-FD 0 */
-    pfc_gpio_output(1, 12);         /* _EN */
-    pfc_gpio_input(1, 10);          /* _RCAR_CAN_ERR_N */
-    pfc_gpio_output(1, 11);         /* _STB_N */
-    pfc_gpio_output(1, 5);          /* _WAKE */
+#if defined (R_TARGET_BOARD_EBISU)
+        pfc_gpio_output(0, 2); /* _EN */
+        pfc_gpio_input(1, 12); /* _RCAR_CAN_ERR_N */
+        pfc_gpio_output(0, 5); /* _STB_N */
 
-    /* Toggle EN & STB_N to bring up the transceiver */
-    gpio_set_output(1, 12, 0);
-    gpio_set_output(1, 11, 0);
+        /* Toggle EN & STB_N to bring up the transceiver */
+        gpio_set_output(0, 2, 0);
+        gpio_set_output(0, 5, 0);
 
-    gpio_set_output(1, 11, 1);
-    gpio_set_output(1, 12, 1);
-    gpio_set_output(1,  5, 1);
+        gpio_set_output(0, 5, 1);
+        gpio_set_output(0, 2, 1);
+#elif defined (R_TARGET_BOARD_ERGUOTOU) /* ERGUOTOU BOARD */
+        pfc_gpio_output(1, 12); /* _EN */
+        pfc_gpio_input(1, 10);  /* _RCAR_CAN_ERR_N */
+        pfc_gpio_output(1, 11); /* _STB_N */
+        pfc_gpio_output(1, 5);  /* _WAKE */
+
+        /* Toggle EN & STB_N to bring up the transceiver */
+        gpio_set_output(1, 12, 0);
+        gpio_set_output(1, 11, 0);
+
+        gpio_set_output(1, 11, 1);
+        gpio_set_output(1, 12, 1);
+        gpio_set_output(1, 5, 1);
+#else /* R_TARGET_BOARD_SALVATOR */
+        pfc_gpio_output(2, 6);  /* _EN */
+        pfc_gpio_input(1, 28);  /* _RCAR_CAN_ERR_N */
+        pfc_gpio_output(1, 21); /* _STB_N */
+
+        /* Toggle EN & STB_N to bring up the transceiver */
+        gpio_set_output(2, 6, 0);
+        gpio_set_output(1, 21, 0);
+
+        gpio_set_output(1, 21, 1);
+        gpio_set_output(2, 6, 1);
+#endif
 #else
-    /* For Can/Can-FD 0 */
-    pfc_gpio_output(1, 12);         /* _EN */
-    pfc_gpio_output(1, 11);         /* _STB_N */
-
-    /* Toggle EN & STB_N to bring up the transceiver */
-    gpio_set_output(1, 12, 0);
-    gpio_set_output(1, 11, 0);
-
-    gpio_set_output(1, 11, 1);
-
-    gpio_set_output(1, 12, 1);
-#endif
-#endif
-
 /* TODO add proper board configuration */
-#if 1 /* ERGUOTOU BOARD */
-    /* For Can/Can-FD 1 */
-    pfc_gpio_output(1, 1);            /* _EN */
-    pfc_gpio_input(1, 7);             /* _RCAR_CAN_ERR_N */
-    pfc_gpio_output(1, 0);            /* _STB_N */
-    pfc_gpio_output(1, 6);            /* _WAKE */
+#if defined (R_TARGET_BOARD_EBISU)
+    /* TODO: Not confirm CAN TRANSCEIVER FOR CANFD1 */
+#elif defined (R_TARGET_BOARD_ERGUOTOU) /* ERGUOTOU BOARD */
+        /* For Can/Can-FD 1 */
+        pfc_gpio_output(1, 1); /* _EN */
+        pfc_gpio_input(1, 7);  /* _RCAR_CAN_ERR_N */
+        pfc_gpio_output(1, 0); /* _STB_N */
+        pfc_gpio_output(1, 6); /* _WAKE */
 
-    /* Toggle EN & STB_N to bring up the transceiver */
-    gpio_set_output(1, 1, 0);
-    gpio_set_output(1, 0, 0);
+        /* Toggle EN & STB_N to bring up the transceiver */
+        gpio_set_output(1, 1, 0);
+        gpio_set_output(1, 0, 0);
 
-    gpio_set_output(1, 0, 1);
-    gpio_set_output(1, 1, 1);
-    gpio_set_output(1, 6, 1);
-#else
-    /* For Can/Can-FD 1 */
-    pfc_gpio_output(1, 9);            /* _EN */
-    pfc_gpio_input(1, 26);            /* _RCAR_CAN_ERR_N */
-    pfc_gpio_output(1, 8);            /* _STB_N */
-
-    /* Toggle EN & STB_N to bring up the transceiver */
-    gpio_set_output(1, 9, 0);
-    gpio_set_output(1, 8, 0);
-
-    gpio_set_output(1, 8, 1);
-    gpio_set_output(1, 9, 1);
+        gpio_set_output(1, 0, 1);
+        gpio_set_output(1, 1, 1);
+        gpio_set_output(1, 6, 1);
+#else /* R_TARGET_BOARD_SALVATOR */
+    /* TODO: Not confirm CAN TRANSCEIVER FOR CANFD1 */
 #endif
-
+#endif
 }
 
 #ifdef R_USE_CANFD
@@ -351,9 +351,9 @@ void prvCanPFCInit(void)
         uint32_t val;
         ipsr = 1;
         /* The below code needs to be adapted if different set of pins are used */
-        /* CAN Peripheral settings  */
+        /* CANFD0 Peripheral settings  */
         val = LOC_REG_READ32(RCAR_PFC_GPSR0);
-        val |= BIT(12) | BIT(13);
+        val |= BIT(12) | BIT(13); /* CANFD0*/
     #if RCAR_CAN_FCANCLK_EXT
         val |= BIT(14);
     #endif
@@ -361,16 +361,32 @@ void prvCanPFCInit(void)
 
         /* CANFD0 Ch1_XX IPSR setting */
         val = LOC_REG_READ32(RCAR_PFC_IPSR7) & 0xFFFFFF0F;
-        val |= 0x00000010; // CANFD1_TX
+        val |= 0x00000010; // CANFD0_TX
         pfc_reg_write(RCAR_PFC_IPSR7, val);
 
         val = LOC_REG_READ32(RCAR_PFC_IPSR7) & 0xFFFFF0FF;
-        val |= 0x00000100; // CANFD1_TX
+        val |= 0x00000100; // CANFD0_RX
         pfc_reg_write(RCAR_PFC_IPSR7, val);
+
+        /* CANFD1 Peripheral settings  */
+        val = LOC_REG_READ32(RCAR_PFC_GPSR0);
+        val |= BIT(4) | BIT(7); /* CANFD1*/
+    #if RCAR_CAN_FCANCLK_EXT
+        val |= BIT(14);
+    #endif
+        pfc_reg_write(RCAR_PFC_GPSR0, val);
+
+        val = LOC_REG_READ32(RCAR_PFC_IPSR6) & 0xFFFFFF0F;
+        val |= 0x00000010; // CANFD1_TX
+        pfc_reg_write(RCAR_PFC_IPSR6, val);
+
+        val = LOC_REG_READ32(RCAR_PFC_IPSR6) & 0xFFF0FFFF;
+        val |= 0x00010000; // CANFD1_RX
+        pfc_reg_write(RCAR_PFC_IPSR6, val);
 
     #if RCAR_CAN_FCANCLK_EXT
         val = LOC_REG_READ32(RCAR_PFC_IPSR7) & 0xFFFF0FFF;
-        val |= 0x00001000; // CANFD1_TX
+        val |= 0x00001000; // CAN_CLK
         pfc_reg_write(RCAR_PFC_IPSR7, val);
     #endif
     }

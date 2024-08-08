@@ -18,9 +18,8 @@ target_include_directories(${PROJECT_NAME}-lib
 )
 
 add_compile_definitions(
-    R_TARGET_BOARD_ERGUOTOU
-    # USE_CANFD_CR
-    # USE_CANFD_CH00
+    USE_CANFD_CR
+    USE_CANFD_CH00
 )
 
 target_link_libraries(${PROJECT_NAME}-lib
