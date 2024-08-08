@@ -25,7 +25,11 @@ static display_t display[MAX_NR_DISPLAYS] = {
 #if MAX_NR_DISPLAYS == 1
     {
         .Valid = 0,
+#ifdef R_TARGET_BOARD_EBISU
+        .Disp = R_WM_DEV_VOUT0,
+#else // R_TARGET_BOARD_SALVATORXS
         .Disp = R_WM_DEV_VOUT1,
+#endif
     },
 #elif MAX_NR_DISPLAYS == 2
     {

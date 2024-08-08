@@ -21,7 +21,11 @@
 
 #ifndef MAX_NR_DISPLAYS
 /* Set default display number. */
+#ifdef R_TARGET_BOARD_EBISU
+#define MAX_NR_DISPLAYS         1
+#else // R_TARGET_BOARD_SALVATORXS
 #define MAX_NR_DISPLAYS         3
+#endif
 #endif /* #ifndef MAX_NR_DISPLAYS */
 
 #define MAX_NR_LAYER            2
