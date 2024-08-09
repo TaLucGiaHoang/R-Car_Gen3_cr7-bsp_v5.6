@@ -16,7 +16,7 @@ option(USE_ETHER_CR "Enables Ethernet driver exclusively for R7" OFF)
 
 # CIO specific options
 # option(R_USE_CAN "Enables CIO CAN driver" OFF)
-option(R_USE_CANFD "Enables CIO CAN-FD driver" ON)
+option(R_USE_CANFD "Enables CIO CAN-FD driver" OFF)
 cmake_dependent_option(R_USE_ETHER "Enables CIO Ethernet driver" OFF "ETHER_ENABLE" OFF)
 option(R_USE_WM "Enables CIO Window Manager driver" ON)
 option(R_USE_VIN "Enables CIO VIN driver" OFF)
@@ -25,7 +25,7 @@ option(R_USE_AUDIO "Enables CIO Audio driver" OFF)
 # Taurus options
 cmake_dependent_option(R_TAURUS_ENABLE_RVGC "Enables Taurus RVGC feature (shared graphics)" ON "R_USE_WM" OFF)
 cmake_dependent_option(R_TAURUS_ENABLE_CAMERA "Enables Taurus CAMERA feature (shared video input)" OFF "R_USE_VIN" OFF)
-cmake_dependent_option(R_TAURUS_ENABLE_CAN "Enables Taurus CAN feature (shared CAN)" ON "R_USE_CANFD" ON)
+cmake_dependent_option(R_TAURUS_ENABLE_CAN "Enables Taurus CAN feature (shared CAN)" OFF "R_USE_CANFD" OFF)
 cmake_dependent_option(R_TAURUS_ENABLE_ETHER "Enables Taurus Ethernet feature (shared Ethernet)" OFF "R_USE_ETHER;ETHER_ENABLE" OFF)
 option(R_TAURUS_ENABLE_COMCH "Enables communication channel example from rich os to RTOS" ON)
 
@@ -51,8 +51,9 @@ cmake_dependent_option(DRW2D_ON_CPU "Enables DRW2D on CPU" OFF "NOT DRW2D_ON_DHD
 add_compile_definitions(
     ENABLE_CANFD0
     RCAR_SALVATOR_XS=0
-    R_TARGET_BOARD_SALVATOR
-    # R_TARGET_BOARD_ERGUOTOU
+    # R_TARGET_BOARD_SALVATORXS
+    # R_TARGET_BOARD_SALVATOR
+    R_TARGET_BOARD_ERGUOTOU
     # R_TARGET_BOARD_EBISU
     RCAR_EBISU=1
     RCAR_BOARD=1
