@@ -274,64 +274,66 @@ void prvCanfdDeviceClose(void)
 
 void prvCanEnableTransceiver(void)
 {
-    
     /* Can FD channel 0 */
 #ifdef ENABLE_CANFD0
 /* TODO add proper board configuration */
 #if defined (R_TARGET_BOARD_EBISU)
-        pfc_gpio_output(0, 2); /* _EN */
-        pfc_gpio_input(1, 12); /* _RCAR_CAN_ERR_N */
-        pfc_gpio_output(0, 5); /* _STB_N */
+    pfc_gpio_output(0, 2); /* _EN */
+    pfc_gpio_input(1, 12); /* _RCAR_CAN_ERR_N */
+    pfc_gpio_output(0, 5); /* _STB_N */
 
-        /* Toggle EN & STB_N to bring up the transceiver */
-        gpio_set_output(0, 2, 0);
-        gpio_set_output(0, 5, 0);
+    /* Toggle EN & STB_N to bring up the transceiver */
+    gpio_set_output(0, 2, 0);
+    gpio_set_output(0, 5, 0);
 
-        gpio_set_output(0, 5, 1);
-        gpio_set_output(0, 2, 1);
-#elif defined (R_TARGET_BOARD_ERGUOTOU) /* ERGUOTOU BOARD */
-        pfc_gpio_output(1, 12); /* _EN */
-        pfc_gpio_input(1, 10);  /* _RCAR_CAN_ERR_N */
-        pfc_gpio_output(1, 11); /* _STB_N */
-        pfc_gpio_output(1, 5);  /* _WAKE */
+    gpio_set_output(0, 5, 1);
+    gpio_set_output(0, 2, 1);
+#else /* R_TARGET_BOARD_EBISU */
+#if defined (R_TARGET_BOARD_ERGUOTOU) /* ERGUOTOU BOARD */
+    /* SalvatorXS + Ergoutou */
+    pfc_gpio_output(1, 12); /* _EN */
+    pfc_gpio_input(1, 10);  /* _RCAR_CAN_ERR_N */
+    pfc_gpio_output(1, 11); /* _STB_N */
+    pfc_gpio_output(1, 5);  /* _WAKE */
 
-        /* Toggle EN & STB_N to bring up the transceiver */
-        gpio_set_output(1, 12, 0);
-        gpio_set_output(1, 11, 0);
+    /* Toggle EN & STB_N to bring up the transceiver */
+    gpio_set_output(1, 12, 0);
+    gpio_set_output(1, 11, 0);
 
-        gpio_set_output(1, 11, 1);
-        gpio_set_output(1, 12, 1);
-        gpio_set_output(1, 5, 1);
-#else /* R_TARGET_BOARD_SALVATOR */
-        pfc_gpio_output(2, 6);  /* _EN */
-        pfc_gpio_input(1, 28);  /* _RCAR_CAN_ERR_N */
-        pfc_gpio_output(1, 21); /* _STB_N */
+    gpio_set_output(1, 11, 1);
+    gpio_set_output(1, 12, 1);
+    gpio_set_output(1, 5, 1);
+#endif /* R_TARGET_BOARD_ERGUOTOU */
+    /* SalvatorXS + External CAN Transceiver */
+    pfc_gpio_output(2, 6);  /* _EN */
+    pfc_gpio_input(1, 28);  /* _RCAR_CAN_ERR_N */
+    pfc_gpio_output(1, 21); /* _STB_N */
 
-        /* Toggle EN & STB_N to bring up the transceiver */
-        gpio_set_output(2, 6, 0);
-        gpio_set_output(1, 21, 0);
+    /* Toggle EN & STB_N to bring up the transceiver */
+    gpio_set_output(2, 6, 0);
+    gpio_set_output(1, 21, 0);
 
-        gpio_set_output(1, 21, 1);
-        gpio_set_output(2, 6, 1);
-#endif
+    gpio_set_output(1, 21, 1);
+    gpio_set_output(2, 6, 1);
+#endif /* R_TARGET_BOARD_EBISU */
 #else
 /* TODO add proper board configuration */
 #if defined (R_TARGET_BOARD_EBISU)
     /* TODO: Not confirm CAN TRANSCEIVER FOR CANFD1 */
 #elif defined (R_TARGET_BOARD_ERGUOTOU) /* ERGUOTOU BOARD */
-        /* For Can/Can-FD 1 */
-        pfc_gpio_output(1, 1); /* _EN */
-        pfc_gpio_input(1, 7);  /* _RCAR_CAN_ERR_N */
-        pfc_gpio_output(1, 0); /* _STB_N */
-        pfc_gpio_output(1, 6); /* _WAKE */
+    /* For Can/Can-FD 1 */
+    pfc_gpio_output(1, 1); /* _EN */
+    pfc_gpio_input(1, 7);  /* _RCAR_CAN_ERR_N */
+    pfc_gpio_output(1, 0); /* _STB_N */
+    pfc_gpio_output(1, 6); /* _WAKE */
 
-        /* Toggle EN & STB_N to bring up the transceiver */
-        gpio_set_output(1, 1, 0);
-        gpio_set_output(1, 0, 0);
+    /* Toggle EN & STB_N to bring up the transceiver */
+    gpio_set_output(1, 1, 0);
+    gpio_set_output(1, 0, 0);
 
-        gpio_set_output(1, 0, 1);
-        gpio_set_output(1, 1, 1);
-        gpio_set_output(1, 6, 1);
+    gpio_set_output(1, 0, 1);
+    gpio_set_output(1, 1, 1);
+    gpio_set_output(1, 6, 1);
 #else /* R_TARGET_BOARD_SALVATOR */
     /* TODO: Not confirm CAN TRANSCEIVER FOR CANFD1 */
 #endif
