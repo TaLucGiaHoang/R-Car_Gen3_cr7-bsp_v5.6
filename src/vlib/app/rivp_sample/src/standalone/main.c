@@ -9,6 +9,10 @@
 #include "rcar-xos/osal/r_osal.h"
 #include "rivp_ldd_sample.h"
 
+#if !defined(RIVP_SUPPORTED)
+#error "rivp_sample requires the RIVP_SUPPORTED option. Please execute 'cmake -DRIVP_SUPPORTED=ON <build-dir>' to enable it."
+#endif
+
 #define RIVP_THREAD_ID              0x8000U                   /* RESOURCE_ID_BSP                 */
 #define LOC_THREAD_ID_START         (RIVP_THREAD_ID + 8U)
 
