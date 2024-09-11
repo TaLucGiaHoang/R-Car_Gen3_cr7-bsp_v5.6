@@ -131,7 +131,7 @@ static void * loc_EvtHandlerThread(void * Arg)
                     osal_ret, evt_mq_conf.max_num_msg, evt_mq_conf.msg_size, LOC_RESOURCE_ID_2DG + 66);
         return(-1);
     }
-
+#if 0  // remove unnecessary code, these displays are initialized in each sub-app
     /* Intialize all displays here */
     wm_err |= R_WM_DisplayConfig(R_WM_DISP_PORT_HDMI0, &display[0]);
     wm_err |= R_WM_DisplayInit(&display[0]);
@@ -146,7 +146,7 @@ static void * loc_EvtHandlerThread(void * Arg)
     wm_err |= R_WM_DisplayEnable(&display[0], true);
     wm_err |= R_WM_DisplayEnable(&display[1], true);
     wm_err |= R_WM_DisplayEnable(&display[2], true);
-
+#endif
     if (R_WM_ERR_SUCCESS != wm_err) {
         R_PRINT_Log("[Fastboot] Failed in initializing display!\r\n");
     }
