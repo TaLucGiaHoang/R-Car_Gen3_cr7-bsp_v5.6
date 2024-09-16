@@ -25,7 +25,7 @@
 // #define USE_MMC_CH	(MMC_CH0)	/* R-Car H3/M3/M3N */
 // #endif /* RCAR_LSI == RCAR_E3 || RCAR_LSI == RZ_G2M */
 
-#define USE_MMC_CH	(MMC_CH0)	/* R-Car H3/M3/M3N */
+#define USE_MMC_CH	(MMC_CH1)	/* R-Car E3 or RZ/G2M */
 
 #define BIT0	(0x00000001U)
 #define BIT1	(0x00000002U)
