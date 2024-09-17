@@ -359,7 +359,7 @@ int imr_main(void)
 *
 *   Description:
 *       Adaptive detection of the actual number of IMR rendering modules
-*       based on the PRR register value. For now supports only H3 and M3-N.
+*       based on the PRR register value. For now supports H3/M3/M3N/E3.
 *
 *   Parameters:
 *       none
@@ -376,14 +376,16 @@ static int get_rendering_module_num (void)
     switch (dev)
     {
     case R_PRR_RCARE3:
-        printf("E3 is detected. Use default number or IMR modules: %d.\n", rendering_module_num);
+        rendering_module_num = 1;
+        printf("E3 is detected. Number of IMR modules is: %d.\n", rendering_module_num);
         break;
     case R_PRR_RCARH3:
         rendering_module_num = 4;
         printf("H3 is detected. Number of IMR modules is: %d.\n", rendering_module_num);
         break;
     case R_PRR_RCARM3W:
-        printf("M3-W is detected. Use default number or IMR modules: %d.\n", rendering_module_num);
+        rendering_module_num = 2;
+        printf("M3-W is detected. Number of IMR modules is: %d.\n", rendering_module_num);
         break;
     case R_PRR_RCARM3N:
         rendering_module_num = 2;
