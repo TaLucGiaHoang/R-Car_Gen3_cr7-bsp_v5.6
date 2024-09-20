@@ -24,6 +24,16 @@
 #define LOGO_CFG_IMG_WIDTH  (1920)
 #define LOGO_CFG_IMG_HEIGHT (360)
 
+#ifdef R_TARGET_BOARD_EBISU
+
+#ifdef USE_DPAD
+#define RGB_IMAGE(member)     (rgb_image_dpad.member)
+#else /* USE_LVDS */
+#define RGB_IMAGE(member)     (rgb_image_lvds.member)
+#endif /* USE_DPAD */
+
+#else /* R_TARGET_BOARD_SALVATORXS */
+
 #ifdef USE_DPAD
 #define RGB_IMAGE(member)     (rgb_image_dpad.member)
 #elif USE_LVDS
@@ -31,6 +41,8 @@
 #else  /* USE_HDMI0 / USE_HDMI1 */
 #define RGB_IMAGE(member)     (rgb_image_hdmi.member)
 #endif /* USE_DPAD */
+
+#endif
 
 logo_Config_t loc_LogoConfig;
 
@@ -52,7 +64,11 @@ static int64_t loc_TaurusThread(void * Arg)
 
 static int64_t loc_LogoStartThread(void * Arg)
 {
+#ifdef R_TARGET_BOARD_EBISU
+    loc_LogoConfig.DisplayPort = R_WM_DISP_PORT_LVDS0;
+#else /* R_TARGET_BOARD_SALVATORXS */
     loc_LogoConfig.DisplayPort = R_WM_DISP_PORT_HDMI0;
+#endif
     loc_LogoConfig.LayerZIndex  = 1;
     loc_LogoConfig.LayerPosX    = 0;
     loc_LogoConfig.LayerPosY    = 1080 - LOGO_CFG_IMG_HEIGHT;
