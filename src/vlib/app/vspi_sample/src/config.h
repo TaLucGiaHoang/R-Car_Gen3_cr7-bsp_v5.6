@@ -8,10 +8,28 @@
 #define CONFIG_H_
 
 #ifdef R_TARGET_BOARD_EBISU
-/* TBD: Not verified yet */
+
+#ifdef USE_DPAD
+
+/* DSIP for VGA (DPAD) */
+#define LOGO_DISP_DU_IDX             1 /* E3=0|1, M3=2, H3=3. [R-Car D3/E3] DPAD can be connected with the DU0 or DU1. */
+#define LOGO_DISP_TIMING_CFG         1
+#define LOGO_DISP_SURFACE_CFG        1
+#define LOGO_DISP_SURFACE_WIDTH      1024
+#define LOGO_DISP_SURFACE_HEIGHT     192
+
+#else
+
+/* DISP for LVDS */
+#define LOGO_DISP_DU_IDX             0
+#define LOGO_DISP_TIMING_CFG         2 /* not used */
+#define LOGO_DISP_SURFACE_CFG        2
+#define LOGO_DISP_SURFACE_WIDTH      1280
+#define LOGO_DISP_SURFACE_HEIGHT     800
+
 #endif
 
-#if defined(R_TARGET_BOARD_SALVATORXS) || defined(R_TARGET_BOARD_ERGUOTOU)
+#elif defined(R_TARGET_BOARD_SALVATORXS) || defined(R_TARGET_BOARD_ERGUOTOU)
 
 #define USE_HDMI0 1
 

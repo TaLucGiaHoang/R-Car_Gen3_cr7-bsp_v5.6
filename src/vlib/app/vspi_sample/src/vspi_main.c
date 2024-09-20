@@ -23,6 +23,15 @@
 
 #include "r_print_api.h"
 
+#ifdef R_TARGET_BOARD_EBISU
+
+#ifdef USE_DPAD
+#define RGB_IMAGE(member)     (rgb_image_dpad.member)
+#else /* USE_LVDS */
+#define RGB_IMAGE(member)     (rgb_image_lvds.member)
+#endif /* USE_DPAD */
+
+#else /* R_TARGET_BOARD_SALVATORXS */
 
 #ifdef USE_DPAD
 #define RGB_IMAGE(member)     (rgb_image_dpad.member)
@@ -31,6 +40,8 @@
 #else  /* USE_HDMI0 / USE_HDMI1 */
 #define RGB_IMAGE(member)     (rgb_image_hdmi.member)
 #endif /* USE_DPAD */
+
+#endif
 
 /*------------------------------*/
 /* User defined output funciton */
