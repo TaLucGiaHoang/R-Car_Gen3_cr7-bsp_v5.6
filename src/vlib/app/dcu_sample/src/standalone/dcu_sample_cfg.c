@@ -112,10 +112,17 @@ static uint32_t loc_FrameBuf[DCU_CFG_IMG_WIDTH * DCU_CFG_IMG_HEIGHT] __attribute
  Exported global variables
  *********************************************************************************************************************/
 const dcu_Config_t dcu_DefaultConfig = {
+#ifdef R_TARGET_BOARD_EBISU
+    .DisplayPort      = R_WM_DISP_PORT_LVDS0,
+    .LayerZIndex      = 0,                    // E3: 0,1,2:success. But 3,4,5:fail
+    .LayerPosX        = 0,                    // [1920x1080]: (1920 - DCU_CFG_IMG_WIDTH) / 2
+    .LayerPosY        = 0,                    // [1920x1080]: (1080 - DCU_CFG_IMG_HEIGHT) / 2
+#else /* R_TARGET_BOARD_SALVATORXS */
     .DisplayPort      = R_WM_DISP_PORT_HDMI0,
     .LayerZIndex      = 3,
     .LayerPosX        = (1920 - DCU_CFG_IMG_WIDTH) / 2,
     .LayerPosY        = (1080 - DCU_CFG_IMG_HEIGHT) / 2,
+#endif
     .ImageWidth       = DCU_CFG_IMG_WIDTH,
     .ImageHeight      = DCU_CFG_IMG_HEIGHT,
     .ImageNumber      = DCU_CFG_IMG_NUMBER,
