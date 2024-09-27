@@ -117,10 +117,17 @@ static const uint32_t * loc_ImageSizeList[SPLASH_CFG_IMG_NUMBER] = {
 static uint32_t loc_FrameBuf[SPLASH_CFG_IMG_WIDTH * SPLASH_CFG_IMG_HEIGHT + 2] __attribute__((aligned(256)));
 
 static const dcu_Config_t loc_SplashScreenConfig = {
+#ifdef R_TARGET_BOARD_EBISU
+    .DisplayPort      = R_WM_DISP_PORT_LVDS0,
+    .LayerZIndex      = 0,                                      // E3: 0,1,2:success. But 3,4,5:fail
+    .LayerPosX        = (1920 - SPLASH_CFG_IMG_WIDTH) / 2,      // Use for 1920x1080 screen resolution
+    .LayerPosY        = (1080 - SPLASH_CFG_IMG_HEIGHT) / 2,     // Use for 1920x1080 screen resolution
+#else /* R_TARGET_BOARD_SALVATORXS */
     .DisplayPort      = R_WM_DISP_PORT_HDMI1,
     .LayerZIndex      = 3,
     .LayerPosX        = (1920 - SPLASH_CFG_IMG_WIDTH) / 2,
     .LayerPosY        = (1080 - SPLASH_CFG_IMG_HEIGHT) / 2,
+#endif
     .ImageWidth       = SPLASH_CFG_IMG_WIDTH,
     .ImageHeight      = SPLASH_CFG_IMG_HEIGHT,
     .ImageNumber      = SPLASH_CFG_IMG_NUMBER,

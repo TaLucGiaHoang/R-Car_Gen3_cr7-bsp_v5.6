@@ -132,20 +132,21 @@ static void * loc_EvtHandlerThread(void * Arg)
         return(-1);
     }
 
-    /* Intialize all displays here */
-    wm_err |= R_WM_DisplayConfig(R_WM_DISP_PORT_HDMI0, &display[0]);
-    wm_err |= R_WM_DisplayInit(&display[0]);
-    
-    wm_err |= R_WM_DisplayConfig(R_WM_DISP_PORT_LVDS0, &display[1]);
-    display[1].BackgroundColor = 0xFFFFFFFF; /* white for splash screen */
-    wm_err |= R_WM_DisplayInit(&display[1]);
-
-    wm_err |= R_WM_DisplayConfig(R_WM_DISP_PORT_HDMI1, &display[2]);
-    wm_err |= R_WM_DisplayInit(&display[2]);
-    /* Enable all displays together after initialzation */
-    wm_err |= R_WM_DisplayEnable(&display[0], true);
-    wm_err |= R_WM_DisplayEnable(&display[1], true);
-    wm_err |= R_WM_DisplayEnable(&display[2], true);
+//Remove unnecessary code, these displays are initialized in each sub-app
+//    /* Intialize all displays here */
+//    wm_err |= R_WM_DisplayConfig(R_WM_DISP_PORT_HDMI0, &display[0]);
+//    wm_err |= R_WM_DisplayInit(&display[0]);
+//    
+//    wm_err |= R_WM_DisplayConfig(R_WM_DISP_PORT_LVDS0, &display[1]);
+//    display[1].BackgroundColor = 0xFFFFFFFF; /* white for splash screen */
+//    wm_err |= R_WM_DisplayInit(&display[1]);
+//
+//    wm_err |= R_WM_DisplayConfig(R_WM_DISP_PORT_HDMI1, &display[2]);
+//    wm_err |= R_WM_DisplayInit(&display[2]);
+//    /* Enable all displays together after initialzation */
+//    wm_err |= R_WM_DisplayEnable(&display[0], true);
+//    wm_err |= R_WM_DisplayEnable(&display[1], true);
+//    wm_err |= R_WM_DisplayEnable(&display[2], true);
 
     if (R_WM_ERR_SUCCESS != wm_err) {
         R_PRINT_Log("[Fastboot] Failed in initializing display!\r\n");

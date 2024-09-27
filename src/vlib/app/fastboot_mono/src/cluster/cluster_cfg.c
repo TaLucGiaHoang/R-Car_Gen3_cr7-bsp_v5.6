@@ -39,6 +39,8 @@ const cluster_Config_t cluster_FastbootConfig = {
     .Port = R_WM_DISP_PORT_LVDS0,
 #elif defined(R_TARGET_BOARD_ERGUOTOU)
     .Port = R_WM_DISP_PORT_LVDS0,
+#elif defined (R_TARGET_BOARD_EBISU)
+    .Port = R_WM_DISP_PORT_LVDS0,
 #else
 #error "Specified board type is not supported!"
 #endif

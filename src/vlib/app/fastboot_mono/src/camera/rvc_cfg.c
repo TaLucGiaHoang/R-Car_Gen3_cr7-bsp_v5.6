@@ -38,7 +38,11 @@
 
 static rvc_DispCfg_t loc_DispCluster =
 {
+#ifdef R_TARGET_BOARD_EBISU
+    .Port = R_WM_DISP_PORT_LVDS0,
+#else /* R_TARGET_BOARD_SALVATORXS */
     .Port = R_WM_DISP_PORT_HDMI1,
+#endif
     .Format = R_WM_FMT_ARGB8888,
     .BackgroundColor = 0xFFFFFFFF, /* white */
 };
@@ -53,7 +57,11 @@ static rvc_DispCfg_t loc_DispCid =
 static rvc_Layer_t loc_LayerCluster =
 {
     /* csi40 */
+#ifdef R_TARGET_BOARD_EBISU
+    .Port = R_WM_DISP_PORT_LVDS0,
+#else /* R_TARGET_BOARD_SALVATORXS */
     .Port = R_WM_DISP_PORT_HDMI1,
+#endif
 };
 
 static rvc_Layer_t loc_LayerCid =
@@ -62,7 +70,7 @@ static rvc_Layer_t loc_LayerCid =
     .Port = R_WM_DISP_PORT_LVDS0,
 };
 
-#if defined(R_TARGET_BOARD_SALVATORXS)
+#if defined(R_TARGET_BOARD_SALVATORXS) || defined(R_TARGET_BOARD_EBISU)
 const rvc_Surface_t SurfaceCluster[] =
 { /* {ImageInWidth,ImageInHeight,ImageScaledWidth,ImageScaledHeight,PosX, PoxY, PosZ, Width, Height, StrideY, StrideC,PreClipPosX,PreClipPosY,     Uvaof, DataRate,Lanes,Interlaced,                  VmcInf,             VmcIm,                   ColorSpaceOut,                    BoundaryMbps,               Fmt, Handle, FBuf, FBufC0, FBufC1, Doc} */
 #if defined(SCALE_IMAGE_CHANGE_USE)
