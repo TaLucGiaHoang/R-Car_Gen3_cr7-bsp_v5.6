@@ -24,7 +24,8 @@ typedef struct {
 #ifdef USE_DPAD
 extern RGB_IMAGE rgb_image_dpad;
 #else  /* USE_LVDS */
-extern RGB_IMAGE rgb_image_lvds;
+extern RGB_IMAGE rgb_image_lvds;  // Use for 1280x800  screen resolution
+extern RGB_IMAGE rgb_image_hdmi;  // Use for 1920x1080 screen resolution
 #endif /* USE_DPAD */
 
 #else /* R_TARGET_BOARD_SALVATORXS */

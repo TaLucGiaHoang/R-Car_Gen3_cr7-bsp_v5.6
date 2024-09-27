@@ -21,15 +21,14 @@
 #define LOGO_THREAD_ID_02   (LOGO_THREAD_ID + 2U) /* OSAL_THREAD_LOGO_02 */
 #define LOGO_THREAD_ID_03   (LOGO_THREAD_ID + 3U) /* OSAL_THREAD_LOGO_03 */
 
-#define LOGO_CFG_IMG_WIDTH  (1920)
-#define LOGO_CFG_IMG_HEIGHT (360)
-
 #ifdef R_TARGET_BOARD_EBISU
 
 #ifdef USE_DPAD
-#define RGB_IMAGE(member)     (rgb_image_dpad.member)
+#define RGB_IMAGE(member)     (rgb_image_dpad.member)  // 1024x192
 #else /* USE_LVDS */
-#define RGB_IMAGE(member)     (rgb_image_lvds.member)
+#define RGB_IMAGE(member)     (rgb_image_lvds.member)  // 1280x800
+//#define RGB_IMAGE(member)     (rgb_image_hdmi.member)  // 1920x360
+
 #endif /* USE_DPAD */
 
 #else /* R_TARGET_BOARD_SALVATORXS */
@@ -71,9 +70,9 @@ static int64_t loc_LogoStartThread(void * Arg)
 #endif
     loc_LogoConfig.LayerZIndex  = 1;
     loc_LogoConfig.LayerPosX    = 0;
-    loc_LogoConfig.LayerPosY    = 1080 - LOGO_CFG_IMG_HEIGHT;
-    loc_LogoConfig.ImageWidth   = LOGO_CFG_IMG_WIDTH;
-    loc_LogoConfig.ImageHeight  = LOGO_CFG_IMG_HEIGHT;
+    loc_LogoConfig.LayerPosY    = 1080 - RGB_IMAGE(height) > 0 ? 1080 - RGB_IMAGE(height) : 0;
+    loc_LogoConfig.ImageWidth   = RGB_IMAGE(width);
+    loc_LogoConfig.ImageHeight  = RGB_IMAGE(height);
     loc_LogoConfig.FrameBuffer = (uintptr_t)RGB_IMAGE(pbuffer);
 
     logo_main(&loc_LogoConfig);
